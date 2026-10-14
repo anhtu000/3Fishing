@@ -281,6 +281,107 @@ const PETS: Record<string, PetDraw> = {
       highlight(84, 60, 16, 7)
     );
   },
+  // ---- Frozen Lake ----
+  penguin_chick: (b) => {
+    const g = shadeDefs(b, 'g', '#5b6a8f');
+    return (
+      feet('#ffa53d', 184, 24, 18) +
+      path('M42,140 C30,128 26,108 36,100 C46,108 52,122 54,136 Z', g) +
+      path('M158,140 C170,128 174,108 164,100 C154,108 148,122 146,136 Z', g) +
+      path('M46,130 C46,74 70,46 100,46 C130,46 154,74 154,130 C154,172 132,188 100,188 C68,188 46,172 46,130 Z', g) +
+      path('M62,104 C62,80 80,70 100,84 C120,70 138,80 138,104 C138,150 124,180 100,180 C76,180 62,150 62,104 Z', '#fbfdff', 'stroke-width="0"') +
+      path('M94,50 C90,34 100,28 104,40 C108,30 116,34 108,48 Z', g) +
+      face(100, 100, 19, 10, 'none') +
+      path('M90,116 L110,116 L100,128 Z', '#ffa53d', 'stroke-width="3.5"') +
+      highlight(80, 66, 16, 7)
+    );
+  },
+  snowy_owlet: (b) => {
+    const g = shadeDefs(b, 'g', '#f4f7ff');
+    const spots = [[70, 150], [124, 140], [100, 168], [84, 130], [136, 166]].map(([x, y]) => ellipse(x, y, 5, 3.5, '#9aa7c2', false)).join('');
+    const ring = (x: number) => circle(x, 92, 24, '#ffe07a', true, 'stroke-width="3.5"');
+    return (
+      feet('#ffb84d', 184, 22, 14) +
+      path('M44,150 C40,120 46,100 56,96 C62,118 62,140 60,162 Z', '#dfe5f4') +
+      path('M156,150 C160,120 154,100 144,96 C138,118 138,140 140,162 Z', '#dfe5f4') +
+      path('M48,126 C48,74 70,52 100,52 C130,52 152,74 152,126 C152,170 130,188 100,188 C70,188 48,170 48,126 Z', g) +
+      path('M56,64 L50,34 L80,54 Z', g) +
+      path('M144,64 L150,34 L120,54 Z', g) +
+      spots +
+      ring(76) +
+      ring(124) +
+      eye(76, 92, 15, '#2b1d38', 0) +
+      eye(124, 92, 15, '#2b1d38', 0) +
+      path('M93,110 L107,110 L100,124 Z', '#ffb84d', 'stroke-width="3.5"') +
+      ellipse(60, 120, 10, 5, '#ff7aa8', false, 'opacity="0.4"') +
+      ellipse(140, 120, 10, 5, '#ff7aa8', false, 'opacity="0.4"') +
+      highlight(82, 66, 16, 6)
+    );
+  },
+  seal_pup: (b) => {
+    const g = shadeDefs(b, 'g', '#eef2fa');
+    return (
+      path('M150,176 C176,180 190,166 188,150 C178,160 164,164 146,160 Z', '#d6ddeb') +
+      path('M28,160 C28,112 56,74 100,74 C144,74 172,112 172,160 C172,182 140,188 100,188 C60,188 28,182 28,160 Z', g) +
+      path('M44,170 C30,176 22,170 26,160 C34,164 42,164 50,160 Z', '#d6ddeb') +
+      ellipse(64, 140, 5, 3.5, '#b8c2d6', false) +
+      ellipse(136, 150, 6, 4, '#b8c2d6', false) +
+      eye(78, 116, 16, '#2b1d38', 0) +
+      eye(122, 116, 16, '#2b1d38', 0) +
+      ellipse(100, 140, 18, 12, '#ffffff', false) +
+      ellipse(100, 134, 7, 5, '#3b2a4d', false) +
+      line('M98,146 Q100,150 102,146', OUTLINE, 2.5) +
+      line('M84,140 l-22,-4 M84,146 l-22,2 M116,140 l22,-4 M116,146 l22,2', OUTLINE, 2.4, 'opacity="0.7"') +
+      ellipse(64, 134, 9, 5, '#ff7aa8', false, 'opacity="0.45"') +
+      ellipse(136, 134, 9, 5, '#ff7aa8', false, 'opacity="0.45"') +
+      highlight(82, 90, 18, 7)
+    );
+  },
+  polar_cub: (b) => {
+    const g = shadeDefs(b, 'g', '#fbfcff');
+    return (
+      feet('#e6ebf5', 182, 32, 22) +
+      path('M44,150 C44,112 66,100 100,100 C134,100 156,112 156,150 C156,178 132,188 100,188 C68,188 44,178 44,150 Z', g) +
+      ellipse(76, 176, 12, 7, '#c9d3e6', false) +
+      ellipse(124, 176, 12, 7, '#c9d3e6', false) +
+      path('M50,118 C72,130 128,130 150,118 L152,134 C128,146 72,146 48,134 Z', '#ff6b8f') +
+      path('M120,132 L136,170 L118,168 L110,136 Z', '#ff6b8f') +
+      circle(58, 50, 16, g) +
+      circle(142, 50, 16, g) +
+      circle(58, 50, 7, '#ffd0dc', false) +
+      circle(142, 50, 7, '#ffd0dc', false) +
+      ellipse(100, 82, 54, 44, g) +
+      ellipse(100, 100, 24, 17, '#eef2fa') +
+      face(100, 76, 22, 10, 'none') +
+      ellipse(100, 94, 8, 6, '#3b2a4d', false) +
+      line('M93,103 Q100,109 107,103', OUTLINE, 3) +
+      highlight(84, 54, 18, 7)
+    );
+  },
+  aurora_hare: (b) => {
+    const g = shadeDefs(b, 'g', '#fbfbff');
+    const au = `${b.id}au`;
+    b.defs.push(linear(au, [
+      [0, '#7dffcf'],
+      [0.5, '#7fb8ff'],
+      [1, '#c58cf0'],
+    ]));
+    return (
+      feet('#e6ebf5', 184, 26, 22) +
+      path('M60,70 C46,30 52,6 66,8 C80,10 84,40 82,72 Z', g) +
+      path('M140,70 C154,30 148,6 134,8 C120,10 116,40 118,72 Z', g) +
+      path('M62,52 C56,30 58,16 66,18 C74,20 76,40 76,58 Z', `url(#${au})`, 'stroke-width="0"') +
+      path('M138,52 C144,30 142,16 134,18 C126,20 124,40 124,58 Z', `url(#${au})`, 'stroke-width="0"') +
+      path('M48,150 C48,112 68,102 100,102 C132,102 152,112 152,150 C152,178 130,188 100,188 C70,188 48,178 48,150 Z', g) +
+      circle(152, 160, 14, '#ffffff') +
+      ellipse(100, 92, 50, 42, g) +
+      face(100, 88, 20, 11, 'w') +
+      ellipse(100, 100, 5, 4, '#ff8fb3', false) +
+      flat('M40,40 Q44,52 56,56 Q44,60 40,72 Q36,60 24,56 Q36,52 40,40 Z', '#bfffe6') +
+      flat('M166,64 Q169,72 177,75 Q169,78 166,86 Q163,78 155,75 Q163,72 166,64 Z', '#d9c2ff') +
+      highlight(84, 66, 16, 7)
+    );
+  },
 };
 
 export const PET_IDS = Object.keys(PETS);

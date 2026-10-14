@@ -16,7 +16,7 @@ export function devPreset(s: SaveData, hash: string) {
   const cozy = PONDS[0];
   const give = (n: number, pond = cozy) => pond.fish.slice(0, n).forEach((f) => (s.dex[f.id] ??= { n: 3, best: f.cm * 1.2 }));
   const pets = (ids: string[]) => ids.forEach((id) => (s.pets[id] ??= { level: 2, xp: 0 }));
-  if (m[1] === 'rich' || m[1] === 'boss' || m[1] === 'misty') {
+  if (m[1] === 'rich' || m[1] === 'boss' || m[1] === 'misty' || m[1] === 'frozen') {
     s.coins = 4200;
     give(6);
     pets(['puddle_frog', 'reed_duckling', 'otter_pup']);
@@ -24,6 +24,15 @@ export function devPreset(s: SaveData, hash: string) {
     s.eggs[0] = { tier: 2, pond: 'cozy', left: 140, total: 300 };
     s.incubatorSlots = 2;
     s.eggs[1] = { tier: 1, pond: 'cozy', left: 0, total: 120 };
+  }
+  if (m[1] === 'frozen') {
+    s.bosses = ['old_whiskers', 'fog_pike'];
+    s.unlocked = ['cozy', 'misty', 'frozen'];
+    s.pond = 'frozen';
+    give(7, PONDS[1]);
+    give(4, PONDS[2]);
+    pets(['mossy_snail', 'firefly_fox', 'penguin_chick', 'seal_pup']);
+    s.team = ['seal_pup', 'penguin_chick', 'firefly_fox'];
   }
   if (m[1] === 'misty') {
     s.bosses = ['old_whiskers'];

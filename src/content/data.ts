@@ -40,7 +40,7 @@ export interface PetDef {
 }
 
 export interface PondDef {
-  id: 'cozy' | 'misty';
+  id: 'cozy' | 'misty' | 'frozen';
   name: string;
   /** Price multiplier P. */
   priceMult: number;
@@ -106,6 +106,32 @@ export const PONDS: PondDef[] = [
     junk: ['boot', 'wheel', 'can'],
     boss: { id: 'fog_pike', name: 'The Fog Pike', hp: 1 },
     bossAt: 7,
+  },
+  {
+    id: 'frozen',
+    name: 'Frozen Lake',
+    priceMult: 9,
+    unlockCost: 14000,
+    fish: [
+      { id: 'frost_minnow', name: 'Frost Minnow', rarity: 0, cm: 8 },
+      { id: 'ice_perch', name: 'Ice Perch', rarity: 0, cm: 22 },
+      { id: 'snow_smelt', name: 'Snow Smelt', rarity: 0, cm: 18 },
+      { id: 'aurora_char', name: 'Aurora Char', rarity: 1, cm: 46 },
+      { id: 'crystal_cisco', name: 'Crystal Cisco', rarity: 1, cm: 34 },
+      { id: 'polar_burbot', name: 'Polar Burbot', rarity: 2, cm: 62 },
+      { id: 'frostfin_muskie', name: 'Frostfin Muskie', rarity: 3, cm: 118 },
+      { id: 'starlight_whitefish', name: 'Starlight Whitefish', rarity: 4, cm: 49 },
+    ],
+    pets: [
+      { id: 'penguin_chick', name: 'Penguin Chick', rarity: 0, perk: 'strong' },
+      { id: 'snowy_owlet', name: 'Snowy Owlet', rarity: 1, perk: 'sharp' },
+      { id: 'seal_pup', name: 'Seal Pup', rarity: 2, perk: 'angler' },
+      { id: 'polar_cub', name: 'Polar Cub', rarity: 3, perk: 'merchant' },
+      { id: 'aurora_hare', name: 'Aurora Hare', rarity: 4, perk: 'luck' },
+    ],
+    junk: ['boot', 'bottle', 'can'],
+    boss: { id: 'frostbeard', name: 'Old Frostbeard', hp: 1 },
+    bossAt: 8,
   },
 ];
 

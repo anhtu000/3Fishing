@@ -1,4 +1,4 @@
-# Game #3 — Pond Pals: Hatch & Fish (v1)
+# Game #3 — Pond Pals: Hatch & Fish (v1.2)
 
 Game câu cá thư giãn một chạm, ấp trứng ra thú cưng giúp câu. Đường phát hành A: Poki (độc quyền web).
 Tài liệu thiết kế: `Pond-Pals-Tai-lieu-thiet-ke.md` (cùng thư mục cha) và bản Docs.
@@ -15,12 +15,13 @@ npm run sim            # mô phỏng cân bằng 1 giờ chơi
 npm run audio          # tạo lại âm thanh (cần python3, numpy, ffmpeg)
 ```
 
-Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn boss), `#dev-misty` (đã mở hồ 2).
+Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn boss), `#dev-misty` (hồ 2), `#dev-frozen` (hồ 3). Đổi ngôn ngữ để thử: `?lang=de` (en, fr, it, de, es, tr).
 
 ## Cấu trúc
 
 - `core/` khung chung (đồng bộ từ game #1), thêm adapter Poki `core/platform/poki.ts`.
-- `src/content/data.ts` nội dung: 2 hồ, 16 cá, 10 thú, 2 boss, nâng cấp, nhiệm vụ.
+- `src/content/data.ts` nội dung: 3 hồ, 24 cá, 15 thú, 3 boss, nâng cấp, nhiệm vụ.
+- `src/i18n/` chữ của game theo 6 ngôn ngữ; `t.ts` là hàm dịch; `i18n.test.ts` kiểm đủ khóa.
 - `src/logic/` luật thuần TypeScript (giá, may mắn, trứng, thú, nhiệm vụ) và máy trạng thái câu cá; có test.
 - `src/render/` toàn bộ hình vẽ SVG; `textures.ts` nạp thành texture lúc loading.
 - `src/world/` cảnh hồ động (`Pond.ts`) và mèo + cần + dây + phao (`Rig.ts`).

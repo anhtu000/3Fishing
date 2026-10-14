@@ -428,3 +428,10 @@ export function fmt(n: number) {
   if (n < 1e6) return `${(n / 1000).toFixed(n < 1e5 ? 1 : 0)}K`;
   return `${(n / 1e6).toFixed(2)}M`;
 }
+
+/** Shrinks a text so it fits in maxW (long translations), never grows it. Returns the text. */
+export function fitText(t: Phaser.GameObjects.Text, maxW: number) {
+  t.setScale(1);
+  if (t.width > maxW) t.setScale(maxW / t.width);
+  return t;
+}

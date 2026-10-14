@@ -9,6 +9,7 @@ import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
 import { anyUpgradeAffordable, questsClaimable, readyEggIndex, type CatchRoll } from '../logic/rules';
 import { devPreset } from '../dev';
+import { bossName, duration, pondName, t } from '../i18n/t';
 import { save } from '../save';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, txt } from '../ui/kit';
@@ -87,10 +88,10 @@ export class PlayScene extends BaseScene {
       golden: () => this.watchAd(() => {
         this.pg.goldenBaitOn();
         app.audio.play('reward');
-        note(this, 'Golden bait! Luck x2 for 5 minutes');
+        note(this, t('msg.goldenOn'));
       }),
       mystery: () => {
-        if (!this.pg.s.eggs.some((e, i) => i < s.incubatorSlots && !e)) return note(this, 'The incubator is full. Hatch an egg first!');
+        if (!this.pg.s.eggs.some((e, i) => i < s.incubatorSlots && !e)) return note(this, t('msg.incubatorFull'));
         this.watchAd(() => {
           const r = this.pg.mysteryEgg();
           app.audio.play('reward');
@@ -102,14 +103,11 @@ export class PlayScene extends BaseScene {
       auto: () => {
         s.autoFish = !s.autoFish;
         this.fishing.auto = s.autoFish;
-        note(this, s.autoFish ? 'Auto fishing on (half speed). Tap the water to fish yourself.' : 'Auto fishing off');
+        note(this, s.autoFish ? t('msg.autoOn') : t('msg.autoOff'));
       },
       boss: () => this.startBoss(),
       egg: (i) => this.tapEgg(i),
-      sound: () => {
-        app.audio.toggle();
-        this.hud.setSoundIcon(app.audio.muted);
-      },
+      sound: () => this.openPause(),
     });
     this.hud.setSoundIcon(app.audio.muted);
 
@@ -129,7 +127,7 @@ export class PlayScene extends BaseScene {
         phase: (ph) => {
           this.cameras.main.shake(300, 0.008);
           app.audio.play('boss');
-          say(this, this.vp.width / 2, this.vp.height * 0.3, `Phase ${ph + 1}!`, '#ff8a8a', 56);
+          say(this, this.vp.width / 2, this.vp.height * 0.3, t('msg.phase', { n: ph + 1 }), '#ff8a8a', 56);
         },
         end: (o) => this.onEnd(o),
       },
@@ -149,7 +147,9 @@ export class PlayScene extends BaseScene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.music?.stop());
 
     // Welcome back: angler pets fished while you were away; then the daily gift.
-    if (!save.isNewPlayer) {
+    const rebuilt = PlayScene.restarting;
+    PlayScene.restarting = false;
+    if (!save.isNewPlayer && !rebuilt) {
       const away = secondsAway(save.lastSavedAt, Date.now(), 7 * 24 * 3600);
       const coins = away > 60 ? this.pg.offline(away) : 0;
       this.time.delayedCall(400, () => {
@@ -210,7 +210,7 @@ export class PlayScene extends BaseScene {
     if (this.fishing.auto && this.fishing.phase === 'ready') {
       this.s.autoFish = false;
       this.fishing.auto = false;
-      note(this, 'Auto fishing off');
+      note(this, t('msg.autoOff'));
     }
     if (this.fishing.phase === 'ready') app.audio.play('charge', { volume: 0.5 });
     this.fishing.press();
@@ -223,11 +223,11 @@ export class PlayScene extends BaseScene {
     this.lucky = this.pg.luckyCastReady && this.s.stats.catches >= 5;
     if (this.lucky) {
       this.s.luckyDay = dayKey();
-      say(this, this.vp.width / 2, this.pond.L.water - 120, 'Lucky cast! Luck x3', '#ffe066', 44);
+      say(this, this.vp.width / 2, this.pond.L.water - 120, t('msg.luckyCast'), '#ffe066', 44);
     }
     this.rig.cast(power, zone);
     app.audio.play('cast', { pitchJitter: 100 });
-    if (zone === 2) this.time.delayedCall(250, () => say(this, this.rig.landX, this.pond.L.water - 70, 'Super far!', '#ffe066', 36));
+    if (zone === 2) this.time.delayedCall(250, () => say(this, this.rig.landX, this.pond.L.water - 70, t('msg.superFar'), '#ffe066', 36));
     this.completeStep('cast');
   }
 
@@ -244,7 +244,7 @@ export class PlayScene extends BaseScene {
     app.audio.play('hook');
     if (this.roll) this.hud.setProgressIcon(rollKey(this.roll));
     if (perfect) {
-      say(this, this.rig.bobber.x, this.pond.L.water - 80, 'Perfect!', '#7dffb0', 44);
+      say(this, this.rig.bobber.x, this.pond.L.water - 80, t('msg.perfect'), '#7dffb0', 44);
       app.audio.play('perfect');
     }
     this.completeStep('bite');
@@ -277,7 +277,7 @@ export class PlayScene extends BaseScene {
           app.audio.play('gem', { volume: 0.5, pitchJitter: 100 });
         },
       };
-      for (const id of res.questsDone) this.time.delayedCall(1200, () => note(this, 'Quest complete! Claim your coins.'), [id]);
+      for (const id of res.questsDone) this.time.delayedCall(1200, () => note(this, t('msg.questDone')), [id]);
       const after = () => {
         this.fishing.reset();
         this.afterCatch(res.roll);
@@ -297,7 +297,7 @@ export class PlayScene extends BaseScene {
       this.roll = null;
       return;
     }
-    const msg: Record<string, string> = { early: 'Too early! Wait for the big splash', missed: 'Too slow!', snap: 'Snap! The line broke', escape: 'It got away!' };
+    const msg: Record<string, string> = { early: t('msg.early'), missed: t('msg.missed'), snap: t('msg.snap'), escape: t('msg.escape') };
     say(this, this.vp.width / 2, this.pond.L.water - 120, msg[o] ?? '', '#ffffff', 36);
     app.audio.play(o === 'snap' ? 'snap' : 'miss');
     if (o === 'snap') {
@@ -336,7 +336,7 @@ export class PlayScene extends BaseScene {
   }
 
   private doHatch(i: number) {
-    if (this.fishing.busy && this.fishing.phase !== 'waiting') return note(this, 'Land your catch first!');
+    if (this.fishing.busy && this.fishing.phase !== 'waiting') return note(this, t('msg.landFirst'));
     const r = this.pg.hatch(i);
     if (!r) return;
     this.completeStep('hatch');
@@ -347,7 +347,7 @@ export class PlayScene extends BaseScene {
       this.modal--;
       this.hud.setVisible(true);
       this.pond.setPets(this.s.team);
-      if (r.result.kind === 'new' && !this.s.team.includes(r.petId)) note(this, 'Your team is full. Swap pets in the Pets menu.');
+      if (r.result.kind === 'new' && !this.s.team.includes(r.petId)) note(this, t('msg.teamFullSwap'));
       this.refresh();
       save.flush();
     });
@@ -380,7 +380,7 @@ export class PlayScene extends BaseScene {
     if (this.panel && !this.panel.isClosed) return;
     if (this.fishing.phase === 'charging') this.fishing.release();
     if (this.fishing.busy && this.fishing.phase !== 'done') {
-      note(this, 'Finish this catch first!');
+      note(this, t('msg.finishFirst'));
       return;
     }
     this.modal++;
@@ -397,25 +397,52 @@ export class PlayScene extends BaseScene {
 
   private openPause() {
     this.open(() => {
-      const p = new CPanel(this, { title: 'Paused', w: 520, h: 460, color: COLORS.teal });
+      const p = new CPanel(this, { title: t('pause.title'), w: 600, h: 680, color: COLORS.teal });
       p.content.add(
-        new CButton(this, 0, p.top + 120, { w: 340, h: 100, label: 'Resume', fontSize: 40, color: COLORS.green, onClick: () => p.close() }),
+        new CButton(this, 0, p.top + 120, { w: 340, h: 100, label: t('pause.resume'), fontSize: 40, color: COLORS.green, onClick: () => p.close() }),
       );
       const sound = new CButton(this, 0, p.top + 250, {
         w: 340,
         h: 84,
-        label: app.audio.muted ? 'Sound: off' : 'Sound: on',
+        label: app.audio.muted ? t('pause.soundOff') : t('pause.soundOn'),
         fontSize: 30,
         color: COLORS.blue,
         onClick: () => {
           app.audio.toggle();
           this.hud.setSoundIcon(app.audio.muted);
-          sound.setLabel(app.audio.muted ? 'Sound: off' : 'Sound: on');
+          sound.setLabel(app.audio.muted ? t('pause.soundOff') : t('pause.soundOn'));
         },
       });
       p.content.add(sound);
+      // Language: detected from Poki or the browser, the player's choice wins (saved in settings).
+      p.content.add(txt(this, 0, p.top + 350, t('pause.language'), 30, { color: '#7a6a8a', stroke: false }));
+      app.i18n.languages.forEach((lang, i) => {
+        const x = ((i % 3) - 1) * 180;
+        const y = p.top + 430 + Math.floor(i / 3) * 86;
+        const b = new CButton(this, x, y, {
+          w: 168,
+          h: 72,
+          label: app.i18n.nameOf(lang),
+          fontSize: 26,
+          color: lang === app.i18n.lang ? COLORS.orange : COLORS.grey,
+          onClick: () => {
+            if (lang === app.i18n.lang) return;
+            PlayScene.restarting = true;
+            void app.setLanguage(lang);
+          },
+        });
+        p.content.add(b);
+      });
       return p;
     });
+  }
+
+  /** Set before a language switch rebuilds the scene, so the welcome-back screen is not shown again. */
+  static restarting = false;
+
+  protected onLanguageChange() {
+    save.flush(true);
+    this.scene.restart();
   }
 
   /**
@@ -449,14 +476,12 @@ export class PlayScene extends BaseScene {
   }
 
   private openOffline(sec: number, coins: number) {
-    const p = new CPanel(this, { title: 'Welcome back!', w: 600, h: 700, color: COLORS.teal, closable: false });
+    const p = new CPanel(this, { title: t('core.welcomeBack'), w: 600, h: 700, color: COLORS.teal, closable: false });
     this.modal++;
     const anglers = this.s.team.filter((id) => petById.get(id)?.perk === 'angler');
     const pet = anglers[0] ?? this.s.team[0];
     if (pet) p.content.add(art(this, 0, p.top + 100, `pet:${pet}`, 0.8));
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    p.content.add(txt(this, 0, p.top + 230, `Your pets fished for ${h > 0 ? `${h}h ` : ''}${m}m`, 30, { color: '#7a6a8a', stroke: false }));
+    p.content.add(txt(this, 0, p.top + 230, t('offline.fished', { t: duration(sec) }), 30, { color: '#7a6a8a', stroke: false, wrap: 520 }));
     const amount = txt(this, 30, p.top + 300, `+${coins}`, 64, { color: '#ffb81c' });
     const coin = art(this, amount.x - amount.width / 2 - 40, p.top + 300, 'item:coin', 0.6);
     p.content.add([amount, coin]);
@@ -474,8 +499,8 @@ export class PlayScene extends BaseScene {
     });
     // Poki: the free option sits above the rewarded one and is at least as big.
     const ads = app.ads.rewardedAvailable && !app.clean;
-    p.content.add(new CButton(this, 0, p.bottom - (ads ? 200 : 110), { w: 400, h: 96, label: 'Collect', fontSize: 38, color: COLORS.orange, onClick: () => give(1) }));
-    if (ads) p.content.add(new CButton(this, 0, p.bottom - 90, { w: 400, h: 96, label: 'Collect x2', fontSize: 38, color: COLORS.ad, ad: true, onClick: () => this.watchAd(() => give(2)) }));
+    p.content.add(new CButton(this, 0, p.bottom - (ads ? 200 : 110), { w: 400, h: 96, label: t('core.collect'), fontSize: 38, color: COLORS.orange, onClick: () => give(1) }));
+    if (ads) p.content.add(new CButton(this, 0, p.bottom - 90, { w: 400, h: 96, label: t('offline.collectDouble'), fontSize: 38, color: COLORS.ad, ad: true, onClick: () => this.watchAd(() => give(2)) }));
   }
 
   private maybeDaily() {
@@ -522,12 +547,12 @@ export class PlayScene extends BaseScene {
       this.refresh();
       this.cameras.main.fadeIn(400, 255, 255, 255);
       app.audio.play('unlock');
-      const title = txt(this, this.vp.width / 2, this.vp.height * 0.25, p.name, 72).setDepth(1500).setScale(0.5);
+      const title = txt(this, this.vp.width / 2, this.vp.height * 0.25, pondName(p.id), 72).setDepth(1500).setScale(0.5);
       this.tweens.add({ targets: title, scale: 1, duration: 400, ease: 'Back.Out' });
       this.tweens.add({ targets: title, alpha: 0, delay: 1600, duration: 400, onComplete: () => title.destroy() });
       if (this.pg.autoUnlocked && !this.s.tutorial.includes('auto')) {
         this.s.tutorial.push('auto');
-        this.time.delayedCall(1800, () => note(this, 'Auto fishing unlocked! Tap the round button on the left.', 3200));
+        this.time.delayedCall(1800, () => note(this, t('msg.autoUnlocked'), 3200));
       }
       this.modal--;
       if (this.played) app.gameplay.start();
@@ -547,7 +572,7 @@ export class PlayScene extends BaseScene {
     app.audio.play('boss');
     this.cameras.main.shake(500, 0.01);
     const vp = this.vp;
-    const banner = txt(this, vp.width / 2, vp.height * 0.22, `${boss.name}\nappears!`, 76, { color: '#ffe066' }).setDepth(1500).setScale(0.4);
+    const banner = txt(this, vp.width / 2, vp.height * 0.22, t('boss.appears', { boss: bossName(boss.id) }), 70, { color: '#ffe066' }).setDepth(1500).setScale(0.4);
     this.tweens.add({ targets: banner, scale: 1, duration: 400, ease: 'Back.Out' });
     this.time.delayedCall(1500, () => {
       banner.destroy();
@@ -555,7 +580,7 @@ export class PlayScene extends BaseScene {
       this.rig.cast(0.55, 2);
       this.rig.setTarget(`fish:${boss.id}`, 0.95);
       this.fishing.startBoss();
-      this.hud.drawBoss(boss.name, 1, 0);
+      this.hud.drawBoss(bossName(boss.id), 1, 0);
       this.pond.setBossTeaser(false);
       if (this.s.autoFish) this.fishing.auto = false;
     });
@@ -583,18 +608,18 @@ export class PlayScene extends BaseScene {
       this.tweens.add({ targets: img, x: vp.width / 2, y: vp.height * 0.36, scale: fitScale(`fish:${boss.id}`, 460), angle: 720, duration: 800, ease: 'Cubic.Out' });
       app.audio.play('win');
       this.cameras.main.shake(400, 0.01);
-      const head = txt(this, vp.width / 2, vp.height * 0.18, 'BOSS CAUGHT!', 64, { color: '#ffe066' });
-      const sub = txt(this, vp.width / 2, vp.height * 0.55, `${boss.name}: ${(this.rng.next() * 40 + 160).toFixed(1)} cm!`, 34, { color: '#3b2a4d', stroke: false });
+      const head = txt(this, vp.width / 2, vp.height * 0.18, t('boss.caught'), 64, { color: '#ffe066' });
+      const sub = txt(this, vp.width / 2, vp.height * 0.55, t('boss.size', { boss: bossName(boss.id), cm: (this.rng.next() * 40 + 160).toFixed(1) }), 34, { color: '#3b2a4d', stroke: false, wrap: Math.min(480, vp.width - 80) });
       const egg = art(this, vp.width / 2 - 70, vp.height * 0.62, 'egg:3', 0.5);
-      const eggT = txt(this, vp.width / 2 + 60, vp.height * 0.62, reward.eggStored ? 'Epic egg' : `+${reward.coins - reward.prize} coins`, 32, { color: '#9356e6', stroke: false });
+      const eggT = txt(this, vp.width / 2 + 60, vp.height * 0.62, reward.eggStored ? t('boss.epicEgg') : t('boss.coins', { n: reward.coins - reward.prize }), 32, { color: '#9356e6', stroke: false });
       const gem = art(this, vp.width / 2 - 70, vp.height * 0.7, 'item:coin', 0.5);
       const gemT = txt(this, vp.width / 2 + 20, vp.height * 0.7, `+${reward.prize}`, 36, { color: '#e39b00', stroke: false });
       const next = this.pg.nextPond();
-      const tip = txt(this, vp.width / 2, vp.height * 0.77, next ? `${next.name} is open on the Map!` : 'You beat every boss! More ponds coming soon.', 26, { wrap: Math.min(480, vp.width - 80), color: '#7a6a8a', stroke: false });
+      const tip = txt(this, vp.width / 2, vp.height * 0.77, next ? t('boss.nextPond', { pond: pondName(next.id) }) : t('boss.allDone'), 26, { wrap: Math.min(480, vp.width - 80), color: '#7a6a8a', stroke: false });
       const btn = new CButton(this, vp.width / 2, vp.height * 0.88, {
         w: 300,
         h: 96,
-        label: 'Hooray!',
+        label: t('boss.hooray'),
         fontSize: 40,
         color: COLORS.green,
         onClick: () => {
@@ -613,12 +638,12 @@ export class PlayScene extends BaseScene {
     const progress = this.fishing.progress;
     this.rig.lose();
     app.audio.play('snap');
-    const p = new CPanel(this, { title: `${boss.name} got away!`, w: 600, h: 720, color: COLORS.red, closable: false });
+    const p = new CPanel(this, { title: t('boss.gotAway', { boss: bossName(boss.id) }), w: 600, h: 720, color: COLORS.red, closable: false });
     this.modal++;
     this.stopPlay();
     p.content.add(art(this, 0, p.top + 110, `fish:${boss.id}`, 0.8));
-    p.content.add(txt(this, 0, p.top + 230, `You got it ${Math.round(progress * 100)}% of the way!`, 30, { color: '#7a6a8a', stroke: false }));
-    p.content.add(txt(this, 0, p.top + 276, 'Tip: upgrade your Rod and Line', 26, { color: '#7a6a8a', stroke: false, weight: '500' }));
+    p.content.add(txt(this, 0, p.top + 230, t('boss.progress', { n: Math.round(progress * 100) }), 30, { color: '#7a6a8a', stroke: false, wrap: 520 }));
+    p.content.add(txt(this, 0, p.top + 276, t('boss.tip'), 26, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 }));
     const done = () => {
       p.close();
     };
@@ -630,7 +655,7 @@ export class PlayScene extends BaseScene {
         new CButton(this, 0, p.bottom - 190, {
           w: 400,
           h: 96,
-          label: 'Keep reeling',
+          label: t('boss.keepReeling'),
           fontSize: 36,
           color: COLORS.ad,
           ad: true,
@@ -641,7 +666,7 @@ export class PlayScene extends BaseScene {
               this.rig.cast(0.55, 2);
               this.rig.setTarget(`fish:${boss.id}`, 0.95);
               this.fishing.continueBoss(progress);
-              this.hud.drawBoss(boss.name, 1 - progress, this.fishing.bossPhase);
+              this.hud.drawBoss(bossName(boss.id), 1 - progress, this.fishing.bossPhase);
               app.gameplay.start();
             }),
         }),
@@ -651,7 +676,7 @@ export class PlayScene extends BaseScene {
       new CButton(this, 0, p.bottom - (revive ? 300 : 190), {
         w: 400,
         h: 96,
-        label: 'Try again',
+        label: t('boss.tryAgain'),
         fontSize: 36,
         color: COLORS.orange,
         onClick: async () => {
@@ -669,7 +694,7 @@ export class PlayScene extends BaseScene {
       new CButton(this, 0, p.bottom - 50, {
         w: 260,
         h: 70,
-        label: 'Later',
+        label: t('boss.later'),
         fontSize: 28,
         color: COLORS.grey,
         onClick: () => {
@@ -699,15 +724,7 @@ export class PlayScene extends BaseScene {
 
   /** Tutorial lines: short, with the hand doing the showing (Poki: visual, not text-heavy). */
   private stepText(step: Step) {
-    return {
-      cast: 'Hold... then let go!',
-      bite: 'TAP NOW!',
-      reel: 'Hold to reel. Let go on red!',
-      egg: 'An egg! It hatches as you fish.',
-      hatch: 'Tap to hatch!',
-      upgrade: 'Upgrade your gear!',
-      boss: 'Boss time! Tap BOSS!',
-    }[step];
+    return t(`tut.${step}`);
   }
 
   private showStep(step: Step) {
@@ -811,13 +828,13 @@ export class PlayScene extends BaseScene {
         }
         this.coinArrive();
       }
-      if (this.pg.refreshDay()) note(this, 'New daily quests!');
+      if (this.pg.refreshDay()) note(this, t('msg.newQuests'));
       if (!s.tutorial.includes('hatch') && readyEggIndex(s) >= 0 && !f.busy && this.modal === 0 && this.step !== 'hatch') this.showStep('hatch');
       if (s.tutorial.includes('hatch') && !s.tutorial.includes('upgrade') && this.step === null && !f.busy && this.modal === 0 && anyUpgradeAffordable(s)) this.showStep('upgrade');
     }
     this.pond.update(dt);
     this.rig.update(dt, f);
-    if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(this.pond.pond.boss.name, 1 - f.progress, f.bossPhase);
+    if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(bossName(this.pond.pond.boss.id), 1 - f.progress, f.bossPhase);
     const tutDone = s.tutorial.includes('done');
     this.hud.update(dt, f, {
       autoOn: f.auto,

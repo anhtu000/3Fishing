@@ -11,6 +11,8 @@ interface PokiSDKApi {
   gameplayStop(): void;
   commercialBreak(onStart?: () => void): Promise<void>;
   rewardedBreak(options: { size?: 'small' | 'medium' | 'large'; onStart?: () => void }): Promise<boolean>;
+  /** Player's language as a base code ('en', 'pt'), synchronous. */
+  getLanguage?(): string;
 }
 
 declare global {
@@ -107,6 +109,13 @@ export class PokiPlatform implements Platform {
   }
 
   locale() {
+    // Poki knows the player's language better than the browser (localized Poki sites).
+    try {
+      const lang = this.sdk.getLanguage?.();
+      if (lang) return lang;
+    } catch {
+      // older SDK
+    }
     return navigator.language ?? null;
   }
 

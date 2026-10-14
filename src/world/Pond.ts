@@ -57,6 +57,7 @@ export class Pond {
   dock!: Phaser.GameObjects.Image;
   private swimmers: Swimmer[] = [];
   private seaBubbles: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private snowFx: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private bossShadow: Phaser.GameObjects.Image | null = null;
   private bossShadowT = 0;
   /** Pets sitting on the dock or on lily pads. */
@@ -106,7 +107,9 @@ export class Pond {
     const surfTex = TEX.get(`${id}:surface`)!;
     this.surface = s.add.tileSprite(0, 0, 256 * surfTex.scale * 8, 48 * surfTex.scale, `${id}:surface`).setOrigin(0, 0.3).setDepth(17);
     this.surface.setScale(1 / surfTex.scale);
-    for (let i = 0; i < 3; i++) this.lilies.push(art(s, 0, 0, i === 1 ? 'sc:lilyFlower' : 'sc:lily', 0.75 + (i % 2) * 0.1).setDepth(18));
+    const snow = !!PALETTES[id].snow;
+    // Frozen Lake swaps lily pads for ice floes (pets sit on them the same way).
+    for (let i = 0; i < 3; i++) this.lilies.push(art(s, 0, 0, snow ? (i === 1 ? 'sc:floe' : 'sc:floeSmall') : i === 1 ? 'sc:lilyFlower' : 'sc:lily', 0.75 + (i % 2) * 0.1).setDepth(18));
     if (PALETTES[id].mist) {
       for (let i = 0; i < 2; i++) this.fogs.push(art(s, 0, 0, 'sc:fog', 1).setDepth(i === 0 ? 4.5 : 19).setAlpha(0.6));
       for (let i = 0; i < 7; i++) this.flies.push(art(s, 0, 0, 'sc:firefly', 0.6 + (i % 3) * 0.2).setDepth(6).setBlendMode(Phaser.BlendModes.ADD));
@@ -214,6 +217,21 @@ export class Pond {
       frequency: 700,
     });
     this.seaBubbles.setDepth(12.2);
+    this.snowFx?.destroy();
+    this.snowFx = null;
+    if (pal.snow) {
+      this.snowFx = this.scene.add.particles(0, -20, 'sc:snowflake', {
+        x: { min: -40, max: w + 40 },
+        speedY: { min: 45, max: 90 },
+        speedX: { min: -18, max: 18 },
+        lifespan: ((water + 40) / 60) * 1000,
+        scale: { min: 0.35, max: 0.9 },
+        alpha: { start: 0.95, end: 0.5 },
+        frequency: 160,
+        advance: 8000,
+      });
+      this.snowFx.setDepth(6.5);
+    }
     this.placePets();
   }
 

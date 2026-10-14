@@ -215,6 +215,14 @@ Ba kiểu rewarded hiệu quả:
   - Nên ghi công minh bạch, ví dụ "Some UI art generated with … and refined in …".
 - **Theo trend:** được, nhưng phải có góc nhìn mới; thể loại đã đông thì Poki có thể từ chối thêm.
 
+### Làm đa ngôn ngữ trong bộ khung
+
+- Mọi chữ người chơi thấy nằm trong `src/i18n/<lang>.json`, gọi qua `t('khóa')`; tên nội dung (cá, thú, hồ…) cũng là khóa.
+- Ngôn ngữ mặc định lấy từ `PokiSDK.getLanguage()` (adapter Poki), người chơi chọn lại được và lựa chọn được lưu.
+- Font phải có đủ dấu: tiếng Thổ cần ğ Ğ ş Ş İ ı. Kiểm bằng `tools/build_font.py` (in ra ký tự thiếu).
+- Chữ dài hơn (tiếng Đức dài hơn khoảng 30%) được co bằng `fitText`; chụp màn hình ở `?lang=de` và `?lang=tr` trước khi nộp.
+- Test `src/i18n/i18n.test.ts` bắt lỗi thiếu khóa hoặc sai `{biến}`.
+
 ## 10. Thumbnail và trang game
 
 **Thumbnail tĩnh** (cần trước Player Fit Test):
@@ -303,7 +311,7 @@ Việc game tự làm, vì phụ thuộc thiết kế từng game:
 
 Ở Pond Pals, phần này nằm trong `src/scenes/PlayScene.ts` (`startPlay` / `stopPlay` / `resumePlay`) và `tools/art/thumbnail.ts`. Game mới nên sao chép cách làm này.
 
-## 13. Kiểm tra Pond Pals theo hướng dẫn này (15/10/2026)
+## 13. Kiểm tra Pond Pals theo hướng dẫn này (15/10/2026, cập nhật v1.2)
 
 | Quy định | Trước | Sau khi sửa |
 | --- | --- | --- |
@@ -322,13 +330,14 @@ Việc game tự làm, vì phụ thuộc thiết kế từng game:
 | Thumbnail tĩnh | Chưa có | `store/thumbnail_1024.png` và `_628.png`: không chữ, nền hoàng hôn ấm (xa `#83FFE7`), mèo + cá vàng nhảy |
 | Dung lượng ≤ 5/8 MB, không URL ngoài | 2,1 MB | Giữ nguyên, kiểm lại OK |
 | Màn dọc + desktop 16:9, ẩn danh, chặn cuộn, không IAP/chat/link | Đạt | Đạt |
-| Vòng chơi khoảng 3 phút, nội dung khoảng 1 giờ | Hồ 2 mở ở khoảng 12–19 phút | Sim sau khi đổi tiền tệ: hồ 2 khoảng 16 phút, boss 2 khoảng 20 phút. Còn thiếu so với mốc 1 giờ, cần hồ 3 (Frozen Lake) trước khi nộp |
+| Vòng chơi khoảng 3 phút, nội dung khoảng 1 giờ | 2 hồ, hạ boss cuối khoảng 20 phút | Thêm hồ 3 Frozen Lake (8 cá, 5 thú, boss Old Frostbeard, tuyết rơi, băng trôi). Sim: hồ 2 khoảng 16 phút, hồ 3 khoảng 42 phút, boss cuối khoảng 48 phút với bot; người thật chậm hơn nên dự kiến gần 1 giờ |
+| Đa ngôn ngữ (khuyến nghị) | Chỉ tiếng Anh | EFIGS + Thổ Nhĩ Kỳ (en, fr, it, de, es, tr), kể cả tên cá/thú/hồ. Lấy ngôn ngữ từ `PokiSDK.getLanguage()`, người chơi đổi trong bảng cài đặt (nút bánh răng, ESC). Font có thêm ğ ş İ. Chữ dài tự co cho vừa khung; có test kiểm đủ khóa dịch |
 
 **Chưa làm, cần trước các mốc sau:**
 
-- Thử trên điện thoại thật và trong Inspector.
+- Thử trên điện thoại thật và trong Inspector (có ô chọn ngôn ngữ để thử từng bản dịch).
+- Nhờ người bản ngữ đọc lại 5 bản dịch.
 - Thumbnail động `.mp4` (trước Global).
-- Bản dịch EFIGS + Thổ Nhĩ Kỳ (khuyến nghị, game có khá nhiều chữ).
 - `PokiSDK.measure` cho phễu (tùy chọn).
 - Ghi công dùng AI trong mô tả nếu Poki hỏi.
 

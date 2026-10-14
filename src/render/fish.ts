@@ -398,6 +398,16 @@ export const FISH_ART: Record<string, FishArt> = {
   thunder_sturgeon: { len: 215, top: 30, bottom: 28, peak: 0.45, nose: 0, tail: 'lunate', dorsal: 'small', back: '#44476e', side: '#6e72a8', belly: '#d7d9f2', fin: '#585c8e', pattern: 'plates', patternColor: '#ffd23f', extras: ['snout', 'barbels'] },
   silver_spirit_trout: { len: 186, top: 34, bottom: 30, tail: 'flow', dorsal: 'tall', back: '#d9e6ff', side: '#f0f5ff', belly: '#ffffff', fin: '#cfe0ff', pattern: 'scales', patternColor: '#9db7f0', extras: ['sparkle', 'crown'], alpha: 0.85 },
   // ---------- Bosses ----------
+  // Frozen Lake
+  frost_minnow: { len: 140, top: 28, bottom: 24, tail: 'fork', tailSize: 0.85, dorsal: 'small', back: '#7fb6e6', side: '#c9e6ff', belly: '#f6fbff', fin: '#a9d2f5', pattern: 'dots', patternColor: '#ffffff', extras: ['sparkle'] },
+  ice_perch: { len: 158, top: 38, bottom: 30, tail: 'fork', dorsal: 'spiky', back: '#5c88b8', side: '#a8cdee', belly: '#f2f8ff', fin: '#86b8e6', pattern: 'stripes', patternColor: '#3f6a99' },
+  snow_smelt: { len: 176, top: 22, bottom: 20, tail: 'fork', dorsal: 'small', back: '#9bb3cf', side: '#e2ecf7', belly: '#ffffff', fin: '#c5d6ea', pattern: 'band', patternColor: '#c3d9f0', alpha: 0.88 },
+  aurora_char: { len: 182, top: 34, bottom: 32, tail: 'fork', dorsal: 'small', back: '#2f6f73', side: '#5fa89a', belly: '#ff8c6b', fin: '#ff7a5c', pattern: 'dots', patternColor: '#ffe3a3' },
+  crystal_cisco: { len: 168, top: 30, bottom: 28, tail: 'fork', dorsal: 'tall', back: '#7d8fd6', side: '#cfd8ff', belly: '#f8f9ff', fin: '#b0b9f2', pattern: 'scales', patternColor: '#9fb0f0', extras: ['sparkle'] },
+  polar_burbot: { len: 205, top: 28, bottom: 28, peak: 0.4, nose: 8, tail: 'round', tailSize: 0.8, dorsal: 'long', back: '#5d6b7d', side: '#8e9bad', belly: '#e6ebf2', fin: '#738196', pattern: 'spots', patternColor: '#3e4a59', extras: ['barbels'], eyeScale: 0.85 },
+  frostfin_muskie: { len: 220, top: 30, bottom: 28, peak: 0.42, nose: 2, tail: 'fork', dorsal: 'small', back: '#3d6a8a', side: '#8fc1d9', belly: '#f0f8ff', fin: '#6fb7e0', pattern: 'band', patternColor: '#d8f2ff', extras: ['snout', 'teeth'] },
+  starlight_whitefish: { len: 182, top: 36, bottom: 32, tail: 'flow', dorsal: 'sail', back: '#c9d8ff', side: '#eef2ff', belly: '#ffffff', fin: '#d6c2ff', pattern: 'scales', patternColor: '#a9b8f2', extras: ['crown', 'sparkle'] },
+  frostbeard: { len: 215, top: 46, bottom: 40, peak: 0.6, nose: 10, tail: 'round', dorsal: 'small', back: '#4b5d7a', side: '#7c90b0', belly: '#e9eef7', fin: '#5f7394', pattern: 'spots', patternColor: '#d9e4f5', extras: ['barbels', 'brows', 'scar'], eyeScale: 0.8 },
   old_whiskers: { len: 200, top: 44, bottom: 40, peak: 0.6, nose: 12, tail: 'round', dorsal: 'small', back: '#5a4a3a', side: '#806a52', belly: '#e3d3b6', fin: '#6d5a46', pattern: 'spots', patternColor: '#3f3227', extras: ['whiskers', 'brows', 'scar'], eyeScale: 0.8 },
   fog_pike: { len: 215, top: 30, bottom: 28, peak: 0.42, nose: 2, tail: 'fork', tailSize: 1.15, dorsal: 'tall', back: '#7c8fb3', side: '#b7c6e0', belly: '#eef3fb', fin: '#9fb0d3', pattern: 'band', patternColor: '#dbe6f7', extras: ['snout', 'teeth', 'brows'] },
 };

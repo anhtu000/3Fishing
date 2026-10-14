@@ -1,7 +1,12 @@
 import { startGame } from '@core';
 import './fonts.css';
 import game from './game.json';
+import de from './i18n/de.json';
 import en from './i18n/en.json';
+import es from './i18n/es.json';
+import fr from './i18n/fr.json';
+import it from './i18n/it.json';
+import tr from './i18n/tr.json';
 import { queueTextures } from './render/textures';
 import { save } from './save';
 import { PlayScene } from './scenes/PlayScene';
@@ -15,7 +20,8 @@ export const SOUNDS = [
 startGame({
   id: game.id,
   title: game.title,
-  languages: { en },
+  // Poki's first localization batch: English, French, Italian, German, Spanish and Turkish.
+  languages: { en, fr, it, de, es, tr },
   scenes: [PlayScene],
   playScene: 'Play',
   // Straight into the pond: the first fish comes within seconds (quality bar, design doc).

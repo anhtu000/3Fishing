@@ -202,6 +202,20 @@ const ICONS: Record<string, Art> = {
       path('M10,24 L84,10 L88,26 L14,40 Z', 'none') +
       flat('M40,52 L62,62 L40,72 Z', '#ffd23f'),
   },
+  i_gear: {
+    w: 96,
+    h: 96,
+    body: () => {
+      let teeth = '';
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const x = 48 + Math.cos(a) * 34;
+        const y = 48 + Math.sin(a) * 34;
+        teeth += `<rect x="${f(x - 9)}" y="${f(y - 9)}" width="18" height="18" rx="4" transform="rotate(${f((a * 180) / Math.PI)} ${f(x)} ${f(y)})" fill="#ffffff" stroke="${OUTLINE}" stroke-width="4.5"/>`;
+      }
+      return teeth + circle(48, 48, 30, '#ffffff') + circle(48, 48, 12, '#7fd3e6');
+    },
+  },
   i_hatch: { w: 96, h: 96, body: () => path('M48,8 C70,8 82,44 82,62 C82,80 68,90 48,90 C28,90 14,80 14,62 C14,44 26,8 48,8 Z', '#ffe9b0') + line('M16,52 l12,-8 l10,10 l12,-12 l10,10 l12,-10 l10,8', OUTLINE, 4) + flat('M48,30 l3,8 8,1 -6,5 2,8 -7,-4 -7,4 2,-8 -6,-5 8,-1 Z', '#ff9c4a') },
 };
 

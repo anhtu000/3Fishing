@@ -1,11 +1,12 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { HATCH_SEC, PERKS, PONDS, QUEST_POOL, RARITIES, RARITY_COLOR, RARITY_CSS, STREAK, UPGRADES, UPGRADE_IDS, petById, type PetDef, type UpgradeId } from '../content/data';
+import { HATCH_SEC, PERKS, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, STREAK, UPGRADES, UPGRADE_IDS, petById, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
 import { dexCount, perkValue, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
-import { CButton, COLORS, CPanel, CREAM_DARK, INK, art, card, drawBar, fitScale, fmt, txt } from './kit';
+import { CButton, COLORS, CPanel, CREAM_DARK, INK, art, card, drawBar, fitScale, fitText, fmt, txt } from './kit';
+import { bossName, duration, eggName, fishName, perkText, petName, pondName, rarityName, t } from '../i18n/t';
 import { flyIcons, note } from './popups';
 
 export interface PanelCtx {
@@ -36,14 +37,13 @@ function upgradeValue(id: UpgradeId, lv: number) {
       return `${(0.6 + 0.02 * lv).toFixed(2)}s`;
   }
 }
-const UPGRADE_WHAT: Record<UpgradeId, string> = { rod: 'Reel power', line: 'Time in red', bait: 'Luck', float: 'Bite time' };
 function upgradeEffect(id: UpgradeId, lv: number, max: boolean) {
-  return `${UPGRADE_WHAT[id]} ${upgradeValue(id, lv)}${max ? '' : ` » ${upgradeValue(id, lv + 1)}`}`;
+  return `${t(`upg.${id}What`)} ${upgradeValue(id, lv)}${max ? '' : ` » ${upgradeValue(id, lv + 1)}`}`;
 }
 
 export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const g = ctx.game;
-  const panel = new CPanel(scene, { title: 'Upgrades', w: 640, h: 760, color: COLORS.orange, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('upg.title'), w: 640, h: 760, color: COLORS.orange, onClose: () => ctx.refresh() });
   const rows: (() => void)[] = [];
   const rw = panel.pw - 60;
   UPGRADE_IDS.forEach((id, i) => {
@@ -70,17 +70,17 @@ export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
           refreshAll();
         } else {
           app.audio.play('nope');
-          note(scene, 'Not enough coins yet. Keep fishing!');
+          note(scene, t('msg.noCoins'));
         }
       },
     });
     const refresh = () => {
       const lv = g.s.upgrades[id];
       const max = lv >= UPGRADES[id].max;
-      name.setText(`${UPGRADES[id].name}  Lv ${lv}`);
-      eff.setText(upgradeEffect(id, lv, max));
+      fitText(name.setText(t('upg.level', { name: t(`upg.${id}`), n: lv })), rw - 340);
+      fitText(eff.setText(upgradeEffect(id, lv, max)), rw - 340);
       if (max) {
-        buy.setLabel('MAX').setEnabled(false);
+        buy.setLabel(t('upg.max')).setEnabled(false);
         buy.icon?.setVisible(false);
       } else {
         const c = upgradeCost(id, lv);
@@ -96,7 +96,7 @@ export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   panel.content.add(coinsLine);
   const refreshAll = () => {
     rows.forEach((r) => r());
-    coinsLine.setText(`You have ${fmt(g.s.coins)} coins`);
+    coinsLine.setText(t('upg.have', { n: fmt(g.s.coins) }));
     ctx.refresh();
   };
   refreshAll();
@@ -105,16 +105,13 @@ export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
 
 function perkLine(p: PetDef, level: number) {
   const perk = PERKS[p.perk];
-  const v = perkValue(p.perk, p.rarity, level);
-  const val = perk.unit === 'pct' ? `+${Math.round(v)}%` : perk.unit === 'sec' ? `+${v.toFixed(2)}s` : `${v.toFixed(1)}/min`;
-  const what: Record<string, string> = { luck: 'luck', merchant: 'fish price', strong: 'reel power', sharp: 'bite time', angler: 'fish caught for you', nurture: 'hatch speed' };
-  return `${perk.name}: ${val} ${what[p.perk]}`;
+  return perkText(p.perk, perkValue(p.perk, p.rarity, level), perk.unit);
 }
 
 export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const g = ctx.game;
   const s = g.s;
-  const panel = new CPanel(scene, { title: 'Pets', w: 660, h: 1000, color: COLORS.pink, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('pets.title'), w: 660, h: 1180, color: COLORS.pink, onClose: () => ctx.refresh() });
   let selected = s.team[0] ?? Object.keys(s.pets)[0] ?? null;
   const tiles: { id: string; refresh: () => void }[] = [];
   const pw = panel.pw;
@@ -122,17 +119,17 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const teamLine = txt(scene, 0, panel.top + 30, '', 30, { color: DARK, stroke: false });
   panel.content.add(teamLine);
   PONDS.forEach((pond, row) => {
-    const y0 = panel.top + 90 + row * 200;
-    const label = txt(scene, -pw / 2 + 40, y0, pond.name, 26, { color: DIM, stroke: false }).setOrigin(0, 0.5);
+    const y0 = panel.top + 80 + row * 190;
+    const label = txt(scene, -pw / 2 + 40, y0 - 8, pondName(pond.id), 24, { color: DIM, stroke: false }).setOrigin(0, 0.5);
     panel.content.add(label);
     pond.pets.forEach((p, i) => {
       const x = (i - 2) * (tw + 10);
-      const y = y0 + 90;
+      const y = y0 + 96;
       const bg = card(scene, x, y, tw, 140, 0xfffdf6, 20);
       const img = art(scene, x, y - 12, `pet:${p.id}`);
       img.setScale(fitScale(`pet:${p.id}`, tw - 14));
       const lv = txt(scene, x, y + 46, '', 22, { color: DARK, stroke: false });
-      const team = txt(scene, x, y - 70, 'TEAM', 20, { color: '#ffffff' });
+      const team = txt(scene, x, y - 70, t('pets.team'), 20, { color: '#ffffff' });
       const frame = scene.add.graphics();
       const hit = scene.add.zone(x, y, tw, 140).setInteractive({ useHandCursor: true });
       hit.on('pointerup', () => {
@@ -145,10 +142,10 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
         const st = s.pets[p.id];
         if (st) {
           img.clearTint().setAlpha(1);
-          lv.setText(`Lv ${st.level}`);
+          lv.setText(t('pets.level', { n: st.level }));
         } else {
           img.setTint(0x3b2a4d).setTintMode(Phaser.TintModes.FILL).setAlpha(0.3);
-          lv.setText('???');
+          lv.setText(t('dex.unknown'));
         }
         team.setVisible(s.team.includes(p.id));
         frame.clear();
@@ -160,7 +157,7 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     });
   });
   // Detail area.
-  const dy = panel.top + 520;
+  const dy = panel.top + 80 + PONDS.length * 190 + 70;
   const dbg = card(scene, 0, dy + 82, pw - 60, 276, 0xfffdf6, 26);
   const dimg = art(scene, -pw / 2 + 120, dy + 60, 'pet:puddle_frog');
   const dname = txt(scene, -pw / 2 + 210, dy - 10, '', 36, { color: DARK, stroke: false }).setOrigin(0, 0.5);
@@ -176,11 +173,11 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     color: COLORS.green,
     onClick: () => {
       if (!selected) return;
-      if (!g.toggleTeam(selected)) note(scene, 'Team is full. Remove a pet first.');
+      if (!g.toggleTeam(selected)) note(scene, t('msg.teamFull'));
       refreshAll();
     },
   });
-  const empty = txt(scene, 0, dy + 70, 'Catch eggs and hatch them\nto find pet friends!', 30, { color: DIM, stroke: false });
+  const empty = txt(scene, 0, dy + 70, t('pets.empty'), 30, { color: DIM, stroke: false });
   panel.content.add([dbg, dimg, dname, drar, dperk, xpG, xpT, toggle, empty]);
   const slotBtn = new CButton(scene, 0, panel.bottom - 70, {
     w: 360,
@@ -194,12 +191,12 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
       if (g.buyTeamSlot()) {
         app.audio.play('buy');
         refreshAll();
-      } else note(scene, 'Not enough coins yet. Keep fishing!');
+      } else note(scene, t('msg.noCoins'));
     },
   });
   panel.content.add(slotBtn);
   const refreshAll = () => {
-    teamLine.setText(`Team ${s.team.length}/${s.teamSlots}  ·  pets help every cast`);
+    fitText(teamLine.setText(t('pets.teamLine', { n: s.team.length, max: s.teamSlots })), pw - 60);
     tiles.forEach((t) => t.refresh());
     const p = selected ? petById.get(selected) : null;
     const st = selected ? s.pets[selected] : null;
@@ -208,18 +205,18 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     empty.setVisible(!has);
     if (p && st) {
       dimg.setTexture(`pet:${p.id}`).setScale(fitScale(`pet:${p.id}`, 170));
-      dname.setText(`${p.name}${st.shiny ? ' (shiny)' : ''}`);
-      drar.setText(`${RARITIES[p.rarity].toUpperCase()}  ·  Level ${st.level}/5`).setColor(RARITY_CSS[p.rarity]);
-      dperk.setText(perkLine(p, st.level));
+      fitText(dname.setText(`${petName(p.id)}${st.shiny ? ` ${t('pets.shiny')}` : ''}`), pw - 290);
+      fitText(drar.setText(t('pets.rarityLevel', { rarity: rarityName(p.rarity).toLocaleUpperCase(), n: st.level })).setColor(RARITY_CSS[p.rarity]), pw - 290);
+      fitText(dperk.setText(perkLine(p, st.level)), pw - 290);
       const need = xpForLevel(st.level);
       drawBar(xpG, 180, 18, st.level >= 5 ? 1 : st.xp / need, COLORS.pink);
-      xpT.setText(st.level >= 5 ? 'MAX' : `XP ${st.xp}/${need}`);
+      xpT.setText(st.level >= 5 ? t('upg.max') : t('pets.xp', { n: st.xp, max: need }));
       const inTeam = s.team.includes(p.id);
-      toggle.setLabel(inTeam ? 'Rest' : 'Join team').setColor(inTeam ? COLORS.grey : COLORS.green);
+      toggle.setLabel(inTeam ? t('pets.rest') : t('pets.join')).setColor(inTeam ? COLORS.grey : COLORS.green);
     }
     const cost = g.teamSlotCost();
     slotBtn.setVisible(Number.isFinite(cost));
-    slotBtn.setLabel(`+1 team slot  ${fmt(cost)}`);
+    slotBtn.setLabel(t('pets.slot', { n: fmt(cost) }));
     ctx.refresh();
   };
   refreshAll();
@@ -230,7 +227,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
   const g = ctx.game;
   const s = g.s;
   const panel = new CPanel(scene, {
-    title: 'Fishdex',
+    title: t('dex.title'),
     w: 660,
     h: 1000,
     color: COLORS.blue,
@@ -241,11 +238,11 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
   const page = scene.add.container(0, 0);
   panel.content.add(page);
   const tabs = PONDS.map((p, i) =>
-    new CButton(scene, (i - 0.5) * 290, panel.top + 30, {
-      w: 270,
+    new CButton(scene, (i - (PONDS.length - 1) / 2) * ((pw - 50) / PONDS.length), panel.top + 30, {
+      w: (pw - 50) / PONDS.length - 12,
       h: 74,
-      label: p.name,
-      fontSize: 28,
+      label: pondName(p.id),
+      fontSize: 26,
       color: COLORS.grey,
       onClick: () => show(p.id),
     }),
@@ -257,7 +254,8 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     tabs.forEach((t, i) => t.setColor(PONDS[i].id === id ? COLORS.blue : COLORS.grey));
     const n = dexCount(s, pond);
     const beaten = s.bosses.includes(pond.boss.id);
-    const head = txt(scene, 0, panel.top + 110, `${n}/${pond.fish.length} found  ·  ${beaten ? `${pond.boss.name} beaten!` : n >= pond.bossAt ? `${pond.boss.name} is waiting!` : `Boss appears at ${pond.bossAt}`}`, 26, { color: DARK, stroke: false });
+    const bn = bossName(pond.boss.id);
+    const head = fitText(txt(scene, 0, panel.top + 110, `${t('dex.found', { n, max: pond.fish.length })}  ·  ${beaten ? t('dex.beaten', { boss: bn }) : n >= pond.bossAt ? t('dex.waiting', { boss: bn }) : t('dex.bossAt', { n: pond.bossAt })}`, 26, { color: DARK, stroke: false }), pw - 60);
     page.add(head);
     const cw = (pw - 70) / 2 - 8;
     const chh = 160;
@@ -273,11 +271,11 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
       img.setScale(fitScale(`fish:${f.id}`, 118));
       const tx = x - cw / 2 + 136;
       const tw = cw - 146;
-      const name = txt(scene, tx, y - 42, entry ? f.name : '???', 24, { color: DARK, stroke: false }).setOrigin(0, 0.5);
+      const name = txt(scene, tx, y - 42, entry ? fishName(f.id) : t('dex.unknown'), 24, { color: DARK, stroke: false }).setOrigin(0, 0.5);
       if (name.width > tw) name.setScale(tw / name.width);
-      const rar = txt(scene, tx, y - 10, RARITIES[f.rarity], 20, { color: RARITY_CSS[f.rarity], stroke: false }).setOrigin(0, 0.5);
-      const rec = txt(scene, tx, y + 20, entry ? `Best ${entry.best.toFixed(1)} cm` : '', 19, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
-      const cnt = txt(scene, tx, y + 44, entry ? `Caught x${entry.n}` : '', 19, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
+      const rar = txt(scene, tx, y - 10, rarityName(f.rarity), 20, { color: RARITY_CSS[f.rarity], stroke: false }).setOrigin(0, 0.5);
+      const rec = txt(scene, tx, y + 20, entry ? t('dex.best', { n: entry.best.toFixed(1) }) : '', 19, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
+      const cnt = txt(scene, tx, y + 44, entry ? t('dex.caught', { n: entry.n }) : '', 19, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
       page.add(cnt);
       if (!entry) img.setTint(0x3b2a4d).setTintMode(Phaser.TintModes.FILL).setAlpha(0.35);
       page.add([bg, frame, img, name, rar, rec]);
@@ -287,7 +285,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
         w: 340,
         h: 90,
         icon: 'icon:i_crown',
-        label: 'Fight boss!',
+        label: t('dex.fight'),
         fontSize: 34,
         color: COLORS.red,
         onClick: () => {
@@ -306,7 +304,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
 export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const g = ctx.game;
   const s = g.s;
-  const panel = new CPanel(scene, { title: 'Map', w: 640, h: 940, color: COLORS.green, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('map.title'), w: 640, h: 1190, color: COLORS.green, onClose: () => ctx.refresh() });
   const pw = panel.pw;
   const list = [...PONDS.map((p) => ({ pond: p, soon: false })), { pond: null, soon: true }];
   list.forEach((entry, i) => {
@@ -315,7 +313,7 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     const items: Phaser.GameObjects.GameObject[] = [bg];
     if (entry.pond) {
       const p = entry.pond;
-      const pal = { cozy: [0x7fd0f2, 0x5fcbe0, 0x1d5f93], misty: [0xb9a8ec, 0x7ac2d0, 0x253f6e] }[p.id] ?? [0x7fd0f2, 0x5fcbe0, 0x1d5f93];
+      const pal = { cozy: [0x7fd0f2, 0x5fcbe0, 0x1d5f93], misty: [0xb9a8ec, 0x7ac2d0, 0x253f6e], frozen: [0x9fc3f0, 0x6fb3d2, 0x1a3a66] }[p.id] ?? [0x7fd0f2, 0x5fcbe0, 0x1d5f93];
       const mini = scene.add.graphics();
       const mx = -pw / 2 + 50;
       mini.fillStyle(INK, 1).fillRoundedRect(mx - 4, y - 94, 228, 168, 22);
@@ -326,8 +324,8 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
       const pet = art(scene, mx + 60, y - 40, `pet:${p.pets[0].id}`);
       pet.setScale(fitScale(`pet:${p.pets[0].id}`, 70));
       items.push(mini, fish, pet);
-      const name = txt(scene, mx + 250, y - 60, p.name, 34, { color: DARK, stroke: false }).setOrigin(0, 0.5);
-      const info = txt(scene, mx + 250, y - 18, `Fish price x${p.priceMult}  ·  ${dexCount(s, p)}/8 fish`, 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
+      const name = fitText(txt(scene, mx + 250, y - 60, pondName(p.id), 34, { color: DARK, stroke: false }).setOrigin(0, 0.5), pw - 330);
+      const info = fitText(txt(scene, mx + 250, y - 18, t('map.info', { m: p.priceMult, n: dexCount(s, p) }), 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5), pw - 330);
       items.push(name, info);
       const here = s.pond === p.id;
       const unlocked = s.unlocked.includes(p.id);
@@ -335,15 +333,15 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
       const prev = PONDS[PONDS.indexOf(p) - 1];
       const bx = mx + 250 + 130;
       let btn: CButton;
-      if (here) btn = new CButton(scene, bx, y + 50, { w: 240, h: 80, label: 'You are here', fontSize: 26, color: COLORS.grey, onClick: () => {} }).setEnabled(false);
-      else if (unlocked) btn = new CButton(scene, bx, y + 50, { w: 240, h: 80, label: 'Go fish here', fontSize: 28, color: COLORS.green, onClick: () => (panel.close(), ctx.travel(p.id)) });
+      if (here) btn = new CButton(scene, bx, y + 50, { w: 240, h: 80, label: t('map.here'), fontSize: 26, color: COLORS.grey, onClick: () => {} }).setEnabled(false);
+      else if (unlocked) btn = new CButton(scene, bx, y + 50, { w: 240, h: 80, label: t('map.go'), fontSize: 28, color: COLORS.green, onClick: () => (panel.close(), ctx.travel(p.id)) });
       else if (canUnlock)
         btn = new CButton(scene, bx, y + 50, {
           w: 240,
           h: 80,
           icon: 'item:coin',
           iconSize: 38,
-          label: `Unlock ${fmt(p.unlockCost)}`,
+          label: t('map.unlock', { n: fmt(p.unlockCost) }),
           fontSize: 26,
           color: s.coins >= p.unlockCost ? COLORS.orange : COLORS.grey,
           onClick: () => {
@@ -351,15 +349,15 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
               app.audio.play('unlock');
               panel.close();
               ctx.travel(p.id);
-            } else note(scene, `You need ${fmt(p.unlockCost)} coins. Keep fishing!`);
+            } else note(scene, t('msg.needCoins', { n: fmt(p.unlockCost) }));
           },
         });
-      else btn = new CButton(scene, bx, y + 50, { w: 240, h: 80, icon: 'icon:i_lock', iconSize: 40, label: `Beat ${prev?.boss.name ?? ''}`, fontSize: 22, color: COLORS.grey, onClick: () => note(scene, `Catch ${prev?.bossAt} kinds of fish in ${prev?.name}, then beat ${prev?.boss.name}.`) });
+      else btn = new CButton(scene, bx, y + 50, { w: 240, h: 80, icon: 'icon:i_lock', iconSize: 40, label: t('map.beat', { boss: prev ? bossName(prev.boss.id) : '' }), fontSize: 22, color: COLORS.grey, onClick: () => note(scene, t('msg.unlockHow', { n: prev?.bossAt ?? 0, pond: prev ? pondName(prev.id) : '', boss: prev ? bossName(prev.boss.id) : '' })) });
       if (canUnlock && !unlocked && s.coins >= p.unlockCost) btn.setGlow(true);
       items.push(btn);
     } else {
-      const name = txt(scene, 0, y - 20, 'Coral Cove', 34, { color: DIM, stroke: false });
-      const info = txt(scene, 0, y + 26, 'Coming soon: tropical fish and a crabby boss!', 22, { color: DIM, stroke: false, weight: '500' });
+      const name = txt(scene, 0, y - 20, t('map.soonName'), 34, { color: DIM, stroke: false });
+      const info = txt(scene, 30, y + 26, t('map.soon'), 22, { color: DIM, stroke: false, weight: '500', wrap: pw - 220 });
       const lock = art(scene, -pw / 2 + 100, y, 'icon:i_lock', 0.8);
       items.push(name, info, lock);
     }
@@ -371,14 +369,14 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
 export function questsPanel(scene: Phaser.Scene, ctx: PanelCtx, onDaily: () => void) {
   const g = ctx.game;
   const s = g.s;
-  const panel = new CPanel(scene, { title: 'Daily quests', w: 640, h: 820, color: COLORS.yellow, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('quests.title'), w: 640, h: 820, color: COLORS.yellow, onClose: () => ctx.refresh() });
   const pw = panel.pw;
   const rows: (() => void)[] = [];
   s.quests.list.forEach((q, i) => {
     const def = QUEST_POOL.find((d) => d.id === q.id)!;
     const y = panel.top + 80 + i * 160;
     const bg = card(scene, 0, y, pw - 60, 140, 0xfffdf6, 24);
-    const t = txt(scene, -pw / 2 + 60, y - 30, def.text.replace('{n}', String(def.goal)), 28, { color: DARK, stroke: false }).setOrigin(0, 0.5);
+    const qt = fitText(txt(scene, -pw / 2 + 60, y - 30, t(`quests.${def.kind}`, { n: fmt(def.goal) }), 28, { color: DARK, stroke: false }).setOrigin(0, 0.5), pw - 300);
     const bar = scene.add.graphics().setPosition(-pw / 2 + 60 + 140, y + 20);
     const pt = txt(scene, -pw / 2 + 60 + 300, y + 20, '', 22, { color: DIM, stroke: false }).setOrigin(0, 0.5);
     const btn = new CButton(scene, pw / 2 - 110, y, {
@@ -404,10 +402,10 @@ export function questsPanel(scene: Phaser.Scene, ctx: PanelCtx, onDaily: () => v
       pt.setText(`${fmt(q.progress)}/${fmt(def.goal)}`);
       const ready = !q.claimed && q.progress >= def.goal;
       btn.setEnabled(ready).setGlow(ready).setColor(q.claimed ? COLORS.grey : COLORS.green);
-      if (q.claimed) btn.setLabel('Done');
+      if (q.claimed) btn.setLabel(t('quests.done'));
     };
     rows.push(refresh);
-    panel.content.add([bg, t, bar, pt, btn]);
+    panel.content.add([bg, qt, bar, pt, btn]);
   });
   const st = dailyStatus(s.daily);
   const day = ((st.streak - 1) % 7) + 1;
@@ -416,17 +414,17 @@ export function questsPanel(scene: Phaser.Scene, ctx: PanelCtx, onDaily: () => v
     h: 90,
     icon: 'icon:i_gift',
     iconSize: 50,
-    label: st.canClaim ? `Daily gift: day ${day}` : 'Daily gift claimed',
+    label: st.canClaim ? t('quests.dailyDay', { n: day }) : t('quests.dailyClaimed'),
     fontSize: 30,
     color: st.canClaim ? COLORS.pink : COLORS.grey,
     onClick: () => {
-      if (!st.canClaim) return note(scene, 'Come back tomorrow for the next gift!');
+      if (!st.canClaim) return note(scene, t('msg.comeBackTomorrow'));
       panel.close();
       onDaily();
     },
   });
   if (st.canClaim) dailyBtn.setGlow(true);
-  const sub = txt(scene, 0, panel.bottom - 160, 'New quests every day at midnight', 24, { color: DIM, stroke: false, weight: '500' });
+  const sub = txt(scene, 0, panel.bottom - 160, t('quests.refresh'), 24, { color: DIM, stroke: false, weight: '500' });
   panel.content.add([dailyBtn, sub]);
   rows.forEach((r) => r());
   return panel;
@@ -437,7 +435,7 @@ export function dailyPanel(scene: Phaser.Scene, ctx: PanelCtx, claim: (dayIndex:
   const s = ctx.game.s;
   const st = dailyStatus(s.daily);
   const today = (st.streak - 1) % 7;
-  const panel = new CPanel(scene, { title: 'Daily gift', w: 660, h: 640, color: COLORS.pink, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('daily.title'), w: 660, h: 640, color: COLORS.pink, onClose: () => ctx.refresh() });
   const pw = panel.pw;
   const tw = Math.min(140, (pw - 80) / 4 - 10);
   STREAK.forEach((r, i) => {
@@ -449,11 +447,11 @@ export function dailyPanel(scene: Phaser.Scene, ctx: PanelCtx, claim: (dayIndex:
     const isToday = i === today && st.canClaim;
     const done = i < today || (!st.canClaim && i === today);
     const bg = card(scene, x, y, tw, 180, isToday ? 0xffe9a8 : done ? CREAM_DARK : 0xfffdf6, 22);
-    const d = txt(scene, x, y - 66, `Day ${i + 1}`, 24, { color: DARK, stroke: false });
+    const d = txt(scene, x, y - 66, t('daily.day', { n: i + 1 }), 24, { color: DARK, stroke: false });
     const key = r.egg >= 0 ? `egg:${r.egg}` : 'item:coin';
     const icon = art(scene, x, y - 4, key);
     icon.setScale(fitScale(key, 70));
-    const label = txt(scene, x, y + 58, r.egg >= 0 ? `${RARITIES[r.egg]} egg` : `${r.coins}`, 20, { color: DARK, stroke: false });
+    const label = txt(scene, x, y + 58, r.egg >= 0 ? eggName(r.egg) : `${r.coins}`, 20, { color: DARK, stroke: false });
     if (label.width > tw - 10) label.setScale((tw - 10) / label.width);
     const items: Phaser.GameObjects.GameObject[] = [bg, d, icon, label];
     if (done) {
@@ -468,7 +466,7 @@ export function dailyPanel(scene: Phaser.Scene, ctx: PanelCtx, claim: (dayIndex:
   const btn = new CButton(scene, 0, panel.bottom - 90, {
     w: 360,
     h: 96,
-    label: st.canClaim ? 'Claim!' : 'Come back tomorrow',
+    label: st.canClaim ? t('daily.claim') : t('daily.tomorrow'),
     fontSize: st.canClaim ? 40 : 28,
     color: st.canClaim ? COLORS.green : COLORS.grey,
     onClick: () => {
@@ -486,33 +484,33 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
   const g = ctx.game;
   const s = g.s;
   const egg = s.eggs[index];
-  const panel = new CPanel(scene, { title: 'Incubator', w: 600, h: 860, color: COLORS.purple, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('incubator.title'), w: 600, h: 860, color: COLORS.purple, onClose: () => ctx.refresh() });
   if (egg) {
     const img = art(scene, 0, panel.top + 120, `egg:${egg.tier}`, 1.0);
     scene.tweens.add({ targets: img, angle: { from: -4, to: 4 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-    const name = txt(scene, 0, panel.top + 240, `${RARITIES[egg.tier].toUpperCase()} EGG`, 36, { color: RARITY_CSS[egg.tier] === '#7d8b99' ? DARK : RARITY_CSS[egg.tier], stroke: false });
+    const name = txt(scene, 0, panel.top + 240, eggName(egg.tier).toLocaleUpperCase(), 36, { color: RARITY_CSS[egg.tier] === '#7d8b99' ? DARK : RARITY_CSS[egg.tier], stroke: false });
     const left = txt(scene, 0, panel.top + 286, '', 28, { color: DIM, stroke: false });
     const bar = scene.add.graphics().setPosition(0, panel.top + 330);
-    const tip = txt(scene, 0, panel.top + 374, 'Every fish you catch: -5 seconds', 24, { color: DIM, stroke: false, weight: '500' });
+    const tip = txt(scene, 0, panel.top + 374, t('incubator.tip'), 24, { color: DIM, stroke: false, weight: '500' });
     panel.content.add([img, name, left, bar, tip]);
     const tick = () => {
       const e = s.eggs[index];
       if (!e) return;
       const sec = Math.ceil(e.left);
-      left.setText(sec > 0 ? `Hatches in ${sec >= 60 ? `${Math.floor(sec / 60)}m ${sec % 60}s` : `${sec}s`}` : 'Ready!');
+      left.setText(sec > 0 ? t('incubator.hatchesIn', { t: duration(sec) }) : t('incubator.ready'));
       drawBar(bar, 380, 26, 1 - e.left / HATCH_SEC[e.tier], COLORS.purple);
     };
     tick();
     const timer = scene.time.addEvent({ delay: 250, loop: true, callback: tick });
     panel.once(Phaser.GameObjects.Events.DESTROY, () => timer.remove());
     // Poki: the free option comes first (above), at least as big as the rewarded one.
-    const wait = new CButton(scene, 0, panel.bottom - 300, { w: 380, h: 96, label: 'Keep fishing', fontSize: 36, color: COLORS.orange, onClick: () => panel.close() });
+    const wait = new CButton(scene, 0, panel.bottom - 300, { w: 380, h: 96, label: t('incubator.keepFishing'), fontSize: 34, color: COLORS.orange, onClick: () => panel.close() });
     panel.content.add(wait);
     if (app.ads.rewardedAvailable && !app.clean) {
       const ad = new CButton(scene, 0, panel.bottom - 190, {
         w: 380,
         h: 96,
-        label: 'Hatch now',
+        label: t('incubator.hatchNow'),
         fontSize: 36,
         color: COLORS.ad,
         ad: true,
@@ -533,7 +531,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
       h: 80,
       icon: 'item:coin',
       iconSize: 38,
-      label: `+1 egg slot  ${fmt(cost)}`,
+      label: t('incubator.slot', { n: fmt(cost) }),
       fontSize: 28,
       color: COLORS.blue,
       onClick: () => {
@@ -541,7 +539,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
           app.audio.play('buy');
           panel.close();
           ctx.refresh();
-        } else note(scene, 'Not enough coins yet. Keep fishing!');
+        } else note(scene, t('msg.noCoins'));
       },
     });
     panel.content.add(b);

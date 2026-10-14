@@ -18,6 +18,8 @@ export interface PondPalette {
   weed2: string;
   rock: string;
   mist: boolean;
+  /** Snow caps, ice floes and falling snow (Frozen Lake). */
+  snow?: boolean;
 }
 
 export const PALETTES: Record<string, PondPalette> = {
@@ -52,6 +54,23 @@ export const PALETTES: Record<string, PondPalette> = {
     weed2: '#7ccfb0',
     rock: '#8a8fae',
     mist: true,
+  },
+  frozen: {
+    skyTop: '#9fc3f0',
+    skyBottom: '#f2e9ff',
+    hillFar: '#e6eefb',
+    hillNear: '#cfdcf2',
+    tree: '#3f7a78',
+    treeDark: '#2e5e5c',
+    trunk: '#6a5a6e',
+    waterTop: '#6fb3d2',
+    waterDeep: '#1a3a66',
+    sand: '#d7e2ef',
+    weed: '#4f8a94',
+    weed2: '#79b8bf',
+    rock: '#a3b3cc',
+    mist: false,
+    snow: true,
   },
 };
 
@@ -99,11 +118,30 @@ function roundTree(p: PondPalette): Piece {
 }
 
 function pineTree(p: PondPalette): Piece {
+  const snow = p.snow
+    ? path('M65,8 L84,42 C76,48 70,40 65,46 C60,40 54,48 46,42 Z', '#ffffff', 'stroke-width="3"') +
+      path('M46,70 L84,70 L94,90 C84,96 76,86 66,94 C56,86 48,96 38,88 Z', '#ffffff', 'stroke-width="3"') +
+      path('M36,128 L94,128 L104,146 C92,152 82,142 70,150 C58,142 46,152 28,144 Z', '#ffffff', 'stroke-width="3"')
+    : '';
   return piece(130, 220, () =>
     path('M58,180 L72,180 L74,216 L56,216 Z', p.trunk) +
     path('M65,8 L100,70 L84,70 L114,128 L94,128 L124,186 L6,186 L36,128 L16,128 L46,70 L30,70 Z', p.tree) +
-    flat('M65,20 L84,62 L70,58 Z', lighten(p.tree, 0.3), 'opacity="0.6"'),
+    flat('M65,20 L84,62 L70,58 Z', lighten(p.tree, 0.3), 'opacity="0.6"') +
+    snow,
   );
+}
+
+/** Flat chunk of floating ice (Frozen Lake's lily pads). */
+function iceFloe(big: boolean): Piece {
+  return piece(150, 70, (id, defs) => {
+    defs.push(linear(`${id}i`, [[0, '#ffffff'], [1, '#cfe3f5']]));
+    const d = big ? 'M14,30 L40,12 L96,10 L138,22 L142,40 L112,58 L48,60 L10,46 Z' : 'M24,30 L50,16 L96,14 L126,28 L120,46 L84,56 L40,54 L18,44 Z';
+    return path(d, `url(#${id}i)`) + flat('M44,22 L90,20 L100,28 L50,30 Z', '#ffffff', 'opacity="0.8"') + line('M60,40 L76,34 L92,42', '#9fc6e6', 3);
+  });
+}
+
+function snowflake(): Piece {
+  return piece(24, 24, () => circle(12, 12, 9, '#ffffff', false));
 }
 
 function cloud(): Piece {
@@ -137,7 +175,8 @@ function dock(p: PondPalette): Piece {
       path('M318,18 L342,18 L338,40 L322,40 Z', '#ffd86b') +
       path('M30,46 L66,46 L62,72 L34,72 Z', '#8fb8d8') +
       ellipse(48, 46, 18, 5, '#bfe0f2') +
-      (p.mist ? circle(330, 28, 18, '#fff3b0', false, 'opacity="0.35"') : '')
+      (p.mist ? circle(330, 28, 18, '#fff3b0', false, 'opacity="0.35"') : '') +
+      (p.snow ? path('M2,74 C30,60 70,68 110,62 C150,68 190,58 230,64 C270,58 310,68 358,62 L358,76 L2,76 Z', '#ffffff', 'stroke-width="3.5"') + path('M28,46 C34,38 62,38 68,46 Z', '#ffffff', 'stroke-width="3"') : '')
     );
   });
 }
@@ -269,7 +308,7 @@ export function sceneryPieces(pond: string): Record<string, Piece> {
   const pieces: Record<string, Piece> = {
     hillsFar: hills(p, false),
     hillsNear: hills(p, true),
-    tree: p.mist ? pineTree(p) : roundTree(p),
+    tree: p.mist || p.snow ? pineTree(p) : roundTree(p),
     dock: dock(p),
     reeds: reeds(p),
     weedTall: seaweed(p, true),
@@ -291,6 +330,9 @@ export function commonPieces(): Record<string, Piece> {
     ray: lightRay(),
     fog: fogBand(),
     firefly: firefly(),
+    floe: iceFloe(true),
+    floeSmall: iceFloe(false),
+    snowflake: snowflake(),
     cat: cat(false),
     catBlink: cat(true),
     rod: rod(),
@@ -299,7 +341,7 @@ export function commonPieces(): Record<string, Piece> {
 
 export function previewItems() {
   const out: { name: string; svg: string; w: number; h: number }[] = [];
-  for (const pond of ['cozy', 'misty']) for (const [k, v] of Object.entries(sceneryPieces(pond))) out.push({ name: `${pond}.${k}`, ...v });
+  for (const pond of ['cozy', 'misty', 'frozen']) for (const [k, v] of Object.entries(sceneryPieces(pond))) out.push({ name: `${pond}.${k}`, ...v });
   for (const [k, v] of Object.entries(commonPieces())) out.push({ name: k, ...v });
   return out;
 }

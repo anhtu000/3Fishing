@@ -1,12 +1,13 @@
 // Everything on top of the pond: currencies, incubator, side buttons, the bottom bar, the
 // cast/tension meter and the idle hint. Kept clear of the top-left corner (Poki's pill on phones).
 import Phaser from 'phaser';
-import { app, shapeTexture } from '@core';
+import { shapeTexture } from '@core';
 import { HATCH_SEC } from '../content/data';
 import type { Fishing } from '../logic/fishing';
 import { RED_AT } from '../logic/fishing';
 import type { SaveData } from '../logic/model';
-import { CButton, COLORS, INK, art, drawChunky, fitScale, fmt, roundButton, setArt, txt } from './kit';
+import { t } from '../i18n/t';
+import { CButton, COLORS, INK, fitText, art, drawChunky, fitScale, fmt, roundButton, setArt, txt } from './kit';
 
 export interface HudActions {
   upgrades(): void;
@@ -65,16 +66,16 @@ export class Hud {
   ) {
     this.root = scene.add.container(0, 0).setDepth(100);
     this.coins = pill(scene, 210, 'item:coin');
-    this.sound = roundButton(scene, 0, 0, app.audio.muted ? 'icon:i_mute' : 'icon:i_sound', 80, COLORS.blue, () => act.sound());
+    this.sound = roundButton(scene, 0, 0, 'icon:i_gear', 80, COLORS.blue, () => act.sound());
     const b = (icon: string, label: string, color: number, fn: () => void) => new CButton(scene, 0, 0, { w: 160, h: 112, icon, iconSize: 60, label, fontSize: 26, color, stack: true, onClick: fn });
-    this.bottom = [b('icon:i_up', 'Upgrade', COLORS.orange, act.upgrades), b('icon:i_paw', 'Pets', COLORS.pink, act.pets), b('icon:i_book', 'Fishdex', COLORS.blue, act.dex), b('icon:i_map', 'Map', COLORS.green, act.map)];
+    this.bottom = [b('icon:i_up', t('hud.upgrade'), COLORS.orange, act.upgrades), b('icon:i_paw', t('hud.pets'), COLORS.pink, act.pets), b('icon:i_book', t('hud.fishdex'), COLORS.blue, act.dex), b('icon:i_map', t('hud.map'), COLORS.green, act.map)];
     this.side = {
       quests: roundButton(scene, 0, 0, 'icon:i_quest', 84, COLORS.yellow, act.quests),
       golden: roundButton(scene, 0, 0, 'icon:i_bait', 84, 0xffc83d, act.golden, true),
       mystery: roundButton(scene, 0, 0, 'icon:i_gift', 84, COLORS.purple, act.mystery, true),
       auto: roundButton(scene, 0, 0, 'icon:i_auto', 84, COLORS.grey, act.auto),
     };
-    this.boss = new CButton(scene, 0, 0, { w: 260, h: 92, icon: 'icon:i_crown', label: 'BOSS!', fontSize: 40, color: COLORS.red, onClick: act.boss });
+    this.boss = new CButton(scene, 0, 0, { w: 260, h: 92, icon: 'icon:i_crown', label: t('hud.boss'), fontSize: 40, color: COLORS.red, onClick: act.boss });
     this.boss.setGlow(true).setVisible(false);
     for (let i = 0; i < 4; i++) {
       const btn = new CButton(scene, 0, 0, { w: 96, h: 104, color: 0xfff6e6, onClick: () => act.egg(i) });
@@ -99,7 +100,7 @@ export class Hud {
     drawHand(hand);
     // Desktop players get the keyboard hint, touch players the finger hint (Poki: adaptive controls).
     const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false;
-    const hintText = txt(scene, 0, 80, touch ? 'Hold & release to cast' : 'Hold click or SPACE to cast', 34);
+    const hintText = txt(scene, 0, 80, touch ? t('hud.hintTouch') : t('hud.hintMouse'), 34);
     this.hint = scene.add.container(0, 0, [hand, hintText]).setDepth(110).setVisible(false);
 
     this.bossG = scene.add.graphics();
@@ -156,7 +157,12 @@ export class Hud {
     this.chip.setPosition(w / 2, portrait ? 132 : 112);
     this.eggs.forEach((e, i) => e.btn.setPosition(w - 60, (portrait ? 170 : 150) + i * 116));
     this.meter.setPosition(w / 2, portrait ? h - 250 : h - 175);
-    this.hint.setPosition(w * (portrait ? 0.66 : 0.62), portrait ? h * 0.62 : h * 0.6);
+    // Keep the hint text on screen whatever its length (translations).
+    const hintText = this.hint.list[1] as Phaser.GameObjects.Text;
+    fitText(hintText, w - 48);
+    const half = (hintText.width * hintText.scaleX) / 2;
+    const hx = Phaser.Math.Clamp(w * (portrait ? 0.66 : 0.62), half + 24, w - half - 24);
+    this.hint.setPosition(hx, portrait ? h * 0.62 : h * 0.6);
     this.bossBar.setPosition(w / 2, portrait ? 170 : 130);
   }
 
@@ -188,12 +194,12 @@ export class Hud {
         e.egg.setAlpha(1);
       }
       if (egg.left <= 0) {
-        e.time.setText('HATCH!');
+        fitText(e.time.setText(t('hud.hatch')), 88);
         e.egg.setAngle(Math.sin(this.t * 14) * 10 * (Math.sin(this.t * 2) > 0 ? 1 : 0));
         e.btn.setGlow(true);
       } else {
         const sec = Math.ceil(egg.left);
-        e.time.setText(sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`);
+        fitText(e.time.setText(sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`), 88);
         e.egg.setAngle(Math.sin(this.t * 3) * 3 * (1 - egg.left / HATCH_SEC[egg.tier]));
         e.btn.setGlow(false);
       }
@@ -213,9 +219,9 @@ export class Hud {
     this.bottom[3].setBadge(extra.mapBadge ? -1 : 0).setGlow(extra.mapBadge && !f.busy);
     // Status chip: golden bait / lucky cast.
     let chip = '';
-    if (extra.goldenLeft > 0) chip = `Golden bait  ${Math.floor(extra.goldenLeft / 60)}:${String(Math.floor(extra.goldenLeft % 60)).padStart(2, '0')}`;
-    else if (extra.lucky) chip = 'Lucky cast ready!  Luck x3';
-    if (extra.autoOn) chip = chip ? chip : 'Auto fishing...';
+    if (extra.goldenLeft > 0) chip = t('hud.goldenChip', { t: `${Math.floor(extra.goldenLeft / 60)}:${String(Math.floor(extra.goldenLeft % 60)).padStart(2, '0')}` });
+    else if (extra.lucky) chip = t('hud.luckyChip');
+    if (extra.autoOn) chip = chip ? chip : t('hud.autoChip');
     if (f.target.boss && f.busy) chip = '';
     this.setChip(chip);
     // Idle hint.
@@ -263,8 +269,8 @@ export class Hud {
       g.fillStyle(0xffffff, 1).fillTriangle(x - 10, -h / 2 - 18, x + 10, -h / 2 - 18, x, -h / 2);
       g.fillStyle(0xffffff, 1).fillRect(x - 3, -h / 2, 6, h);
       const zone = f.power < 0.4 ? 0 : f.power < 0.8 ? 1 : 2;
-      this.meterText.setText(['Near', 'Far', 'Super far!'][zone]);
-      this.meterSub.setText(`Luck x${[1, 1.5, 2.5][zone]}  ·  release to cast`);
+      this.meterText.setText(t(['hud.near', 'hud.far', 'hud.superFar'][zone]));
+      this.meterSub.setText(t('hud.castSub', { m: [1, 1.5, 2.5][zone] }));
       this.progFish.setVisible(false);
       return;
     }
@@ -278,10 +284,10 @@ export class Hud {
     g.fillStyle(INK, 1).fillRoundedRect(x - 9, -h / 2 - 12, 18, h + 24, 8);
     g.fillStyle(0xffffff, 1).fillRoundedRect(x - 5, -h / 2 - 8, 10, h + 16, 5);
     const red = f.tension >= RED_AT;
-    this.meterText.setText(red ? 'LET GO!' : f.holding ? 'Reeling...' : 'HOLD to reel');
+    this.meterText.setText(red ? t('hud.letGo') : f.holding ? t('hud.reeling') : t('hud.holdReel'));
     this.meterText.setColor(red ? '#ff5a5a' : '#ffffff');
     this.meterText.setScale(red ? 1 + Math.sin(this.t * 20) * 0.06 : 1);
-    this.meterSub.setText(f.target.boss ? 'Keep the marker in the green' : '');
+    this.meterSub.setText(f.target.boss ? t('hud.bossSub') : '');
     // Progress track above.
     if (!f.target.boss) {
       const pw = w;
@@ -305,7 +311,7 @@ export class Hud {
   /** Boss health (1 - progress). */
   drawBoss(name: string, hp: number, phase: number) {
     this.bossBar.setVisible(true);
-    this.bossName.setText(`${name}${phase > 0 ? `  ·  Phase ${phase + 1}` : ''}`);
+    this.bossName.setText(`${name}${phase > 0 ? `  ·  ${t('hud.phase', { n: phase + 1 })}` : ''}`);
     const g = this.bossG;
     const w = 460;
     const h = 30;
@@ -320,10 +326,8 @@ export class Hud {
     this.bossBar.setVisible(false);
   }
 
-  setSoundIcon(muted: boolean) {
-    this.sound.icon && setArt(this.sound.icon, muted ? 'icon:i_mute' : 'icon:i_sound');
-    this.sound.icon?.setScale(fitScale(muted ? 'icon:i_mute' : 'icon:i_sound', 50));
-  }
+  /** The top-right button opens settings (sound, language); kept for API compatibility. */
+  setSoundIcon(_muted: boolean) {}
 
   /** Dims the HUD while a popup shows. */
   setVisible(v: boolean) {

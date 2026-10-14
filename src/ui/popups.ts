@@ -2,7 +2,8 @@
 // These are the moments players screenshot, so they get the most juice: rays, sparkles, bounce, sound.
 import Phaser from 'phaser';
 import { app, shapeTexture } from '@core';
-import { JUNK_LINES, JUNK_NAMES, PERKS, RARITIES, RARITY_COLOR, RARITY_CSS, petById, type PetDef } from '../content/data';
+import { PERKS, RARITY_COLOR, RARITY_CSS, petById, type PetDef } from '../content/data';
+import { eggName, fishName, junkName, perkText, petName, rarityName, t } from '../i18n/t';
 import type { CatchResult } from '../logic/game';
 import { perkValue, type HatchResult } from '../logic/rules';
 import { CButton, COLORS, CREAM, INK, art, card, drawChunky, fitScale, txt } from './kit';
@@ -73,13 +74,13 @@ function catchInfo(r: CatchResult) {
   const roll = r.roll;
   switch (roll.kind) {
     case 'fish':
-      return { key: `fish:${roll.fish.id}`, name: roll.fish.name, rarity: roll.fish.rarity, line: `${r.cm.toFixed(1)} cm`, size: 360 };
+      return { key: `fish:${roll.fish.id}`, name: fishName(roll.fish.id), rarity: roll.fish.rarity, line: `${r.cm.toFixed(1)} cm`, size: 360 };
     case 'egg':
-      return { key: `egg:${roll.tier}`, name: `${RARITIES[roll.tier][0].toUpperCase()}${RARITIES[roll.tier].slice(1)} Egg`, rarity: roll.tier, line: r.eggStored ? 'Into the incubator!' : 'Incubator full: sold', size: 200 };
+      return { key: `egg:${roll.tier}`, name: eggName(roll.tier), rarity: roll.tier, line: r.eggStored ? t('catch.intoIncubator') : t('catch.sold'), size: 200 };
     case 'junk':
-      return { key: `item:${roll.item}`, name: JUNK_NAMES[roll.item] ?? 'Junk', rarity: -1, line: JUNK_LINES[Math.floor(Math.random() * JUNK_LINES.length)], size: 170 };
+      return { key: `item:${roll.item}`, name: junkName(roll.item), rarity: -1, line: t(`catch.junk${Math.floor(Math.random() * 5)}`), size: 170 };
     case 'chest':
-      return { key: 'item:chest', name: 'Treasure Chest', rarity: 3, line: '', size: 220 };
+      return { key: 'item:chest', name: t('catch.chest'), rarity: 3, line: '', size: 220 };
   }
 }
 
@@ -127,8 +128,8 @@ export function bigCatch(scene: Phaser.Scene, v: CatchView): Promise<void> {
     const body = card(scene, 0, 0, cw, ch, CREAM, 36);
     const ribT = shapeTexture(scene, `rib|${color}`, 300, 70, (g) => drawChunky(g, 300, 70, color, 26, 7, false, 5), 6);
     const ribbon = scene.add.image(0, -ch / 2 + 4, ribT.key).setScale(1 / ribT.res);
-    const rarityText = info.rarity >= 0 ? RARITIES[info.rarity].toUpperCase() : 'JUNK';
-    const ribLabel = txt(scene, 0, -ch / 2, r.roll.kind === 'chest' ? 'TREASURE' : rarityText, 32);
+    const rarityText = info.rarity >= 0 ? rarityName(info.rarity).toLocaleUpperCase() : t('catch.junkLabel');
+    const ribLabel = txt(scene, 0, -ch / 2, r.roll.kind === 'chest' ? t('catch.treasureLabel') : rarityText, 32);
     const name = txt(scene, 0, 120, info.name, 44, { color: '#3b2a4d', stroke: false, wrap: cw - 40 });
     const sub = txt(scene, 0, 172, info.line, 30, { color: '#7a6a8a', stroke: false, wrap: cw - 40 });
     const items: Phaser.GameObjects.GameObject[] = [body, ribbon, ribLabel, name, sub];
@@ -152,7 +153,7 @@ export function bigCatch(scene: Phaser.Scene, v: CatchView): Promise<void> {
       const sticker = scene.add.container(cw / 2 - 40, -ch / 2 + 70);
       const st = shapeTexture(scene, 'sticker', 150, 70, (g) => drawChunky(g, 150, 70, 0xff4d6d, 24, 6, false, 5), 6);
       sticker.add(scene.add.image(0, 0, st.key).setScale(1 / st.res));
-      sticker.add(txt(scene, 0, -3, r.isNew ? 'NEW!' : 'RECORD!', r.isNew ? 38 : 28));
+      sticker.add(txt(scene, 0, -3, r.isNew ? t('catch.new') : t('catch.record'), r.isNew ? 34 : 26));
       sticker.setAngle(14);
       items.push(sticker);
       scene.tweens.add({ targets: sticker, scale: 1.12, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
@@ -191,7 +192,7 @@ export function bigCatch(scene: Phaser.Scene, v: CatchView): Promise<void> {
       app.haptic(40);
     }
 
-    const hint = txt(scene, cx, cy + (ch / 2 + 40) * k, 'Tap to continue', 28).setAlpha(0);
+    const hint = txt(scene, cx, cy + (ch / 2 + 40) * k, t('catch.tapContinue'), 28).setAlpha(0);
     layer.add(hint);
     scene.tweens.add({ targets: hint, alpha: 0.9, duration: 300, delay: 900 });
 
@@ -253,18 +254,18 @@ export function hatchReveal(scene: Phaser.Scene, tier: number, petId: string, re
         scene.tweens.add({ targets: img, scale: fitScale(`pet:${petId}`, 330 * k), duration: 500, ease: 'Back.Out' });
         scene.tweens.add({ targets: img, y: cy - 12, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut', delay: 500 });
         sparkles(scene, cx, cy, shiny ? 20 : 10, 200);
-        const headline = result.kind === 'new' ? (shiny ? 'SHINY NEW PET!' : 'NEW PET!') : result.kind === 'xp' && result.levelUp ? `LEVEL UP! Lv ${level}` : result.kind === 'xp' ? 'Pet XP +1' : `Max level! +${result.coins} coins`;
+        const headline = result.kind === 'new' ? (shiny ? t('hatch.shinyNew') : t('hatch.new')) : result.kind === 'xp' && result.levelUp ? t('hatch.levelUp', { n: level }) : result.kind === 'xp' ? t('hatch.xp') : t('hatch.max', { n: result.coins });
         const h = txt(scene, cx, cy - 250 * k, headline, 54 * Math.max(0.8, k), { color: '#ffe066' });
-        const name = txt(scene, cx, cy + 210 * k, pet.name, 48 * Math.max(0.8, k));
+        const name = txt(scene, cx, cy + 210 * k, petName(pet.id), 48 * Math.max(0.8, k));
         const perk = PERKS[pet.perk];
         const val = perkValue(pet.perk, pet.rarity, level);
-        const perkLine = `${RARITIES[pet.rarity].toUpperCase()}  ·  ${perk.name} ${perk.unit === 'pct' ? `+${Math.round(val)}%` : perk.unit === 'sec' ? `+${val.toFixed(2)}s bite time` : `${val.toFixed(1)} fish/min`}`;
-        const p2 = txt(scene, cx, cy + 262 * k, perkLine, 30, { color: RARITY_CSS[pet.rarity] === '#7d8b99' ? '#ffffff' : '#ffffff' });
+        const perkLine = `${rarityName(pet.rarity).toLocaleUpperCase()}  ·  ${perkText(pet.perk, val, perk.unit)}`;
+        const p2 = txt(scene, cx, cy + 262 * k, perkLine, 30, { wrap: vp.width - 60, color: RARITY_CSS[pet.rarity] === '#7d8b99' ? '#ffffff' : '#ffffff' });
         p2.setTint(RARITY_COLOR[pet.rarity]);
         const btn = new CButton(scene, cx, cy + 370 * k, {
           w: 280,
           h: 100,
-          label: 'Yay!',
+          label: t('hatch.yay'),
           fontSize: 44,
           color: COLORS.green,
           onClick: () => {
@@ -295,12 +296,12 @@ export function say(scene: Phaser.Scene, x: number, y: number, message: string, 
 /** Bottom toast in the house style. */
 export function note(scene: Phaser.Scene, message: string, ms = 2200) {
   const vp = app.viewport.info;
-  const t = txt(scene, 0, -2, message, 30, { wrap: Math.min(600, vp.width - 80) });
+  const label = txt(scene, 0, -2, message, 30, { wrap: Math.min(600, vp.width - 80) });
   const g = scene.add.graphics();
-  const w = t.width + 50;
-  const h = t.height + 26;
+  const w = label.width + 50;
+  const h = label.height + 26;
   g.fillStyle(INK, 0.85).fillRoundedRect(-w / 2, -h / 2, w, h, 22);
-  const c = scene.add.container(vp.width / 2, vp.height * 0.3, [g, t]).setDepth(DEPTH + 40).setAlpha(0);
+  const c = scene.add.container(vp.width / 2, vp.height * 0.3, [g, label]).setDepth(DEPTH + 40).setAlpha(0);
   scene.tweens.add({ targets: c, alpha: 1, y: c.y - 16, duration: 180 });
   scene.tweens.add({ targets: c, alpha: 0, delay: ms, duration: 300, onComplete: () => c.destroy() });
 }
