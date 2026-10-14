@@ -1,0 +1,8 @@
+/* Fredoka (SIL Open Font License 1.1, see ASSETS.md), subset to Latin. Bundled, never loaded from the web.
+   Its heaviest weight is 700; the range up to 900 lets the framework's weight-900 text use it too. */
+@font-face {
+  font-family: 'Fredoka';
+  src: url('./fonts/fredoka.woff') format('woff');
+  font-weight: 500 900;
+  font-display: block;
+}

@@ -1,0 +1,30 @@
+{
+  "name": "pond-pals",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build --mode poki && node scripts/check-build.mjs dist/poki poki",
+    "build:poki": "npm run build",
+    "build:web": "tsc --noEmit && vite build --mode web && node scripts/check-build.mjs dist/web web",
+    "build:single": "npm run build:web && node scripts/build-single.mjs dist/web dist/single/PondPals_PhoneTest_v1.html",
+    "preview": "vite preview --outDir dist/poki",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/core.test.ts && bun test src/logic",
+    "sim": "bun tools/sim.ts 30 0.6",
+    "audio": "python3 tools/make_audio.py",
+    "sync-core": "node scripts/sync-core.mjs"
+  },
+  "dependencies": {
+    "phaser": "4.2.1"
+  },
+  "devDependencies": {
+    "@fontsource/nunito": "5.3.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  }
+}
