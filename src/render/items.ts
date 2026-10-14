@@ -191,6 +191,17 @@ const ICONS: Record<string, Art> = {
   i_sound: { w: 96, h: 96, body: () => path('M14,36 L32,36 L54,16 L54,80 L32,60 L14,60 Z', '#ffffff') + line('M66,34 Q76,48 66,62 M74,24 Q92,48 74,72', '#ffffff', 7) + line('M66,34 Q76,48 66,62 M74,24 Q92,48 74,72', OUTLINE, 0.01) },
   i_mute: { w: 96, h: 96, body: () => path('M14,36 L32,36 L54,16 L54,80 L32,60 L14,60 Z', '#ffffff') + line('M66,36 L88,60 M88,36 L66,60', OUTLINE, 11) + line('M66,36 L88,60 M88,36 L66,60', '#ff6b6b', 6) },
   i_music: { w: 96, h: 96, body: () => path('M36,20 L80,10 L80,64 C80,74 64,78 60,70 C56,62 68,56 72,58 L72,26 L44,32 L44,72 C44,82 28,86 24,78 C20,70 32,64 36,66 Z', '#ffffff') },
+  // Clapperboard: Poki's required "video" mark on every rewarded-ad button.
+  i_video: {
+    w: 96,
+    h: 96,
+    body: () =>
+      path('M12,40 L86,40 L86,84 L12,84 Z', '#4b4f7a') +
+      path('M10,24 L84,10 L88,26 L14,40 Z', '#ffffff') +
+      flat('M24,21.5 L36,19 L30,35 L18,37.5 Z M48,17 L60,14.8 L54,30.6 L42,32.9 Z M72,12.6 L84,10.4 L78,26 L66,28.3 Z', OUTLINE) +
+      path('M10,24 L84,10 L88,26 L14,40 Z', 'none') +
+      flat('M40,52 L62,62 L40,72 Z', '#ffd23f'),
+  },
   i_hatch: { w: 96, h: 96, body: () => path('M48,8 C70,8 82,44 82,62 C82,80 68,90 48,90 C28,90 14,80 14,62 C14,44 26,8 48,8 Z', '#ffe9b0') + line('M16,52 l12,-8 l10,10 l12,-12 l10,10 l12,-10 l10,8', OUTLINE, 4) + flat('M48,30 l3,8 8,1 -6,5 2,8 -7,-4 -7,4 2,-8 -6,-5 8,-1 Z', '#ff9c4a') },
 };
 

@@ -85,7 +85,7 @@ export const PONDS: PondDef[] = [
     id: 'misty',
     name: 'Misty Creek',
     priceMult: 3,
-    unlockCost: 1500,
+    unlockCost: 2000,
     fish: [
       { id: 'fog_shiner', name: 'Fog Shiner', rarity: 0, cm: 11 },
       { id: 'stone_loach', name: 'Stone Loach', rarity: 0, cm: 16 },
@@ -157,42 +157,47 @@ export const JUNK_LINES = [
   'A cat can dream.',
 ];
 
-/** Gem prices for extra slots. */
-export const INCUBATOR_SLOT_GEMS = [0, 15, 40, 90];
-export const TEAM_SLOT_GEMS = [0, 0, 0, 30, 80];
+/** Coin prices for extra slots. One currency only (Poki: dual currencies confuse web players). */
+export const INCUBATOR_SLOT_COST = [0, 150, 600, 2000];
+export const TEAM_SLOT_COST = [0, 0, 0, 500, 2500];
 export const START_TEAM_SLOTS = 3;
 
 export interface QuestDef {
   id: string;
   kind: 'catch' | 'rare' | 'perfect' | 'hatch' | 'coins' | 'new';
   goal: number;
-  gems: number;
+  /** Reward in coins, times the price multiplier of the pond you are in. */
   coins: number;
   text: string;
 }
 /** Daily quests are drawn from this pool, 3 a day. */
 export const QUEST_POOL: QuestDef[] = [
-  { id: 'catch20', kind: 'catch', goal: 20, gems: 3, coins: 0, text: 'Catch {n} fish' },
-  { id: 'catch40', kind: 'catch', goal: 40, gems: 5, coins: 0, text: 'Catch {n} fish' },
-  { id: 'rare3', kind: 'rare', goal: 3, gems: 5, coins: 0, text: 'Catch {n} Rare or better' },
-  { id: 'perfect10', kind: 'perfect', goal: 10, gems: 4, coins: 0, text: 'Hook {n} fish on the first tap' },
-  { id: 'hatch2', kind: 'hatch', goal: 2, gems: 4, coins: 0, text: 'Hatch {n} eggs' },
-  { id: 'coins500', kind: 'coins', goal: 500, gems: 4, coins: 0, text: 'Earn {n} coins' },
+  { id: 'catch20', kind: 'catch', goal: 20, coins: 60, text: 'Catch {n} fish' },
+  { id: 'catch40', kind: 'catch', goal: 40, coins: 120, text: 'Catch {n} fish' },
+  { id: 'rare3', kind: 'rare', goal: 3, coins: 150, text: 'Catch {n} Rare or better' },
+  { id: 'perfect10', kind: 'perfect', goal: 10, coins: 80, text: 'Hook {n} fish on the first tap' },
+  { id: 'hatch2', kind: 'hatch', goal: 2, coins: 80, text: 'Hatch {n} eggs' },
+  { id: 'coins500', kind: 'coins', goal: 500, coins: 100, text: 'Earn {n} coins' },
 ];
 
 /** 7-day login streak. Day 7 gives a Rare egg. */
 export const STREAK = [
-  { coins: 50, gems: 0, egg: -1 },
-  { coins: 100, gems: 0, egg: -1 },
-  { coins: 0, gems: 5, egg: -1 },
-  { coins: 200, gems: 0, egg: -1 },
-  { coins: 0, gems: 0, egg: 1 },
-  { coins: 300, gems: 5, egg: -1 },
-  { coins: 0, gems: 10, egg: 2 },
+  { coins: 50, egg: -1 },
+  { coins: 100, egg: -1 },
+  { coins: 150, egg: -1 },
+  { coins: 200, egg: -1 },
+  { coins: 0, egg: 1 },
+  { coins: 400, egg: -1 },
+  { coins: 0, egg: 2 },
 ];
 
+/**
+ * Rewarded ads. No cooldown timers: Poki controls ad frequency and asks games not to add their own.
+ * Each reward is gated by the game state instead (golden bait while it is not active, a mystery egg
+ * while an incubator slot is free).
+ */
 export const AD = {
-  mysteryEggEverySec: 15 * 60,
-  goldenBaitEverySec: 10 * 60,
+  mysteryEggEverySec: 0,
+  goldenBaitEverySec: 0,
   goldenBaitSec: 5 * 60,
 };

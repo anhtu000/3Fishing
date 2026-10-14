@@ -185,7 +185,7 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const slotBtn = new CButton(scene, 0, panel.bottom - 70, {
     w: 360,
     h: 84,
-    icon: 'item:gem',
+    icon: 'item:coin',
     iconSize: 40,
     label: '',
     fontSize: 28,
@@ -194,7 +194,7 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
       if (g.buyTeamSlot()) {
         app.audio.play('buy');
         refreshAll();
-      } else note(scene, 'Not enough gems. Gems come from chests, quests and bosses.');
+      } else note(scene, 'Not enough coins yet. Keep fishing!');
     },
   });
   panel.content.add(slotBtn);
@@ -219,7 +219,7 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     }
     const cost = g.teamSlotCost();
     slotBtn.setVisible(Number.isFinite(cost));
-    slotBtn.setLabel(`+1 team slot  ${cost}`);
+    slotBtn.setLabel(`+1 team slot  ${fmt(cost)}`);
     ctx.refresh();
   };
   refreshAll();
@@ -234,10 +234,8 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     w: 660,
     h: 1000,
     color: COLORS.blue,
-    onClose: () => {
-      ctx.refresh();
-      ctx.breakPoint();
-    },
+    // The commercial break on the way back to play is handled by the scene for every menu.
+    onClose: () => ctx.refresh(),
   });
   const pw = panel.pw;
   const page = scene.add.container(0, 0);
@@ -386,17 +384,17 @@ export function questsPanel(scene: Phaser.Scene, ctx: PanelCtx, onDaily: () => v
     const btn = new CButton(scene, pw / 2 - 110, y, {
       w: 170,
       h: 84,
-      icon: 'item:gem',
+      icon: 'item:coin',
       iconSize: 38,
-      label: `${def.gems}`,
-      fontSize: 32,
+      label: fmt(def.coins * g.pond.priceMult),
+      fontSize: 30,
       color: COLORS.green,
       onClick: () => {
         if (q.claimed || q.progress < def.goal) return;
         q.claimed = true;
-        s.gems += def.gems;
+        g.earn(def.coins * g.pond.priceMult);
         app.audio.play('reward');
-        flyIcons(scene, 'item:gem', panel.toScene(btn.x, y), ctx.gemTo(), Math.min(6, def.gems));
+        flyIcons(scene, 'item:coin', panel.toScene(btn.x, y), ctx.coinTo(), 6);
         refresh();
         ctx.refresh();
       },
@@ -452,10 +450,10 @@ export function dailyPanel(scene: Phaser.Scene, ctx: PanelCtx, claim: (dayIndex:
     const done = i < today || (!st.canClaim && i === today);
     const bg = card(scene, x, y, tw, 180, isToday ? 0xffe9a8 : done ? CREAM_DARK : 0xfffdf6, 22);
     const d = txt(scene, x, y - 66, `Day ${i + 1}`, 24, { color: DARK, stroke: false });
-    const key = r.egg >= 0 ? `egg:${r.egg}` : r.gems > 0 ? 'item:gem' : 'item:coin';
+    const key = r.egg >= 0 ? `egg:${r.egg}` : 'item:coin';
     const icon = art(scene, x, y - 4, key);
     icon.setScale(fitScale(key, 70));
-    const label = txt(scene, x, y + 58, r.egg >= 0 ? `${RARITIES[r.egg]} egg` : r.gems > 0 && r.coins > 0 ? `${r.coins} + ${r.gems}` : `${r.gems || r.coins}`, 20, { color: DARK, stroke: false });
+    const label = txt(scene, x, y + 58, r.egg >= 0 ? `${RARITIES[r.egg]} egg` : `${r.coins}`, 20, { color: DARK, stroke: false });
     if (label.width > tw - 10) label.setScale((tw - 10) / label.width);
     const items: Phaser.GameObjects.GameObject[] = [bg, d, icon, label];
     if (done) {
@@ -488,7 +486,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
   const g = ctx.game;
   const s = g.s;
   const egg = s.eggs[index];
-  const panel = new CPanel(scene, { title: 'Incubator', w: 600, h: 760, color: COLORS.purple, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: 'Incubator', w: 600, h: 860, color: COLORS.purple, onClose: () => ctx.refresh() });
   if (egg) {
     const img = art(scene, 0, panel.top + 120, `egg:${egg.tier}`, 1.0);
     scene.tweens.add({ targets: img, angle: { from: -4, to: 4 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
@@ -507,8 +505,11 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
     tick();
     const timer = scene.time.addEvent({ delay: 250, loop: true, callback: tick });
     panel.once(Phaser.GameObjects.Events.DESTROY, () => timer.remove());
+    // Poki: the free option comes first (above), at least as big as the rewarded one.
+    const wait = new CButton(scene, 0, panel.bottom - 300, { w: 380, h: 96, label: 'Keep fishing', fontSize: 36, color: COLORS.orange, onClick: () => panel.close() });
+    panel.content.add(wait);
     if (app.ads.rewardedAvailable && !app.clean) {
-      const ad = new CButton(scene, 0, panel.bottom - 200, {
+      const ad = new CButton(scene, 0, panel.bottom - 190, {
         w: 380,
         h: 96,
         label: 'Hatch now',
@@ -530,9 +531,9 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
     const b = new CButton(scene, 0, panel.bottom - 80, {
       w: 380,
       h: 80,
-      icon: 'item:gem',
+      icon: 'item:coin',
       iconSize: 38,
-      label: `+1 egg slot  ${cost}`,
+      label: `+1 egg slot  ${fmt(cost)}`,
       fontSize: 28,
       color: COLORS.blue,
       onClick: () => {
@@ -540,7 +541,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
           app.audio.play('buy');
           panel.close();
           ctx.refresh();
-        } else note(scene, 'Not enough gems. Gems come from chests, quests and bosses.');
+        } else note(scene, 'Not enough coins yet. Keep fishing!');
       },
     });
     panel.content.add(b);

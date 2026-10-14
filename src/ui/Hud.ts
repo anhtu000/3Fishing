@@ -34,9 +34,7 @@ function pill(scene: Phaser.Scene, w: number, icon: string) {
 
 export class Hud {
   private coins: ReturnType<typeof pill>;
-  private gems: ReturnType<typeof pill>;
   private shownCoins = 0;
-  private shownGems = 0;
   sound: CButton;
   bottom: CButton[] = [];
   side: { quests: CButton; golden: CButton; mystery: CButton; auto: CButton };
@@ -67,7 +65,6 @@ export class Hud {
   ) {
     this.root = scene.add.container(0, 0).setDepth(100);
     this.coins = pill(scene, 210, 'item:coin');
-    this.gems = pill(scene, 160, 'item:gem');
     this.sound = roundButton(scene, 0, 0, app.audio.muted ? 'icon:i_mute' : 'icon:i_sound', 80, COLORS.blue, () => act.sound());
     const b = (icon: string, label: string, color: number, fn: () => void) => new CButton(scene, 0, 0, { w: 160, h: 112, icon, iconSize: 60, label, fontSize: 26, color, stack: true, onClick: fn });
     this.bottom = [b('icon:i_up', 'Upgrade', COLORS.orange, act.upgrades), b('icon:i_paw', 'Pets', COLORS.pink, act.pets), b('icon:i_book', 'Fishdex', COLORS.blue, act.dex), b('icon:i_map', 'Map', COLORS.green, act.map)];
@@ -100,18 +97,18 @@ export class Hud {
 
     const hand = scene.add.graphics();
     drawHand(hand);
-    const hintText = txt(scene, 0, 80, 'Hold & release to cast', 34);
+    // Desktop players get the keyboard hint, touch players the finger hint (Poki: adaptive controls).
+    const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+    const hintText = txt(scene, 0, 80, touch ? 'Hold & release to cast' : 'Hold click or SPACE to cast', 34);
     this.hint = scene.add.container(0, 0, [hand, hintText]).setDepth(110).setVisible(false);
 
     this.bossG = scene.add.graphics();
     this.bossName = txt(scene, 0, -40, '', 32);
     this.bossBar = scene.add.container(0, 0, [this.bossG, this.bossName]).setDepth(120).setVisible(false);
 
-    this.root.add([this.coins.c, this.gems.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.boss, ...this.eggs.map((e) => e.btn), this.chip]);
+    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.boss, ...this.eggs.map((e) => e.btn), this.chip]);
     this.shownCoins = s.coins;
-    this.shownGems = s.gems;
     this.coins.label.setText(fmt(s.coins));
-    this.gems.label.setText(fmt(s.gems));
   }
 
   /** Where coins fly to. */
@@ -119,7 +116,7 @@ export class Hud {
     return { x: this.coins.c.x - 75, y: this.coins.c.y };
   }
   gemTarget() {
-    return { x: this.gems.c.x - 50, y: this.gems.c.y };
+    return this.coinTarget();
   }
   eggTarget() {
     const e = this.eggs.find((q) => q.btn.visible) ?? this.eggs[0];
@@ -130,7 +127,7 @@ export class Hud {
     this.bump(this.coins.icon);
   }
   bumpGems() {
-    this.bump(this.gems.icon);
+    this.bumpCoins();
   }
   private bump(icon: Phaser.GameObjects.Image) {
     const base = ((icon as unknown as { __base?: number }).__base ??= icon.scale);
@@ -142,8 +139,7 @@ export class Hud {
   layout(w: number, h: number) {
     const portrait = h > w;
     const top = portrait ? 58 : 50;
-    this.coins.c.setPosition(w / 2 - 70, top);
-    this.gems.c.setPosition(w / 2 + 130, top);
+    this.coins.c.setPosition(w / 2, top);
     this.sound.setPosition(w - 56, top);
     if (portrait) {
       const bw = Math.min(166, (w - 40) / 4 - 8);
@@ -152,7 +148,8 @@ export class Hud {
       this.bottom.forEach((b, i) => b.setPosition(w / 2 + (i - 1.5) * 176, h - 66));
     }
     const sx = portrait ? 60 : 62;
-    const sy = portrait ? 180 : 150;
+    // Below Poki's pill (top-left on phones, 62 px tall at a 24 px offset).
+    const sy = portrait ? 250 : 150;
     const step = portrait ? 104 : 96;
     [this.side.quests, this.side.golden, this.side.mystery, this.side.auto].forEach((b, i) => b.setPosition(sx, sy + i * step));
     this.boss.setPosition(w / 2, portrait ? 218 : 180);
@@ -172,10 +169,6 @@ export class Hud {
       this.shownCoins += Math.abs(diff) < 2 ? diff : diff * Math.min(1, dt * 10);
       if (Math.abs(s.coins - this.shownCoins) < 0.5) this.shownCoins = s.coins;
       this.coins.label.setText(fmt(Math.round(this.shownCoins)));
-    }
-    if (this.shownGems !== s.gems) {
-      this.shownGems = s.gems;
-      this.gems.label.setText(fmt(s.gems));
     }
     // Eggs.
     this.eggs.forEach((e, i) => {
@@ -208,10 +201,10 @@ export class Hud {
     // Side buttons.
     const tutDone = s.tutorial.includes('done');
     this.side.quests.setVisible(s.quests.list.length > 0 && (tutDone || s.stats.playSec > 180)).setBadge(extra.questBadge);
-    this.side.golden.setVisible(tutDone && extra.adsOk);
-    this.side.golden.setEnabled(extra.goldenIn <= 0 && extra.goldenLeft <= 0);
-    this.side.mystery.setVisible(tutDone && extra.adsOk && s.stats.catches >= 12);
-    this.side.mystery.setEnabled(extra.mysteryIn <= 0);
+    this.side.golden.setVisible(tutDone && extra.adsOk && extra.goldenLeft <= 0);
+    // Offers are gated by game state, never by an ad timer: bait while not already active, an egg while a slot is free.
+    const freeSlot = s.eggs.some((e, i) => i < s.incubatorSlots && !e);
+    this.side.mystery.setVisible(tutDone && extra.adsOk && s.stats.catches >= 12 && freeSlot);
     this.side.auto.setVisible(extra.autoUnlocked).setColor(extra.autoOn ? COLORS.green : COLORS.grey);
     this.boss.setVisible(extra.bossReady && !f.busy);
     this.bottom[0].setGlow(extra.canUpgrade && !f.busy).setBadge(extra.canUpgrade ? -1 : 0);

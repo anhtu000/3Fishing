@@ -166,7 +166,7 @@ export function expectedFishValue(pond: PondDef, luck: number, merchantPct: numb
 }
 
 export function chestReward(rng: Rng, pond: PondDef, first: boolean) {
-  return { coins: Math.round((30 + rng.int(0, 30)) * pond.priceMult), gems: first ? 5 : rng.int(1, 3) };
+  return { coins: Math.round((first ? 100 : 60 + rng.int(0, 60)) * pond.priceMult), gems: 0 };
 }
 
 export function junkCoins(pond: PondDef) {

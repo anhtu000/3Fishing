@@ -28,9 +28,15 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
 - `src/scenes/PlayScene.ts` ghép tất cả: vòng câu, hướng dẫn, boss, quảng cáo, thu offline.
 - `tools/` build bằng Bun, chụp màn hình, bot chơi thử (`play.mjs`), sim, tạo âm thanh.
 
+## Poki
+
+- Quy định và checklist trước khi nộp: `docs/Poki-Huong-dan.md` (dùng chung cho mọi game đường A).
+- Thumbnail cửa hàng: `store/thumbnail_1024.png`, `store/thumbnail_628.png` (tạo lại: `bun tools/art/thumbnail.ts store/thumbnail_1024.png 1024`).
+- Kiểm thứ tự sự kiện SDK bằng SDK giả: `npm run build && node tools/poki-events.mjs dist/poki`.
+
 ## Ghi chú kỹ thuật
 
 - `maxTextures: 1` trong `src/main.ts`: tắt gộp nhiều texture một lượt vẽ, vì sprite xoay bị mất một tam giác
   khi nhiều texture chung batch (thấy trên SwiftShader). Cần đo FPS trên điện thoại thật; nếu ổn thì giữ.
-- Quảng cáo xen kẽ chỉ ở chỗ nghỉ: đóng Sổ cá, sau boss, chuyển hồ. Không bao giờ lúc đang kéo.
+- Sự kiện Poki: `gameplayStart` ở lần chạm đầu; mở menu/pause/kết quả boss gửi `gameplayStop`, quay lại chơi gửi `commercialBreak` rồi `gameplayStart`. Không có bộ đếm quảng cáo riêng.
 - Góc trên trái để trống cho nút Poki trên điện thoại.

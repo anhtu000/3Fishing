@@ -8,6 +8,7 @@ import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
 import { anyUpgradeAffordable, questsClaimable, readyEggIndex, type CatchRoll } from '../logic/rules';
+import { devPreset } from '../dev';
 import { save } from '../save';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, txt } from '../ui/kit';
@@ -47,7 +48,8 @@ export class PlayScene extends BaseScene {
   private seenDex = 0;
 
   constructor() {
-    super('Play', { gameplay: true });
+    // Gameplay events are sent by hand: gameplayStart on the first input, not on load (Poki rule).
+    super('Play', { gameplay: false });
   }
 
   protected build() {
@@ -58,7 +60,8 @@ export class PlayScene extends BaseScene {
     this.pg.refreshDay();
     if (__TARGET__ === 'web') {
       (window as unknown as { __play: unknown }).__play = this;
-      this.devPreset(location.hash);
+      devPreset(this.s, location.hash);
+      this.pg.refreshDay();
     }
     this.seenPets = Object.keys(s.pets).length;
     this.seenDex = Object.keys(s.dex).length;
@@ -156,41 +159,6 @@ export class PlayScene extends BaseScene {
     }
   }
 
-  /** Web build only: #dev-<preset> jumps to a state for screenshots and testing. */
-  private devPreset(hash: string) {
-    const s = this.s;
-    const m = /#dev-([a-z0-9]+)/.exec(hash);
-    if (!m) return;
-    const done = ['cast', 'bite', 'reel', 'egg', 'hatch', 'upgrade', 'done', 'boss'];
-    s.tutorial = done;
-    s.stats.catches = Math.max(s.stats.catches, 40);
-    s.stats.eggs = Math.max(1, s.stats.eggs);
-    s.stats.chests = Math.max(1, s.stats.chests);
-    s.daily = { lastClaim: dayKey(), streak: 1 };
-    const cozy = PONDS[0];
-    const give = (n: number, pond = cozy) => pond.fish.slice(0, n).forEach((f) => (s.dex[f.id] ??= { n: 3, best: f.cm * 1.2 }));
-    const pets = (ids: string[]) => ids.forEach((id) => (s.pets[id] ??= { level: 2, xp: 0 }));
-    if (m[1] === 'rich' || m[1] === 'boss' || m[1] === 'misty') {
-      s.coins = 4200;
-      s.gems = 60;
-      give(6);
-      pets(['puddle_frog', 'reed_duckling', 'otter_pup']);
-      s.team = ['puddle_frog', 'reed_duckling', 'otter_pup'];
-      s.eggs[0] = { tier: 2, pond: 'cozy', left: 140, total: 300 };
-      s.incubatorSlots = 2;
-      s.eggs[1] = { tier: 1, pond: 'cozy', left: 0, total: 120 };
-    }
-    if (m[1] === 'misty') {
-      s.bosses = ['old_whiskers'];
-      s.unlocked = ['cozy', 'misty'];
-      s.pond = 'misty';
-      give(5, PONDS[1]);
-      pets(['mossy_snail', 'firefly_fox']);
-      s.team = ['firefly_fox', 'puddle_frog', 'otter_pup'];
-    }
-    this.pg.refreshDay();
-  }
-
   private get ctx(): PanelCtx {
     return {
       game: this.pg,
@@ -223,6 +191,13 @@ export class PlayScene extends BaseScene {
       if (this.fishing.phase === 'charging') this.fishing.release();
     });
     const kb = this.input.keyboard;
+    // ESC pauses (keyboard players, Poki rule). Registered before any panel, so a panel's own ESC
+    // handler closes it first and this one sees the panel still open and does nothing.
+    kb?.on('keydown-ESC', () => {
+      if (this.modal > 0 || (this.panel && !this.panel.isClosed)) return;
+      if (this.fishing.phase === 'reeling' || this.fishing.phase === 'bite') return;
+      this.openPause();
+    });
     kb?.on('keydown-SPACE', (e: KeyboardEvent) => {
       if (e.repeat || this.modal > 0) return;
       this.press();
@@ -231,6 +206,7 @@ export class PlayScene extends BaseScene {
   }
 
   private press() {
+    this.startPlay();
     if (this.fishing.auto && this.fishing.phase === 'ready') {
       this.s.autoFish = false;
       this.fishing.auto = false;
@@ -301,7 +277,7 @@ export class PlayScene extends BaseScene {
           app.audio.play('gem', { volume: 0.5, pitchJitter: 100 });
         },
       };
-      for (const id of res.questsDone) this.time.delayedCall(1200, () => note(this, 'Quest complete! Claim your gems.'), [id]);
+      for (const id of res.questsDone) this.time.delayedCall(1200, () => note(this, 'Quest complete! Claim your coins.'), [id]);
       const after = () => {
         this.fishing.reset();
         this.afterCatch(res.roll);
@@ -379,6 +355,27 @@ export class PlayScene extends BaseScene {
 
   // ---------- panels, ads, breaks ----------
 
+  /** True after the player's first input: from then on menus count as interruptions of play. */
+  private played = false;
+
+  /** First input, or back from a menu: tell the portal the player is playing. */
+  private startPlay() {
+    this.played = true;
+    if (this.modal === 0) app.gameplay.start();
+  }
+
+  /** Menu, pause or result screen: gameplay stops (Poki: on every interruption). */
+  private stopPlay() {
+    app.gameplay.stop();
+  }
+
+  /** Leaving an interruption: commercial break opportunity, then gameplay again. */
+  private async resumePlay() {
+    if (!this.played) return;
+    await this.breakPoint();
+    if (this.modal === 0) app.gameplay.start();
+  }
+
   private open(make: () => CPanel) {
     if (this.panel && !this.panel.isClosed) return;
     if (this.fishing.phase === 'charging') this.fishing.release();
@@ -387,26 +384,54 @@ export class PlayScene extends BaseScene {
       return;
     }
     this.modal++;
+    this.stopPlay();
     const p = make();
     this.panel = p;
     p.once(Phaser.GameObjects.Events.DESTROY, () => {
       this.modal--;
       if (this.panel === p) this.panel = null;
       this.refresh();
+      void this.resumePlay();
     });
   }
 
+  private openPause() {
+    this.open(() => {
+      const p = new CPanel(this, { title: 'Paused', w: 520, h: 460, color: COLORS.teal });
+      p.content.add(
+        new CButton(this, 0, p.top + 120, { w: 340, h: 100, label: 'Resume', fontSize: 40, color: COLORS.green, onClick: () => p.close() }),
+      );
+      const sound = new CButton(this, 0, p.top + 250, {
+        w: 340,
+        h: 84,
+        label: app.audio.muted ? 'Sound: off' : 'Sound: on',
+        fontSize: 30,
+        color: COLORS.blue,
+        onClick: () => {
+          app.audio.toggle();
+          this.hud.setSoundIcon(app.audio.muted);
+          sound.setLabel(app.audio.muted ? 'Sound: off' : 'Sound: on');
+        },
+      });
+      p.content.add(sound);
+      return p;
+    });
+  }
+
+  /**
+   * Rewarded ad. Only grants the reward when the ad finished. No message of our own when it fails:
+   * Poki shows its own ad-blocker message and asks games not to add one.
+   */
   private watchAd(onReward: () => void) {
     app.ads.rewarded().then((ok) => {
       if (ok) onReward();
-      else note(this, app.ads.lastOutcome === 'adblock' ? 'Ads are blocked, so this reward is unavailable.' : 'No ad available right now. Try again later.');
       this.refresh();
     });
   }
 
-  /** Natural pause: Poki may show a midgame ad here (never while reeling). */
+  /** Natural pause on the way back to play: Poki may show a midgame ad here (never while reeling). */
   private async breakPoint() {
-    if (this.fishing.busy) return;
+    if (this.fishing.busy && this.fishing.phase !== 'done') return;
     this.modal++;
     try {
       await app.ads.midgame();
@@ -447,10 +472,10 @@ export class PlayScene extends BaseScene {
       this.modal--;
       this.maybeDaily();
     });
-    if (app.ads.rewardedAvailable && !app.clean) {
-      p.content.add(new CButton(this, 0, p.bottom - 190, { w: 400, h: 96, label: 'Collect x2', fontSize: 38, color: COLORS.ad, ad: true, onClick: () => this.watchAd(() => give(2)) }));
-    }
-    p.content.add(new CButton(this, 0, p.bottom - 80, { w: 400, h: 86, label: 'Collect', fontSize: 34, color: COLORS.orange, onClick: () => give(1) }));
+    // Poki: the free option sits above the rewarded one and is at least as big.
+    const ads = app.ads.rewardedAvailable && !app.clean;
+    p.content.add(new CButton(this, 0, p.bottom - (ads ? 200 : 110), { w: 400, h: 96, label: 'Collect', fontSize: 38, color: COLORS.orange, onClick: () => give(1) }));
+    if (ads) p.content.add(new CButton(this, 0, p.bottom - 90, { w: 400, h: 96, label: 'Collect x2', fontSize: 38, color: COLORS.ad, ad: true, onClick: () => this.watchAd(() => give(2)) }));
   }
 
   private maybeDaily() {
@@ -467,10 +492,6 @@ export class PlayScene extends BaseScene {
         if (r.coins) {
           this.pg.earn(r.coins);
           flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
-        }
-        if (r.gems) {
-          this.s.gems += r.gems;
-          flyIcons(this, 'item:gem', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.gemTarget(), 5, () => this.hud.bumpGems());
         }
         if (r.egg >= 0) {
           const stored = this.pg.s.eggs.some((e, k) => k < this.s.incubatorSlots && !e);
@@ -489,6 +510,8 @@ export class PlayScene extends BaseScene {
   private async travel(id: string) {
     const p = pondById.get(id as 'cozy');
     if (!p || !this.pg.travel(p)) return;
+    // Next level: gameplayStop, commercial break, then gameplayStart in the new pond.
+    this.stopPlay();
     await this.breakPoint();
     this.modal++;
     this.cameras.main.fadeOut(300, 255, 255, 255);
@@ -507,6 +530,7 @@ export class PlayScene extends BaseScene {
         this.time.delayedCall(1800, () => note(this, 'Auto fishing unlocked! Tap the round button on the left.', 3200));
       }
       this.modal--;
+      if (this.played) app.gameplay.start();
       save.flush();
     });
   }
@@ -546,6 +570,7 @@ export class PlayScene extends BaseScene {
       const reward = this.pg.winBoss();
       app.moments.emit('rarePull', { tier: 4, odds: 0.01, label: boss.name });
       this.modal++;
+      this.stopPlay();
       this.hud.setVisible(false);
       const vp = this.vp;
       const layer = this.add.container(0, 0).setDepth(1400);
@@ -561,9 +586,9 @@ export class PlayScene extends BaseScene {
       const head = txt(this, vp.width / 2, vp.height * 0.18, 'BOSS CAUGHT!', 64, { color: '#ffe066' });
       const sub = txt(this, vp.width / 2, vp.height * 0.55, `${boss.name}: ${(this.rng.next() * 40 + 160).toFixed(1)} cm!`, 34, { color: '#3b2a4d', stroke: false });
       const egg = art(this, vp.width / 2 - 70, vp.height * 0.62, 'egg:3', 0.5);
-      const eggT = txt(this, vp.width / 2 + 30, vp.height * 0.62, reward.eggStored ? 'Epic egg' : `+${reward.coins} coins`, 32, { color: '#9356e6', stroke: false });
-      const gem = art(this, vp.width / 2 - 70, vp.height * 0.7, 'item:gem', 0.5);
-      const gemT = txt(this, vp.width / 2 + 10, vp.height * 0.7, `+${reward.gems}`, 36, { color: '#2f86e0', stroke: false });
+      const eggT = txt(this, vp.width / 2 + 60, vp.height * 0.62, reward.eggStored ? 'Epic egg' : `+${reward.coins - reward.prize} coins`, 32, { color: '#9356e6', stroke: false });
+      const gem = art(this, vp.width / 2 - 70, vp.height * 0.7, 'item:coin', 0.5);
+      const gemT = txt(this, vp.width / 2 + 20, vp.height * 0.7, `+${reward.prize}`, 36, { color: '#e39b00', stroke: false });
       const next = this.pg.nextPond();
       const tip = txt(this, vp.width / 2, vp.height * 0.77, next ? `${next.name} is open on the Map!` : 'You beat every boss! More ponds coming soon.', 26, { wrap: Math.min(480, vp.width - 80), color: '#7a6a8a', stroke: false });
       const btn = new CButton(this, vp.width / 2, vp.height * 0.88, {
@@ -578,7 +603,7 @@ export class PlayScene extends BaseScene {
           this.hud.setVisible(true);
           this.fishing.reset();
           this.refresh();
-          this.breakPoint();
+          void this.resumePlay();
         },
       });
       layer.add([head, sub, egg, eggT, gem, gemT, tip, btn]);
@@ -588,8 +613,9 @@ export class PlayScene extends BaseScene {
     const progress = this.fishing.progress;
     this.rig.lose();
     app.audio.play('snap');
-    const p = new CPanel(this, { title: `${boss.name} got away!`, w: 600, h: 620, color: COLORS.red, closable: false });
+    const p = new CPanel(this, { title: `${boss.name} got away!`, w: 600, h: 720, color: COLORS.red, closable: false });
     this.modal++;
+    this.stopPlay();
     p.content.add(art(this, 0, p.top + 110, `fish:${boss.id}`, 0.8));
     p.content.add(txt(this, 0, p.top + 230, `You got it ${Math.round(progress * 100)}% of the way!`, 30, { color: '#7a6a8a', stroke: false }));
     p.content.add(txt(this, 0, p.top + 276, 'Tip: upgrade your Rod and Line', 26, { color: '#7a6a8a', stroke: false, weight: '500' }));
@@ -597,9 +623,11 @@ export class PlayScene extends BaseScene {
       p.close();
     };
     p.once(Phaser.GameObjects.Events.DESTROY, () => this.modal--);
-    if (!this.bossContinued && app.ads.rewardedAvailable && !app.clean) {
+    // Poki button order: the free "Try again" above, the rewarded revive below it, same size.
+    const revive = !this.bossContinued && app.ads.rewardedAvailable && !app.clean;
+    if (revive) {
       p.content.add(
-        new CButton(this, 0, p.bottom - 250, {
+        new CButton(this, 0, p.bottom - 190, {
           w: 400,
           h: 96,
           label: 'Keep reeling',
@@ -614,21 +642,25 @@ export class PlayScene extends BaseScene {
               this.rig.setTarget(`fish:${boss.id}`, 0.95);
               this.fishing.continueBoss(progress);
               this.hud.drawBoss(boss.name, 1 - progress, this.fishing.bossPhase);
+              app.gameplay.start();
             }),
         }),
       );
     }
     p.content.add(
-      new CButton(this, 0, p.bottom - 140, {
+      new CButton(this, 0, p.bottom - (revive ? 300 : 190), {
         w: 400,
-        h: 88,
+        h: 96,
         label: 'Try again',
-        fontSize: 34,
+        fontSize: 36,
         color: COLORS.orange,
-        onClick: () => {
+        onClick: async () => {
           done();
           this.fishing.reset();
           this.rig.clear();
+          // Death and restart: gameplayStop, commercial break, gameplayStart.
+          await this.breakPoint();
+          app.gameplay.start();
           this.startBoss();
         },
       }),
@@ -645,7 +677,7 @@ export class PlayScene extends BaseScene {
           this.fishing.reset();
           this.rig.clear();
           this.refresh();
-          this.breakPoint();
+          void this.resumePlay();
         },
       }),
     );
@@ -665,15 +697,16 @@ export class PlayScene extends BaseScene {
     }
   }
 
+  /** Tutorial lines: short, with the hand doing the showing (Poki: visual, not text-heavy). */
   private stepText(step: Step) {
     return {
-      cast: 'Hold anywhere on the water, then let go to cast!',
-      bite: 'A bite! TAP NOW!',
-      reel: 'HOLD to reel it in. Let go if the bar turns red!',
-      egg: 'An egg! It hatches while you fish. Each fish = -5 seconds.',
-      hatch: 'Your egg is ready! Tap it to hatch.',
-      upgrade: 'You have coins! Buy an upgrade.',
-      boss: 'The pond boss is here! Tap BOSS to fight it.',
+      cast: 'Hold... then let go!',
+      bite: 'TAP NOW!',
+      reel: 'Hold to reel. Let go on red!',
+      egg: 'An egg! It hatches as you fish.',
+      hatch: 'Tap to hatch!',
+      upgrade: 'Upgrade your gear!',
+      boss: 'Boss time! Tap BOSS!',
     }[step];
   }
 

@@ -252,7 +252,8 @@ class App extends Emitter<{ language: [lang: string] }> {
 
     // #debug works where a query string is dropped (artifact pages); it can follow a preset: #showcase+debug.
     const hashDebug = /^#(?:[a-z]+\+)*debug(?:\+|$)/.test(location.hash);
-    if ((params.has('debug') || hashDebug) && !this.clean) this.toggleDebug();
+    // Portal builds ship clean: no debug tools (Poki requirement), so ?debug only works in the web build.
+    if (__TARGET__ === 'web' && (params.has('debug') || hashDebug) && !this.clean) this.toggleDebug();
   }
 
   private debug: DebugOverlay | null = null;

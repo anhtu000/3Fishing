@@ -21,6 +21,8 @@ startGame({
   // Straight into the pond: the first fish comes within seconds (quality bar, design doc).
   menu: false,
   save,
+  // Poki decides when a midgame ad really plays; the game sends every chance and keeps no timer of its own.
+  ads: { midgameGapSec: __TARGET__ === 'poki' ? 0 : 180 },
   // Vector sprites are separate textures; see GameConfig.maxTextures.
   maxTextures: 1,
   preload: (scene) => {
@@ -42,7 +44,7 @@ startGame({
     primaryText: '#3b2a4d',
     surface: 0xfff6e6,
     surfaceText: '#3b2a4d',
-    reward: 0x36c977,
+    reward: 0x7c6cff,
     rewardText: '#ffffff',
   },
 });

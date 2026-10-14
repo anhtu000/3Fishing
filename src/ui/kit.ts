@@ -20,7 +20,8 @@ export const COLORS = {
   red: 0xff6b6b,
   grey: 0xb8b2c4,
   teal: 0x3fc1c9,
-  ad: 0x36c977,
+  // Rewarded-ad buttons: never green (Poki rule), always with the clapperboard icon.
+  ad: 0x7c6cff,
 };
 
 export interface TextOpts {
@@ -136,6 +137,8 @@ export class CButton extends Phaser.GameObjects.Container {
     this.bg = scene.add.image(0, 0, '__DEFAULT');
     this.face = scene.add.container(0, 0);
     this.add([this.bg, this.face]);
+    // A labelled rewarded button carries the clapperboard as its icon; round icon buttons get it as a badge.
+    if (opts.ad && opts.label != null && !opts.icon) opts.icon = 'icon:i_video';
     if (opts.icon) {
       this.icon = art(scene, 0, 0, opts.icon);
       this.face.add(this.icon);
@@ -144,14 +147,13 @@ export class CButton extends Phaser.GameObjects.Container {
       this.label = txt(scene, 0, 0, opts.label, opts.fontSize ?? 34);
       this.face.add(this.label);
     }
-    if (opts.ad) {
-      const b = scene.add.container(opts.w / 2 - 14, -opts.h / 2 + 10);
+    if (opts.ad && opts.icon !== 'icon:i_video') {
       const g = scene.add.graphics();
-      g.fillStyle(INK, 1).fillRoundedRect(-24, -17, 48, 34, 10);
-      g.fillStyle(0xffffff, 1).fillRoundedRect(-20, -13, 40, 26, 7);
-      g.fillStyle(COLORS.ad, 1).fillTriangle(-6, -8, -6, 8, 9, 0);
-      b.add(g);
-      this.add(b);
+      g.fillStyle(INK, 1).fillCircle(0, 0, 25);
+      g.fillStyle(0xffffff, 1).fillCircle(0, 0, 21);
+      const clap = art(scene, 0, 0, 'icon:i_video');
+      clap.setScale(fitScale('icon:i_video', 34));
+      this.add(scene.add.container(opts.w / 2 - 8, -opts.h / 2 + 8, [g, clap]));
     }
     this.redraw();
     this.layoutFace();

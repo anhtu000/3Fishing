@@ -2,7 +2,7 @@
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { AD, INCUBATOR_SLOT_GEMS, PONDS, TEAM_SLOT_GEMS, UPGRADES, petById, pondById, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { AD, INCUBATOR_SLOT_COST, PONDS, TEAM_SLOT_COST, UPGRADES, petById, pondById, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
@@ -244,25 +244,25 @@ export class PondGame {
   }
 
   incubatorSlotCost() {
-    return INCUBATOR_SLOT_GEMS[this.s.incubatorSlots] ?? Infinity;
+    return INCUBATOR_SLOT_COST[this.s.incubatorSlots] ?? Infinity;
   }
 
   buyIncubatorSlot() {
     const cost = this.incubatorSlotCost();
-    if (this.s.gems < cost) return false;
-    this.s.gems -= cost;
+    if (this.s.coins < cost) return false;
+    this.s.coins -= cost;
     this.s.incubatorSlots += 1;
     return true;
   }
 
   teamSlotCost() {
-    return TEAM_SLOT_GEMS[this.s.teamSlots] ?? Infinity;
+    return TEAM_SLOT_COST[this.s.teamSlots] ?? Infinity;
   }
 
   buyTeamSlot() {
     const cost = this.teamSlotCost();
-    if (this.s.gems < cost) return false;
-    this.s.gems -= cost;
+    if (this.s.coins < cost) return false;
+    this.s.coins -= cost;
     this.s.teamSlots += 1;
     return true;
   }
@@ -280,16 +280,16 @@ export class PondGame {
     return bossReady(this.s, this.pond);
   }
 
-  /** Boss beaten: an Epic egg (or coins when the incubator is full) and gems. */
+  /** Boss beaten: an Epic egg (or coins when the incubator is full) and a coin prize. */
   winBoss() {
     const s = this.s;
     const pond = this.pond;
     if (!s.bosses.includes(pond.boss.id)) s.bosses.push(pond.boss.id);
     const stored = addEgg(s, 3, pond.id);
-    const coins = stored ? 0 : eggCoins(3, pond);
+    const prize = 250 * pond.priceMult;
+    const coins = (stored ? 0 : eggCoins(3, pond)) + prize;
     this.earn(coins);
-    s.gems += 10;
-    return { eggStored: stored, coins, gems: 10 };
+    return { eggStored: stored, coins, prize };
   }
 
   nextPond(): PondDef | null {
