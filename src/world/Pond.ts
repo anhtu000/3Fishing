@@ -43,6 +43,9 @@ export class Pond {
   private sun: Phaser.GameObjects.Image;
   private clouds: Phaser.GameObjects.Image[] = [];
   private hillsFar!: Phaser.GameObjects.Image;
+  /** One picture per pond on the far bank: cottage, waterfall, ice-fishing hut. */
+  private landmark!: Phaser.GameObjects.Image;
+  private aurora: Phaser.GameObjects.Image | null = null;
   private hillsNear!: Phaser.GameObjects.Image;
   private trees: Phaser.GameObjects.Image[] = [];
   private reeds: Phaser.GameObjects.Image[] = [];
@@ -82,7 +85,7 @@ export class Pond {
     const s = this.scene;
     this.pond = pondById.get(pondId as 'cozy')!;
     const id = this.pond.id;
-    for (const o of [this.hillsFar, this.hillsNear, this.sand, this.surface, this.dock, ...this.trees, ...this.reeds, ...this.weeds, ...this.rocks, ...this.rays, ...this.lilies, ...this.fogs, ...this.flies]) o?.destroy();
+    for (const o of [this.hillsFar, this.landmark, this.aurora, this.hillsNear, this.sand, this.surface, this.dock, ...this.trees, ...this.reeds, ...this.weeds, ...this.rocks, ...this.rays, ...this.lilies, ...this.fogs, ...this.flies]) o?.destroy();
     for (const f of this.swimmers) f.img.destroy();
     this.bossShadow?.destroy();
     this.bossShadow = null;
@@ -95,7 +98,13 @@ export class Pond {
     this.fogs = [];
     this.flies = [];
     this.swimmers = [];
+    this.aurora = null;
     this.hillsFar = art(s, 0, 0, `${id}:hillsFar`).setOrigin(0.5, 1).setDepth(2);
+    const land = PALETTES[id].land;
+    this.landmark = art(s, 0, 0, `${id}:landmark`, land === 'gorge' ? 0.75 : 0.62).setOrigin(0.5, 1).setDepth(4.5);
+    // Sky: the evening creek has a moon, the frozen lake northern lights.
+    setArt(this.sun, land === 'gorge' ? 'sc:moon' : 'sc:sun', 1);
+    if (land === 'peaks') this.aurora = art(s, 0, 0, 'sc:aurora', 1).setOrigin(0.5, 0).setDepth(0.5).setBlendMode(Phaser.BlendModes.SCREEN);
     for (let i = 0; i < 3; i++) this.trees.push(art(s, 0, 0, `${id}:tree`, 0.55 + (i % 2) * 0.15).setOrigin(0.5, 1).setDepth(3));
     this.hillsNear = art(s, 0, 0, `${id}:hillsNear`).setOrigin(0.5, 1).setDepth(4);
     for (let i = 0; i < 2; i++) this.reeds.push(art(s, 0, 0, `${id}:reeds`, 0.8 - i * 0.15).setOrigin(0.5, 1).setDepth(5));
@@ -109,7 +118,9 @@ export class Pond {
     this.surface.setScale(1 / surfTex.scale);
     const snow = !!PALETTES[id].snow;
     // Frozen Lake swaps lily pads for ice floes (pets sit on them the same way).
-    for (let i = 0; i < 3; i++) this.lilies.push(art(s, 0, 0, snow ? (i === 1 ? 'sc:floe' : 'sc:floeSmall') : i === 1 ? 'sc:lilyFlower' : 'sc:lily', 0.75 + (i % 2) * 0.1).setDepth(18));
+    // Misty Creek has stepping stones instead.
+    const gorge = PALETTES[id].land === 'gorge';
+    for (let i = 0; i < 3; i++) this.lilies.push(art(s, 0, 0, snow ? (i === 1 ? 'sc:floe' : 'sc:floeSmall') : gorge ? (i === 1 ? 'sc:stone' : 'sc:stoneSmall') : i === 1 ? 'sc:lilyFlower' : 'sc:lily', 0.75 + (i % 2) * 0.1).setDepth(18));
     if (PALETTES[id].mist) {
       for (let i = 0; i < 2; i++) this.fogs.push(art(s, 0, 0, 'sc:fog', 1).setDepth(i === 0 ? 4.5 : 19).setAlpha(0.6));
       for (let i = 0; i < 7; i++) this.flies.push(art(s, 0, 0, 'sc:firefly', 0.6 + (i % 3) * 0.2).setDepth(6).setBlendMode(Phaser.BlendModes.ADD));
@@ -182,6 +193,8 @@ export class Pond {
     const stretch = Math.max(1, w / 1560);
     this.hillsFar.setPosition(w / 2, water + 6).setScale((1 / TEX.get(`${this.pond.id}:hillsFar`)!.scale) * stretch, 1 / TEX.get(`${this.pond.id}:hillsFar`)!.scale);
     this.hillsNear.setPosition(w / 2, water + 8).setScale((1 / TEX.get(`${this.pond.id}:hillsNear`)!.scale) * stretch, 1 / TEX.get(`${this.pond.id}:hillsNear`)!.scale);
+    this.landmark.setPosition(w * (portrait ? 0.5 : 0.4), water + (pal.land === 'gorge' ? 10 : -2));
+    this.aurora?.setPosition(w / 2, water * 0.04).setScale((w / 1600) * 1.15 / 1.3, (water * 0.55) / 260 / 1.3);
     const treeX = portrait ? [0.62, 0.86, 0.97] : [0.55, 0.74, 0.93];
     this.trees.forEach((t, i) => t.setPosition(w * treeX[i], water - (portrait ? 70 : 60) + i * 10));
     this.reeds.forEach((r, i) => r.setPosition(w - 30 - i * 60, water + 12));
@@ -265,6 +278,7 @@ export class Pond {
       if (c.x > L.w + 140) c.x = -140;
     });
     this.sun.setAngle(Math.sin(t * 0.4) * 4);
+    this.aurora?.setAlpha(0.55 + Math.sin(t * 0.5) * 0.25);
     this.rays.forEach((r, i) => {
       r.setAlpha(0.18 + 0.14 * Math.sin(t * 0.7 + i * 2));
       r.setAngle(Math.sin(t * 0.25 + i) * 6);
