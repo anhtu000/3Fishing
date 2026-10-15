@@ -6,7 +6,9 @@ import { AD, INCUBATOR_SLOT_COST, OFFLINE_CAP, PONDS, QUEST_POOL, STREAK, TEAM_S
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
-  addEgg,
+  incubateFromBasket,
+  storeEgg,
+  type EggPlace,
   addNestEgg,
   addPet,
   bossReady,
@@ -45,8 +47,10 @@ export interface CatchResult {
   /** New size record for a species already known. */
   record: boolean;
   cm: number;
-  /** Egg went into the incubator (false: sold, incubator full). */
+  /** Egg was kept (incubator or basket); false: sold, both full. */
   eggStored: boolean;
+  /** Where the egg went. */
+  eggWhere: EggPlace;
   questsDone: string[];
   /** This was the WANTED fish (triple coins plus a bonus). */
   bounty: boolean;
@@ -158,7 +162,7 @@ export class PondGame {
   applyCatch(roll: CatchRoll, perfect: boolean): CatchResult {
     const s = this.s;
     const pond = this.pond;
-    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false };
+    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false };
     s.stats.catches += 1;
     this.streak = perfect ? this.streak + 1 : 0;
     res.streak = this.streak;
@@ -201,8 +205,8 @@ export class PondGame {
           // An overnight egg: Rare (Epic for a Legendary), with a good shiny chance.
           const tier = roll.fish.rarity >= 4 ? 3 : 2;
           res.nestEgg = addNestEgg(s, tier, pond.id, TODAY_FISH.shiny);
-          // Nest taken (a daily-gift egg): the incubator, then coins.
-          if (!res.nestEgg && !addEgg(s, tier, pond.id)) res.coins += eggCoins(3, pond);
+          // Nest taken (a daily-gift egg): the incubator or basket, then coins.
+          if (!res.nestEgg && !storeEgg(s, tier, pond.id, TODAY_FISH.shiny)) res.coins += eggCoins(3, pond);
         }
         fishSpeedsEggs(s);
         q('catch');
@@ -211,7 +215,8 @@ export class PondGame {
       }
       case 'egg':
         s.stats.eggs += 1;
-        res.eggStored = addEgg(s, roll.tier, pond.id);
+        res.eggWhere = storeEgg(s, roll.tier, pond.id);
+        res.eggStored = !!res.eggWhere;
         if (!res.eggStored) res.coins = eggCoins(roll.tier, pond);
         break;
       case 'junk':
@@ -325,13 +330,13 @@ export class PondGame {
     const coins = def.coins * rewardMult(s);
     this.earn(coins);
     const egg = questEgg(s, index);
-    const eggStored = egg >= 0 && addEgg(s, egg, this.pond.id);
+    const eggStored = egg >= 0 && !!storeEgg(s, egg, this.pond.id);
     if (egg >= 0 && !eggStored) this.earn(eggCoins(egg, this.pond));
     return { coins, egg, eggStored };
   }
 
   /** Claims today's login gift. Eggs go to the overnight nest (incubator, then coins, if it is taken). */
-  claimDailyGift(): { coins: number; egg: number; where: 'nest' | 'incubator' | 'sold' | null } | null {
+  claimDailyGift(): { coins: number; egg: number; where: 'nest' | 'incubator' | 'basket' | 'sold' | null } | null {
     const s = this.s;
     const today = dayKey(new Date(this.now()));
     const st = dailyStatus(s.daily, today);
@@ -340,16 +345,24 @@ export class PondGame {
     s.daily = claimDaily(s.daily, today);
     const coins = r.coins * rewardMult(s);
     this.earn(coins);
-    let where: 'nest' | 'incubator' | 'sold' | null = null;
+    let where: 'nest' | 'incubator' | 'basket' | 'sold' | null = null;
     if (r.egg >= 0) {
       if (addNestEgg(s, r.egg, this.pond.id, 0.1)) where = 'nest';
-      else if (addEgg(s, r.egg, this.pond.id)) where = 'incubator';
       else {
+        const placed = storeEgg(s, r.egg, this.pond.id, 0.1);
+        if (placed) where = placed;
+      }
+      if (!where) {
         where = 'sold';
         this.earn(eggCoins(r.egg, this.pond));
       }
     }
     return { coins, egg: r.egg, where };
+  }
+
+  /** Puts the chosen basket egg into a free incubator slot. */
+  incubate(basketIndex: number, slot = -1) {
+    return incubateFromBasket(this.s, basketIndex, slot);
   }
 
   /** Rewarded ad: the egg is ready now. */
@@ -410,7 +423,7 @@ export class PondGame {
     const s = this.s;
     const pond = this.pond;
     if (!s.bosses.includes(pond.boss.id)) s.bosses.push(pond.boss.id);
-    const stored = addEgg(s, 3, pond.id);
+    const stored = !!storeEgg(s, 3, pond.id);
     const prize = 250 * pond.priceMult;
     const coins = (stored ? 0 : eggCoins(3, pond)) + prize;
     this.earn(coins);
@@ -482,7 +495,7 @@ export class PondGame {
   mysteryEgg() {
     const tier = Math.min(4, [0, 0, 1, 1, 1, 2, 2, 3][this.rng.int(0, 7)]);
     this.s.ads.mysteryAt = this.now();
-    return { tier, stored: addEgg(this.s, tier, this.pond.id) };
+    return { tier, stored: !!storeEgg(this.s, tier, this.pond.id) };
   }
 
   /** Rewarded: luck x2 for five minutes. */

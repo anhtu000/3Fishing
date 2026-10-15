@@ -13,7 +13,7 @@ import { bossName, duration, pondName, t } from '../i18n/t';
 import { save } from '../save';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
-import { dailyPanel, dexPanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
+import { basketPanel, dailyPanel, dexPanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
 import { Rig } from '../world/Rig';
@@ -107,6 +107,7 @@ export class PlayScene extends BaseScene {
       },
       boss: () => this.startBoss(),
       egg: (i) => this.tapEgg(i),
+      basket: () => this.open(() => basketPanel(this, this.ctx)),
       sound: () => this.openPause(),
     });
     this.hud.setSoundIcon(app.audio.muted);
@@ -286,7 +287,7 @@ export class PlayScene extends BaseScene {
         from,
         coinTo: this.hud.coinTarget(),
         gemTo: this.hud.gemTarget(),
-        eggTo: this.hud.eggTarget(),
+        eggTo: res.eggWhere === 'basket' ? this.hud.basketTarget() : this.hud.eggTarget(),
         onCoins: () => this.coinArrive(),
         onGems: () => {
           this.hud.bumpGems();
@@ -359,7 +360,11 @@ export class PlayScene extends BaseScene {
 
   private tapEgg(i: number) {
     const egg = this.s.eggs[i];
-    if (!egg) return;
+    // Empty slot: choose an egg from the basket.
+    if (!egg) {
+      if (this.s.basket.length && i < this.s.incubatorSlots) this.open(() => basketPanel(this, this.ctx, i));
+      return;
+    }
     if (egg.left <= 0) this.doHatch(i);
     else this.open(() => incubatorPanel(this, this.ctx, i, (done) => this.watchAd(done)));
   }

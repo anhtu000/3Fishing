@@ -192,7 +192,7 @@
   },
   "catch": {
     "intoIncubator": "Direction l'incubateur !",
-    "sold": "Incubateur plein : vendu",
+    "sold": "Panier plein : vendu",
     "chest": "Coffre au trésor",
     "junkLabel": "DÉCHET",
     "treasureLabel": "TRÉSOR",
@@ -205,7 +205,8 @@
     "junk3": "L'étang te dit merci.",
     "junk4": "Un chat peut rêver.",
     "wanted": "RECHERCHÉ !",
-    "today": "POISSON DU JOUR !"
+    "today": "POISSON DU JOUR !",
+    "intoBasket": "Dans le panier !"
   },
   "hatch": {
     "shinyNew": "NOUVEL ANIMAL BRILLANT !",
@@ -307,5 +308,11 @@
   "today": {
     "label": "POISSON DU JOUR",
     "reward": "x5 + œuf"
+  },
+  "basket": {
+    "title": "Panier d'œufs",
+    "empty": "Aucun œuf dans le panier. Les œufs attendent ici quand l'incubateur est plein.",
+    "tip": "Touche un œuf pour le mettre dans l'incubateur.",
+    "full": "L'incubateur est plein. Fais éclore un œuf ou ajoute une place !"
   }
 }

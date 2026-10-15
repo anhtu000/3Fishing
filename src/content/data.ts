@@ -222,6 +222,9 @@ export const STREAK = [
  * Each reward is gated by the game state instead (golden bait while it is not active, a mystery egg
  * while an incubator slot is free).
  */
+/** Egg basket: eggs wait here when the incubator is full. Past this many they sell for coins. */
+export const BASKET_MAX = 12;
+
 /** The overnight nest: one extra egg slot for special eggs that hatch over hours, so there is a reason to come back. */
 export const NEST_INDEX = 4;
 export const NEST_SEC = 6 * 3600;

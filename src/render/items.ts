@@ -182,6 +182,18 @@ const ICONS: Record<string, Art> = {
   i_up: { w: 96, h: 96, body: () => path('M48,10 L84,48 L62,48 L62,86 L34,86 L34,48 L12,48 Z', '#5fd38d') },
   i_egg: { w: 96, h: 96, body: () => path('M48,8 C70,8 82,44 82,62 C82,80 68,90 48,90 C28,90 14,80 14,62 C14,44 26,8 48,8 Z', '#fff3d6') + circle(36, 46, 6, '#8fcf7a', false) + circle(58, 64, 8, '#8fcf7a', false) + circle(62, 34, 5, '#8fcf7a', false) },
   i_gift: { w: 96, h: 96, body: () => path('M14,40 L82,40 L82,56 L14,56 Z', '#ff6b8f') + path('M20,56 L76,56 L76,86 L20,86 Z', '#ff8fab') + path('M42,40 L54,40 L54,86 L42,86 Z', '#ffd23f') + path('M48,40 C34,20 20,30 30,40 Z', '#ffd23f') + path('M48,40 C62,20 76,30 66,40 Z', '#ffd23f') },
+  // Woven basket with two eggs peeking out.
+  i_basket: {
+    w: 96,
+    h: 96,
+    body: () =>
+      line('M22,46 C22,14 74,14 74,46', '#b07a3c', 7) +
+      path('M32,44 C32,26 52,24 54,44 Z', '#fff3d6') +
+      path('M50,44 C50,22 72,24 70,44 Z', '#cfe9ff') +
+      path('M10,44 L86,44 L76,86 L20,86 Z', '#d9a35c') +
+      line('M14,58 L82,58 M17,72 L79,72', '#b07a3c', 4) +
+      line('M34,44 L36,86 M48,44 L48,86 M62,44 L60,86', '#b07a3c', 3),
+  },
   i_star: { w: 96, h: 96, body: () => path('M48,8 L59,34 L88,36 L65,54 L73,84 L48,67 L23,84 L31,54 L8,36 L37,34 Z', '#ffd23f') },
   i_lock: { w: 96, h: 96, body: () => line('M30,42 L30,30 C30,10 66,10 66,30 L66,42', OUTLINE, 9) + line('M30,42 L30,30 C30,10 66,10 66,30 L66,42', '#b9b4c9', 4) + path('M20,40 L76,40 L76,86 L20,86 Z', '#ffcf3a') + circle(48, 60, 6, OUTLINE, false) + flat('M45,62 L51,62 L50,74 L46,74 Z', OUTLINE) },
   i_clock: { w: 96, h: 96, body: () => circle(48, 48, 38, '#ffffff') + line('M48,48 L48,24 M48,48 L64,58', OUTLINE, 5) + circle(48, 48, 4, OUTLINE, false) },

@@ -192,7 +192,7 @@
   },
   "catch": {
     "intoIncubator": "Nell'incubatrice!",
-    "sold": "Incubatrice piena: venduto",
+    "sold": "Cesto pieno: venduto",
     "chest": "Forziere del tesoro",
     "junkLabel": "RIFIUTO",
     "treasureLabel": "TESORO",
@@ -205,7 +205,8 @@
     "junk3": "Il laghetto ti ringrazia.",
     "junk4": "Un gatto può sognare.",
     "wanted": "RICERCATO!",
-    "today": "PESCE DEL GIORNO!"
+    "today": "PESCE DEL GIORNO!",
+    "intoBasket": "Nel cesto!"
   },
   "hatch": {
     "shinyNew": "NUOVO AMICO SCINTILLANTE!",
@@ -307,5 +308,11 @@
   "today": {
     "label": "PESCE DEL GIORNO",
     "reward": "x5 + uovo"
+  },
+  "basket": {
+    "title": "Cesto delle uova",
+    "empty": "Nessun uovo nel cesto. Le uova aspettano qui quando l'incubatrice è piena.",
+    "tip": "Tocca un uovo per metterlo nell'incubatrice.",
+    "full": "L'incubatrice è piena. Schiudi un uovo o aggiungi un posto!"
   }
 }

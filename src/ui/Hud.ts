@@ -20,6 +20,7 @@ export interface HudActions {
   auto(): void;
   boss(): void;
   egg(i: number): void;
+  basket(): void;
   sound(): void;
 }
 
@@ -57,6 +58,10 @@ export class Hud {
   private goalShown = '';
   private portrait = true;
   private wDesign = 720;
+  private hDesign = 1280;
+  /** Egg basket: eggs waiting for a free incubator slot (count on the button). */
+  basket!: CButton;
+  private basketCount!: Phaser.GameObjects.Text;
   private chipText: Phaser.GameObjects.Text;
   private meter: Phaser.GameObjects.Container;
   private meterG: Phaser.GameObjects.Graphics;
@@ -100,6 +105,12 @@ export class Hud {
       btn.add([egg, time]);
       this.eggs.push({ btn, egg, time, tier: 0 });
     }
+    this.basket = new CButton(scene, 0, 0, { w: 96, h: 96, color: 0xf3dfb8, onClick: () => act.basket() });
+    const bIcon = art(scene, 0, -8, 'icon:i_basket');
+    bIcon.setScale(fitScale('icon:i_basket', 66));
+    this.basketCount = txt(scene, 0, 32, '', 26);
+    this.basket.add([bIcon, this.basketCount]);
+    this.basket.setVisible(false);
     this.chipText = txt(scene, 0, -3, '', 26);
     const chipBg = scene.add.graphics();
     this.chip = scene.add.container(0, 0, [chipBg, this.chipText]).setVisible(false);
@@ -140,7 +151,7 @@ export class Hud {
     this.goalBar = scene.add.graphics().setPosition(14, 16);
     this.goal = scene.add.container(0, 0, [goalBg, this.goalIcon, this.goalText, this.goalBar]).setVisible(false);
     this.root.add([this.wanted, this.goal]);
-    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.boss, ...this.eggs.map((e) => e.btn), this.chip]);
+    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.chip]);
     this.shownCoins = s.coins;
     this.coins.label.setText(fmt(s.coins));
   }
@@ -152,6 +163,11 @@ export class Hud {
   gemTarget() {
     return this.coinTarget();
   }
+  basketTarget() {
+    if (this.basket.visible) return { x: this.basket.x, y: this.basket.y };
+    return this.eggTarget();
+  }
+
   eggTarget() {
     const e = this.eggs.find((q) => q.btn.visible) ?? this.eggs[0];
     return { x: e.btn.x, y: e.btn.y };
@@ -188,6 +204,7 @@ export class Hud {
     [this.side.quests, this.side.golden, this.side.mystery, this.side.auto].forEach((b, i) => b.setPosition(sx, sy + i * step));
     this.portrait = portrait;
     this.wDesign = w;
+    this.hDesign = h;
     this.boss.setPosition(w / 2, portrait ? 292 : 252);
     this.placeStrip();
     this.chip.setPosition(w / 2, portrait ? 132 : 112);
@@ -225,9 +242,11 @@ export class Hud {
       if (nest) e.btn.setY(this.eggY0 + Math.min(row, s.incubatorSlots) * 116);
       else row++;
       if (!egg) {
+        // A free slot while the basket has eggs: "+" and a glow, tap to pick one.
+        const pick = !nest && s.basket.length > 0;
         e.egg.setAlpha(0.25);
-        e.time.setText(i === 0 ? '' : '');
-        e.btn.setGlow(false);
+        e.time.setText(pick ? '+' : '');
+        e.btn.setGlow(pick);
         return;
       }
       if (e.tier !== egg.tier || e.egg.alpha !== 1) {
@@ -247,6 +266,18 @@ export class Hud {
         e.btn.setGlow(false);
       }
     });
+    // Basket: under the last egg button; beside the top one when the column is full (landscape).
+    const nB = s.basket.length;
+    this.basket.setVisible(nB > 0);
+    if (nB > 0) {
+      const shown = this.eggs.filter((e) => e.btn.visible);
+      const below = (shown.length ? Math.max(...shown.map((e) => e.btn.y)) : this.eggY0 - 116) + 116;
+      if (below + 60 < this.hDesign - (this.portrait ? 170 : 140)) this.basket.setPosition(this.wDesign - 60, below);
+      else this.basket.setPosition(this.wDesign - 170, this.eggY0);
+      this.basketCount.setText(`${nB}`);
+      // Glow when a slot is free: pick an egg to incubate.
+      this.basket.setGlow(s.eggs.some((e, i) => i < s.incubatorSlots && !e));
+    }
     // Side buttons.
     const tutDone = s.tutorial.includes('done');
     this.side.quests.setVisible(s.quests.list.length > 0 && (tutDone || s.stats.playSec > 180)).setBadge(extra.questBadge);

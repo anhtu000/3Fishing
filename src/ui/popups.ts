@@ -76,7 +76,7 @@ function catchInfo(r: CatchResult) {
     case 'fish':
       return { key: `fish:${roll.fish.id}`, name: fishName(roll.fish.id), rarity: roll.fish.rarity, line: `${r.cm.toFixed(1)} cm`, size: 360 };
     case 'egg':
-      return { key: `egg:${roll.tier}`, name: eggName(roll.tier), rarity: roll.tier, line: r.eggStored ? t('catch.intoIncubator') : t('catch.sold'), size: 200 };
+      return { key: `egg:${roll.tier}`, name: eggName(roll.tier), rarity: roll.tier, line: r.eggWhere === 'basket' ? t('catch.intoBasket') : r.eggStored ? t('catch.intoIncubator') : t('catch.sold'), size: 200 };
     case 'junk':
       return { key: `item:${roll.item}`, name: junkName(roll.item), rarity: -1, line: t(`catch.junk${Math.floor(Math.random() * 5)}`), size: 170 };
     case 'chest':

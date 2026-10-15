@@ -192,7 +192,7 @@
   },
   "catch": {
     "intoIncubator": "Kuluçkaya gidiyor!",
-    "sold": "Kuluçka dolu: satıldı",
+    "sold": "Sepet dolu: satıldı",
     "chest": "Hazine sandığı",
     "junkLabel": "ÇÖP",
     "treasureLabel": "HAZİNE",
@@ -205,7 +205,8 @@
     "junk3": "Gölet sana teşekkür ediyor.",
     "junk4": "Bir kedi hayal kurabilir.",
     "wanted": "ARANIYOR!",
-    "today": "GÜNÜN BALIĞI!"
+    "today": "GÜNÜN BALIĞI!",
+    "intoBasket": "Sepete!"
   },
   "hatch": {
     "shinyNew": "YENİ PARLAK DOST!",
@@ -307,5 +308,11 @@
   "today": {
     "label": "GÜNÜN BALIĞI",
     "reward": "x5 + yumurta"
+  },
+  "basket": {
+    "title": "Yumurta sepeti",
+    "empty": "Sepette henüz yumurta yok. Kuluçka dolunca yumurtalar burada bekler.",
+    "tip": "Kuluçkaya koymak için bir yumurtaya dokun.",
+    "full": "Kuluçka dolu. Bir yumurtayı çatlat ya da yer ekle!"
   }
 }

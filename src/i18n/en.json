@@ -192,7 +192,7 @@
   },
   "catch": {
     "intoIncubator": "Into the incubator!",
-    "sold": "Incubator full: sold",
+    "sold": "Basket full: sold",
     "chest": "Treasure Chest",
     "junkLabel": "JUNK",
     "treasureLabel": "TREASURE",
@@ -205,7 +205,8 @@
     "junk3": "The pond says thank you.",
     "junk4": "A cat can dream.",
     "wanted": "WANTED!",
-    "today": "TODAY'S FISH!"
+    "today": "TODAY'S FISH!",
+    "intoBasket": "Into the basket!"
   },
   "hatch": {
     "shinyNew": "SHINY NEW PET!",
@@ -307,5 +308,11 @@
   "today": {
     "label": "TODAY'S FISH",
     "reward": "x5 + egg"
+  },
+  "basket": {
+    "title": "Egg basket",
+    "empty": "No eggs in the basket yet. Eggs wait here when the incubator is full.",
+    "tip": "Tap an egg to put it in the incubator.",
+    "full": "The incubator is full. Hatch an egg or add a slot!"
   }
 }

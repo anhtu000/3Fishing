@@ -148,3 +148,24 @@ test('offline income is capped at 8 hours', () => {
   assert.ok(g.offline(8 * 3600) > 0);
   assert.equal(g.offline(24 * 3600), g.offline(8 * 3600));
 });
+
+test('eggs wait in the basket when the incubator is full, the player picks which to incubate', () => {
+  const s = defaultSave();
+  const g = new PondGame(s, new Rng(1));
+  assert.equal(g.applyCatch({ kind: 'egg', tier: 0 }, false).eggWhere, 'incubator');
+  const r = g.applyCatch({ kind: 'egg', tier: 2 }, false);
+  assert.equal(r.eggWhere, 'basket');
+  assert.equal(r.coins, 0, 'kept, not sold');
+  g.applyCatch({ kind: 'egg', tier: 1 }, false);
+  assert.equal(s.basket.length, 2);
+  assert.equal(g.incubate(0), false, 'no free slot yet');
+  s.eggs[0] = null;
+  assert.equal(g.incubate(1), true, 'pick the second one');
+  assert.equal(s.eggs[0]!.tier, 1);
+  assert.deepEqual(s.basket.map((b) => b.tier), [2]);
+  // Full basket: sold for coins.
+  s.basket = Array.from({ length: 12 }, () => ({ tier: 0, pond: 'cozy' }));
+  const sold = g.applyCatch({ kind: 'egg', tier: 0 }, false);
+  assert.equal(sold.eggStored, false);
+  assert.ok(sold.coins > 0);
+});

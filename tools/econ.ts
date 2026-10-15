@@ -221,6 +221,12 @@ function runOne(p: Profile, seed: number) {
     f.reset();
     f.assist = false;
     // Between casts: the player reacts to what the HUD shows.
+    // A free slot and eggs in the basket: incubate the rarest.
+    while (s.basket.length && s.eggs.some((e, i) => i < s.incubatorSlots && !e)) {
+      const best = s.basket.reduce((bi, b, i) => (b.tier > s.basket[bi].tier ? i : bi), 0);
+      if (!game.incubate(best)) break;
+      pause += 1.5;
+    }
     const ready = readyEggIndex(s);
     if (ready >= 0) {
       const h = game.hatch(ready);

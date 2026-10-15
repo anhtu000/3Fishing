@@ -557,4 +557,77 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
   return panel;
 }
 
+/** Egg basket: pick which egg goes into a free incubator slot (slot -1: the first free one). */
+export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
+  const g = ctx.game;
+  const s = g.s;
+  const panel = new CPanel(scene, { title: t('basket.title'), w: 640, h: 900, color: COLORS.orange, onClose: () => ctx.refresh() });
+  const pw = panel.pw;
+  const free = () => s.eggs.some((e, i) => i < s.incubatorSlots && !e);
+  const sub = txt(scene, 0, panel.top + 50, '', 26, { color: DIM, stroke: false, weight: '500', wrap: pw - 80 });
+  panel.content.add(sub);
+  const cells: Phaser.GameObjects.GameObject[] = [];
+  const draw = () => {
+    cells.forEach((c) => c.destroy());
+    cells.length = 0;
+    sub.setText(s.basket.length === 0 ? t('basket.empty') : free() ? t('basket.tip') : t('basket.full'));
+    // Rarest first, so the best egg is the easy pick.
+    const order = s.basket.map((b, i) => ({ b, i })).sort((a, b) => b.b.tier - a.b.tier);
+    const cw = Math.min(136, (pw - 60) / 4 - 10);
+    order.forEach(({ b, i }, k) => {
+      const col = k % 4;
+      const row = Math.floor(k / 4);
+      const x = (col - 1.5) * (cw + 12);
+      const y = panel.top + 160 + row * 196;
+      const c = new CButton(scene, x, y, {
+        w: cw,
+        h: 180,
+        color: free() ? 0xfffdf6 : CREAM_DARK,
+        onClick: () => {
+          if (!g.incubate(i, slot >= 0 && !s.eggs[slot] ? slot : -1)) return note(scene, t('basket.full'));
+          app.audio.play('plop');
+          flyIcons(scene, `egg:${b.tier}`, panel.toScene(x, y), ctx.eggTo(), 1);
+          ctx.refresh();
+          if (!free() || s.basket.length === 0) panel.close();
+          else draw();
+        },
+      });
+      const egg = art(scene, 0, -26, `egg:${b.tier}`);
+      egg.setScale(fitScale(`egg:${b.tier}`, 82));
+      const name = fitText(txt(scene, 0, 40, eggName(b.tier), 20, { color: RARITY_CSS[b.tier] === '#7d8b99' ? DARK : RARITY_CSS[b.tier], stroke: false }), cw - 14);
+      const time = txt(scene, 0, 66, duration(HATCH_SEC[b.tier]), 20, { color: DIM, stroke: false, weight: '500' });
+      c.add([egg, name, time]);
+      if (b.shiny) {
+        const st = art(scene, cw / 2 - 22, -66, 'icon:i_star');
+        st.setScale(fitScale('icon:i_star', 30));
+        c.add(st);
+      }
+      panel.content.add(c);
+      cells.push(c);
+    });
+  };
+  draw();
+  const cost = g.incubatorSlotCost();
+  if (Number.isFinite(cost)) {
+    const b = new CButton(scene, 0, panel.bottom - 80, {
+      w: 380,
+      h: 80,
+      icon: 'item:coin',
+      iconSize: 38,
+      label: t('incubator.slot', { n: fmt(cost) }),
+      fontSize: 28,
+      color: COLORS.blue,
+      onClick: () => {
+        if (g.buyIncubatorSlot()) {
+          app.audio.play('buy');
+          ctx.refresh();
+          panel.close();
+        } else note(scene, t('msg.noCoins'));
+      },
+    });
+    panel.content.add(b);
+  }
+  return panel;
+}
+
 void fmt;

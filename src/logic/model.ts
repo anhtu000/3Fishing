@@ -12,6 +12,13 @@ export interface EggSlot {
   shiny?: number;
 }
 
+/** An egg waiting in the basket: the player picks which one goes into a free incubator slot. */
+export interface BasketEgg {
+  tier: number;
+  pond: string;
+  shiny?: number;
+}
+
 export interface PetState {
   level: number;
   /** Duplicates fed since the last level. */
@@ -39,6 +46,8 @@ export interface SaveData {
   teamSlots: number;
   incubatorSlots: number;
   eggs: (EggSlot | null)[];
+  /** Eggs caught while the incubator was full (up to BASKET_MAX). */
+  basket: BasketEgg[];
   stats: {
     casts: number;
     catches: number;
@@ -82,6 +91,7 @@ export function defaultSave(): SaveData {
     teamSlots: START_TEAM_SLOTS,
     incubatorSlots: 1,
     eggs: [null, null, null, null],
+    basket: [],
     stats: { casts: 0, catches: 0, fish: 0, perfect: 0, eggs: 0, hatched: 0, chests: 0, junk: 0, coinsEarned: 0, playSec: 0, snaps: 0 },
     tutorial: [],
     daily: { lastClaim: null, streak: 0 },

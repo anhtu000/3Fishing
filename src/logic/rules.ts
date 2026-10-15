@@ -4,6 +4,7 @@ import { pickWeighted, type Rng } from '../../core/rng';
 import {
   CATCH_WEIGHTS,
   FIGHT,
+  BASKET_MAX,
   HATCH_SEC,
   NEST_INDEX,
   NEST_SEC,
@@ -211,15 +212,39 @@ export function eggTime(tier: number) {
 }
 
 /** Puts an egg into the first free slot. False when every open slot is full. */
-export function addEgg(s: SaveData, tier: number, pond: string): boolean {
+export function addEgg(s: SaveData, tier: number, pond: string, shiny?: number): boolean {
   for (let i = 0; i < s.incubatorSlots; i++) {
     if (!s.eggs[i]) {
       const t = eggTime(tier);
-      s.eggs[i] = { tier, pond, left: t, total: t };
+      s.eggs[i] = { tier, pond, left: t, total: t, ...(shiny ? { shiny } : {}) };
       return true;
     }
   }
   return false;
+}
+
+export type EggPlace = 'incubator' | 'basket' | null;
+
+/** A new egg: into a free incubator slot, else the basket, else nowhere (null: the caller sells it). */
+export function storeEgg(s: SaveData, tier: number, pond: string, shiny?: number): EggPlace {
+  if (addEgg(s, tier, pond, shiny)) return 'incubator';
+  if (s.basket.length < BASKET_MAX) {
+    s.basket.push(shiny ? { tier, pond, shiny } : { tier, pond });
+    return 'basket';
+  }
+  return null;
+}
+
+/** Moves a basket egg into a free incubator slot (the given one, or the first free). */
+export function incubateFromBasket(s: SaveData, basketIndex: number, slot = -1): boolean {
+  const b = s.basket[basketIndex];
+  if (!b) return false;
+  const i = slot >= 0 ? slot : s.eggs.findIndex((e, k) => k < s.incubatorSlots && !e);
+  if (i < 0 || i >= s.incubatorSlots || s.eggs[i]) return false;
+  const t = eggTime(b.tier);
+  s.eggs[i] = { tier: b.tier, pond: b.pond, left: t, total: t, ...(b.shiny ? { shiny: b.shiny } : {}) };
+  s.basket.splice(basketIndex, 1);
+  return true;
 }
 
 export function hasFreeEggSlot(s: SaveData) {
