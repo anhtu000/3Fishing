@@ -61,7 +61,9 @@
     "todayFish": "Fisch des Tages: {fish} ({pond})! x5 Münzen und ein besonderes Ei",
     "nestEgg": "Besonderes Ei im Nest! Schlüpft in {t}",
     "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen",
-    "lateUnlock": "Neue Ziele: Medaillen im Fischdex, Boss-Revanchen mit Sternen und der Kleiderschrank bei Verbessern!"
+    "lateUnlock": "Neue Ziele: Medaillen im Fischdex, Boss-Revanchen mit Sternen und der Kleiderschrank bei Verbessern!",
+    "slip": "Er hat sich losgerissen!",
+    "bossHeal": "Zu früh! Der Boss heilt sich"
   },
   "tut": {
     "cast": "Halten... dann loslassen!",
@@ -330,7 +332,8 @@
     "gotHat": "Neuer Hut! Die Katze trägt ihn schon.",
     "gotCaptain": "15 Boss-Sterne: Kapitänsmütze freigeschaltet!",
     "fromDaily3": "Dieser Hut ist das Geschenk von Tag 3.",
-    "fromStars15": "Sammle insgesamt 15 Boss-Sterne für diesen Hut."
+    "fromStars15": "Sammle insgesamt 15 Boss-Sterne für diesen Hut.",
+    "baits": "Köder"
   },
   "rematch": {
     "fight": "Revanche ★{n}",
@@ -347,5 +350,11 @@
     "pondGold": "{pond}: alle Fische in Gold! Fische hier bringen +10 %",
     "pondGoldOn": "Goldteich: Fische +10 %",
     "pondGoldHint": "Gold für jeden Fisch: +10 % hier"
+  },
+  "lure": {
+    "how": "Fange hier {n} Fische, um {boss} zurückzulocken.",
+    "ok": "OK",
+    "goal": "{boss} locken: {n}/{max} Fische",
+    "done": "{boss} ist zurück! Tippe auf BOSS!"
   }
 }

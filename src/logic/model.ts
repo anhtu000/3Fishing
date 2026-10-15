@@ -76,12 +76,14 @@ export interface SaveData {
    * from the ponds open then, so travelling or opening a new pond does not change it.
    */
   todayFish: { day: string; pond: string; fish: string; caught: boolean };
+  /** After a lost boss fight: catch this many fish in that pond to lure the boss back. */
+  bossLure: { boss: string; need: number; have: number } | null;
   /** Rematch: best star cleared per boss id. */
   bossStars: Record<string, number>;
   /** Rematch tickets used today (a win uses one). */
   tickets: { day: string; used: number };
   /** Wardrobe: what the cat wears and what is owned. */
-  style: { hat: string; rod: string; bobber: string; owned: string[] };
+  style: { hat: string; rod: string; bobber: string; bait?: string; owned: string[] };
   /** Seed state for gameplay rolls, so a reload cannot re-roll a result. */
   rng: number;
 }
@@ -111,9 +113,10 @@ export function defaultSave(): SaveData {
     bounty: null,
     bountyIn: 8,
     todayFish: { day: '', pond: '', fish: '', caught: false },
+    bossLure: null,
     bossStars: {},
     tickets: { day: '', used: 0 },
-    style: { hat: 'hat:rain', rod: 'rod:classic', bobber: 'bobber:classic', owned: ['hat:rain', 'rod:classic', 'bobber:classic'] },
+    style: { hat: 'hat:rain', rod: 'rod:classic', bobber: 'bobber:classic', bait: 'bait:worm', owned: ['hat:rain', 'rod:classic', 'bobber:classic', 'bait:worm'] },
     rng: 0,
   };
 }

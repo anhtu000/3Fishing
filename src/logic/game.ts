@@ -2,7 +2,7 @@
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
 import { claimDaily, dailyStatus, dayKey } from '../../core/time';
-import { AD, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { AD, BOSS_LURE, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
@@ -25,6 +25,7 @@ import {
   petForEgg,
   medalOf,
   pondGold,
+  lurePending,
   questEgg,
   questProgress,
   refreshQuests,
@@ -72,6 +73,8 @@ export interface CatchResult {
   giant: boolean;
   /** This catch completed the pond (every species at gold). */
   pondGold: boolean;
+  /** The lost boss is lured back (it can be fought again). */
+  lured: boolean;
 }
 
 /** Bonus per perfect hook in a row, capped. */
@@ -188,7 +191,7 @@ export class PondGame {
   applyCatch(roll: CatchRoll, perfect: boolean): CatchResult {
     const s = this.s;
     const pond = this.pond;
-    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false, medal: 0, giant: false, pondGold: false };
+    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false, medal: 0, giant: false, pondGold: false, lured: false };
     s.stats.catches += 1;
     this.streak = perfect ? this.streak + 1 : 0;
     res.streak = this.streak;
@@ -236,6 +239,11 @@ export class PondGame {
           res.nestEgg = addNestEgg(s, tier, pond.id, TODAY_FISH.shiny);
           // Nest taken (a daily-gift egg): the incubator or basket, then coins.
           if (!res.nestEgg && !storeEgg(s, tier, pond.id, TODAY_FISH.shiny)) res.coins += eggCoins(3, pond);
+        }
+        // Luring a boss back after a lost fight: any fish in its pond counts.
+        if (s.bossLure && s.bossLure.boss === pond.boss.id && s.bossLure.have < s.bossLure.need) {
+          s.bossLure.have += 1;
+          if (s.bossLure.have >= s.bossLure.need) res.lured = true;
         }
         res.giant = roll.size >= GIANT_SIZE;
         if (this.lateGame) {
@@ -417,6 +425,17 @@ export class PondGame {
     return Math.max(0, BOSS_STARS.ticketsPerDay - this.s.tickets.used);
   }
 
+  /** A boss fight was lost: catch some fish in this pond before it comes back. */
+  loseBoss() {
+    const i = Math.max(0, PONDS.indexOf(this.pond));
+    this.s.bossLure = { boss: this.pond.boss.id, need: BOSS_LURE[i] ?? 8, have: 0 };
+  }
+
+  /** Lure task for this pond's boss, if one is pending. */
+  get lure() {
+    return lurePending(this.s, this.pond) ? this.s.bossLure : null;
+  }
+
   /** The star the next rematch of this pond's boss is fought at (null: not open). */
   rematchStar(pond = this.pond): number | null {
     if (!this.lateGame || !this.s.bosses.includes(pond.boss.id)) return null;
@@ -449,7 +468,9 @@ export class PondGame {
   // ---------- wardrobe ----------
 
   owns(id: string) {
-    return this.s.style.owned.includes(id);
+    const c = cosmeticById.get(id);
+    // Free defaults count as owned (older saves never listed the default bait).
+    return this.s.style.owned.includes(id) || (!!c && c.price === 0 && !c.source);
   }
 
   /** Gives a cosmetic and wears it (exclusives and gifts). False if already owned. */

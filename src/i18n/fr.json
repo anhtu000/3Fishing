@@ -61,7 +61,9 @@
     "todayFish": "Poisson du jour : {fish} ({pond}) ! x5 pièces et un œuf spécial",
     "nestEgg": "Œuf spécial dans le nid ! Éclot dans {t}",
     "todayDone": "Poisson du jour attrapé ! Un nouveau demain",
-    "lateUnlock": "Nouveaux objectifs : médailles dans le Poissodex, revanches de boss avec étoiles et garde-robe dans Améliorer !"
+    "lateUnlock": "Nouveaux objectifs : médailles dans le Poissodex, revanches de boss avec étoiles et garde-robe dans Améliorer !",
+    "slip": "Il s'est décroché !",
+    "bossHeal": "Trop tôt ! Le boss se soigne"
   },
   "tut": {
     "cast": "Maintiens... puis lâche !",
@@ -330,7 +332,8 @@
     "gotHat": "Nouveau chapeau ! Le chat le porte déjà.",
     "gotCaptain": "15 étoiles de boss : chapeau de capitaine débloqué !",
     "fromDaily3": "Ce chapeau est le cadeau du jour 3.",
-    "fromStars15": "Gagne 15 étoiles de boss au total pour ce chapeau."
+    "fromStars15": "Gagne 15 étoiles de boss au total pour ce chapeau.",
+    "baits": "Appâts"
   },
   "rematch": {
     "fight": "Revanche ★{n}",
@@ -347,5 +350,11 @@
     "pondGold": "{pond} : tous les poissons en or ! Ils se vendent +10 % ici",
     "pondGoldOn": "Étang en or : poissons +10 %",
     "pondGoldHint": "Médaille d'or pour chaque poisson : +10 % ici"
+  },
+  "lure": {
+    "how": "Pêche {n} poissons ici pour faire revenir {boss}.",
+    "ok": "OK",
+    "goal": "Attirer {boss} : {n}/{max} poissons",
+    "done": "{boss} est de retour ! Touche BOSS !"
   }
 }

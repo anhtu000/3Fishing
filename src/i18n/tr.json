@@ -61,7 +61,9 @@
     "todayFish": "Günün balığı: {fish} ({pond})! x5 altın ve özel yumurta",
     "nestEgg": "Yuvada özel yumurta! {t} sonra çıkar",
     "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir",
-    "lateUnlock": "Yeni hedefler: Balıkdex'te madalyalar, yıldızlı boss rövanşları ve Geliştir'de gardırop!"
+    "lateUnlock": "Yeni hedefler: Balıkdex'te madalyalar, yıldızlı boss rövanşları ve Geliştir'de gardırop!",
+    "slip": "Oltadan kurtuldu!",
+    "bossHeal": "Çok erken! Boss iyileşiyor"
   },
   "tut": {
     "cast": "Basılı tut... sonra bırak!",
@@ -330,7 +332,8 @@
     "gotHat": "Yeni şapka! Kedi şimdiden takıyor.",
     "gotCaptain": "15 boss yıldızı: kaptan şapkası açıldı!",
     "fromDaily3": "Bu şapka 3. günün hediyesi.",
-    "fromStars15": "Bu şapka için toplam 15 boss yıldızı topla."
+    "fromStars15": "Bu şapka için toplam 15 boss yıldızı topla.",
+    "baits": "Yemler"
   },
   "rematch": {
     "fight": "Rövanş ★{n}",
@@ -347,5 +350,11 @@
     "pondGold": "{pond}: tüm balıklar altın! Burada balıklar %10 fazla değerli",
     "pondGoldOn": "Altın göl: balıklar +%10",
     "pondGoldHint": "Her balığa altın madalya: burada +%10"
+  },
+  "lure": {
+    "how": "{boss} geri gelsin diye burada {n} balık yakala.",
+    "ok": "Tamam",
+    "goal": "{boss} için yem: {n}/{max} balık",
+    "done": "{boss} geri döndü! BOSS'a dokun!"
   }
 }

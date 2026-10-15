@@ -101,7 +101,8 @@ export class Rig {
   }
 
   /** What the cat wears: hat, rod and bobber ids from the wardrobe. */
-  setStyle(hat: string, rod: [number, number], bobber: string) {
+  setStyle(hat: string, rod: [number, number], bobber: string, bait = 'item:worm') {
+    setArt(this.worm, bait, 0.5);
     setArt(this.hat, hat, CAT_K);
     this.drawRod(rod[0], rod[1]);
     this.bobberKey = bobber === 'bobber:classic' ? 'item:bobber' : `item:${bobber}`;

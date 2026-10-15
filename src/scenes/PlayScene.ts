@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { BOSS_STARS, PONDS, cosmeticById, petById, pondById } from '../content/data';
+import { BOSS_LURE, BOSS_STARS, PONDS, baitKey, cosmeticById, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
@@ -130,6 +130,13 @@ export class PlayScene extends BaseScene {
           say(this, this.vp.width / 2, this.pond.L.water - 120, t('msg.again'), '#ffe066', 34);
         },
         hook: (perfect) => this.onHook(perfect),
+        slip: () => (this.slipped = true),
+        bossHeal: () => {
+          // A press at the wrong moment: the boss gets health back.
+          this.hud.drawBoss(this.bossLabel(), 1 - Math.max(0, this.fishing.progress), this.fishing.bossPhase);
+          say(this, this.vp.width / 2, this.vp.height * 0.2, t('msg.bossHeal'), '#7dffb0', 34);
+          app.audio.play('nope', { volume: 0.6 });
+        },
         surgeWarn: () => {
           this.rig.warn();
           app.audio.play('nibble', { volume: 0.8, pitchJitter: 60 });
@@ -303,6 +310,10 @@ export class PlayScene extends BaseScene {
       const after = () => {
         this.fishing.reset();
         this.afterCatch(res.roll);
+        if (res.lured) {
+          note(this, t('lure.done', { boss: bossName(this.pond.pond.boss.id) }), 3000);
+          app.audio.play('boss');
+        }
         // Medals (late game): a new medal, a gold pond.
         if (res.pondGold) {
           note(this, t('medal.pondGold', { pond: pondName(this.pond.pond.id) }), 3600);
@@ -341,7 +352,8 @@ export class PlayScene extends BaseScene {
       return;
     }
     this.pg.breakStreak();
-    const msg: Record<string, string> = { early: t('msg.early'), missed: t('msg.missed'), snap: t('msg.snap'), escape: t('msg.escape') };
+    const msg: Record<string, string> = { early: t('msg.early'), missed: t('msg.missed'), snap: t('msg.snap'), escape: t(this.slipped ? 'msg.slip' : 'msg.escape') };
+    this.slipped = false;
     say(this, this.vp.width / 2, this.pond.L.water - 120, msg[o] ?? '', '#ffffff', 36);
     app.audio.play(o === 'snap' ? 'snap' : 'miss');
     if (o === 'snap') {
@@ -518,7 +530,7 @@ export class PlayScene extends BaseScene {
   /** Wardrobe: hat, rod colours and bobber on the cat. */
   private applyStyle() {
     const st = this.s.style;
-    this.rig.setStyle(st.hat, cosmeticById.get(st.rod)?.colors ?? [0xc98a4b, 0x8d5a2b], st.bobber);
+    this.rig.setStyle(st.hat, cosmeticById.get(st.rod)?.colors ?? [0xc98a4b, 0x8d5a2b], st.bobber, baitKey(st.bait ?? 'bait:worm'));
   }
 
   private refresh() {
@@ -649,11 +661,13 @@ export class PlayScene extends BaseScene {
 
   /** Star of the rematch in progress (0: the first fight with the pond's boss). */
   private rematchStar = 0;
+  /** The last fish shook off the hook (for the message). */
+  private slipped = false;
 
   private startBoss(rematch = false) {
     if (this.fishing.busy) return;
     const star = rematch ? this.pg.rematchStar() : null;
-    if (rematch ? star === null || this.pg.ticketsLeft <= 0 : !this.pg.bossReady) return;
+    if (rematch ? star === null || this.pg.ticketsLeft <= 0 || !!this.pg.lure : !this.pg.bossReady) return;
     this.rematchStar = star ?? 0;
     if (!rematch) this.completeStep('boss');
     const boss = this.pond.pond.boss;
@@ -784,7 +798,7 @@ export class PlayScene extends BaseScene {
       layer.add([head, sub, egg, eggT, gem, gemT, tip, btn]);
       return;
     }
-    // Lost: continue once with an ad (keeps progress), or try again for free.
+    // Lost: continue once with an ad (keeps progress), or lure the boss back with a few catches.
     const progress = this.fishing.progress;
     this.rig.lose();
     app.audio.play('snap');
@@ -823,33 +837,20 @@ export class PlayScene extends BaseScene {
         }),
       );
     }
+    // No free retry: the boss swims off and comes back after a few more catches in this pond.
+    const lureN = BOSS_LURE[Math.max(0, PONDS.indexOf(this.pond.pond))] ?? 8;
+    p.content.add(txt(this, 0, p.top + 330, t('lure.how', { n: lureN, boss: bossName(boss.id) }), 26, { color: '#c0392b', stroke: false, wrap: 520 }));
     p.content.add(
       new CButton(this, 0, p.bottom - (revive ? 300 : 190), {
         w: 400,
         h: 96,
-        label: t('boss.tryAgain'),
+        label: t('lure.ok'),
         fontSize: 36,
         color: COLORS.orange,
-        onClick: async () => {
-          done();
-          this.fishing.reset();
-          this.rig.clear();
-          // Death and restart: gameplayStop, commercial break, gameplayStart.
-          await this.breakPoint();
-          app.gameplay.start();
-          this.startBoss(this.rematchStar > 0);
-        },
-      }),
-    );
-    p.content.add(
-      new CButton(this, 0, p.bottom - 50, {
-        w: 260,
-        h: 70,
-        label: t('boss.later'),
-        fontSize: 28,
-        color: COLORS.grey,
         onClick: () => {
           done();
+          this.pg.loseBoss();
+          this.rematchStar = 0;
           this.fishing.reset();
           this.rig.clear();
           this.refresh();
@@ -876,6 +877,9 @@ export class PlayScene extends BaseScene {
   /** Tutorial lines: short, with the hand doing the showing (Poki: visual, not text-heavy). */
   /** The goal tracker under the coin counter (see PondGame.nextGoal). */
   private goalView(): { icon: string; text: string; progress: number } | null {
+    // A lost boss to lure back comes first.
+    const lure = this.pg.lure;
+    if (lure) return { icon: 'icon:i_crown', text: t('lure.goal', { boss: bossName(lure.boss), n: lure.have, max: lure.need }), progress: lure.have / lure.need };
     const g = this.pg.nextGoal();
     if (!g || !this.s.tutorial.includes('done')) return null;
     switch (g.kind) {

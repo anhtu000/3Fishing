@@ -61,7 +61,9 @@
     "todayFish": "Today's fish: {fish} in {pond}! x5 coins and a special egg",
     "nestEgg": "Special egg in the nest! Hatches in {t}",
     "todayDone": "Today's fish caught! A new one tomorrow",
-    "lateUnlock": "New goals: medals in the Fishdex, boss rematches with stars, and the wardrobe in Upgrades!"
+    "lateUnlock": "New goals: medals in the Fishdex, boss rematches with stars, and the wardrobe in Upgrades!",
+    "slip": "It shook off the hook!",
+    "bossHeal": "Too soon! The boss heals"
   },
   "tut": {
     "cast": "Hold... then let go!",
@@ -330,7 +332,8 @@
     "gotHat": "New hat! The cat is wearing it now.",
     "gotCaptain": "15 boss stars: Captain's hat unlocked!",
     "fromDaily3": "This hat is the day-3 login gift.",
-    "fromStars15": "Earn 15 boss stars in total for this hat."
+    "fromStars15": "Earn 15 boss stars in total for this hat.",
+    "baits": "Baits"
   },
   "rematch": {
     "fight": "Rematch ★{n}",
@@ -347,5 +350,11 @@
     "pondGold": "{pond}: every fish is gold! Fish here sell for +10%",
     "pondGoldOn": "Gold pond: fish +10%",
     "pondGoldHint": "Gold medals for every fish: +10% here"
+  },
+  "lure": {
+    "how": "Catch {n} fish here to lure {boss} back.",
+    "ok": "OK",
+    "goal": "Lure {boss}: {n}/{max} fish",
+    "done": "{boss} is back! Tap BOSS!"
   }
 }

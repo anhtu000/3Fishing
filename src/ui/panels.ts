@@ -1,7 +1,7 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { BOSS_STARS, COSMETICS, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
+import { BOSS_STARS, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
 import { dexCount, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
@@ -323,7 +323,11 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     });
     // Rematch (late game, boss beaten, in this pond): next star, 3 winning tickets a day.
     const star = g.rematchStar(pond);
-    if (star !== null && pond.id === s.pond) {
+    // A lost boss must be lured back first (a few catches in this pond).
+    const lure = pond.id === s.pond ? g.lure : null;
+    if (lure && (star !== null || (!beaten && n >= pond.bossAt))) {
+      page.add(txt(scene, 0, panel.bottom - 70, t('lure.goal', { boss: bn, n: lure.have, max: lure.need }), 28, { color: '#c0392b', stroke: false, wrap: pw - 80 }));
+    } else if (star !== null && pond.id === s.pond) {
       const left = g.ticketsLeft;
       const b = new CButton(scene, 0, panel.bottom - 84, {
         w: 400,
@@ -342,7 +346,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
       page.add(b);
       page.add(txt(scene, 0, panel.bottom - 26, t('rematch.tickets', { n: left, max: BOSS_STARS.ticketsPerDay }), 22, { color: DIM, stroke: false, weight: '500' }));
     }
-    if (!beaten && n >= pond.bossAt && pond.id === s.pond) {
+    if (!lure && !beaten && n >= pond.bossAt && pond.id === s.pond) {
       const b = new CButton(scene, 0, panel.bottom - 70, {
         w: 340,
         h: 90,
@@ -706,7 +710,7 @@ export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
 export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const g = ctx.game;
   const s = g.s;
-  const panel = new CPanel(scene, { title: t('wardrobe.title'), w: 660, h: 1060, color: COLORS.purple, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('wardrobe.title'), w: 660, h: 1290, color: COLORS.purple, onClose: () => ctx.refresh() });
   const pw = panel.pw;
   const tw = Math.min(112, (pw - 70) / 5 - 8);
   const coinsLine = txt(scene, 0, panel.bottom - 44, '', 28, { color: DARK, stroke: false });
@@ -747,6 +751,10 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
         gr.lineStyle(8, handle, 1).lineBetween(-34, 30, -16, 9);
         gr.fillStyle(INK, 1).fillCircle(-24, 18, 10).fillStyle(0x5b6178, 1).fillCircle(-24, 18, 7);
         tile.add(gr);
+      } else if (kind === 'bait') {
+        const b = art(scene, 0, -12, baitKey(c.id));
+        b.setScale(fitScale(baitKey(c.id), 70));
+        tile.add(b);
       } else {
         const key = c.id === 'bobber:classic' ? 'item:bobber' : `item:${c.id}`;
         const b = art(scene, 0, -12, key);
@@ -761,7 +769,7 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
       tile.add(frame);
       tiles.push(() => {
         const owned = g.owns(c.id);
-        const worn = s.style[kind] === c.id;
+        const worn = (s.style[kind] ?? 'bait:worm') === c.id;
         frame.clear();
         if (worn) frame.lineStyle(6, 0x5fd38d, 1).strokeRoundedRect(-tw / 2 + 4, -74, tw - 8, 148, 18);
         coin.setVisible(!owned && !c.source);
@@ -782,6 +790,7 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
   section('hat', t('wardrobe.hats'), panel.top + 40);
   section('rod', t('wardrobe.rods'), panel.top + 440);
   section('bobber', t('wardrobe.bobbers'), panel.top + 670);
+  section('bait', t('wardrobe.baits'), panel.top + 900);
   const refreshAll = () => {
     tiles.forEach((r) => r());
     coinsLine.setText(t('upg.have', { n: fmt(s.coins) }));

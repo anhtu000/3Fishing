@@ -309,7 +309,12 @@ export function dexCount(s: SaveData, pond: PondDef) {
 }
 
 export function bossReady(s: SaveData, pond: PondDef) {
-  return !s.bosses.includes(pond.boss.id) && dexCount(s, pond) >= pond.bossAt;
+  return !s.bosses.includes(pond.boss.id) && dexCount(s, pond) >= pond.bossAt && !lurePending(s, pond);
+}
+
+/** The boss of this pond got away and has not been lured back yet. */
+export function lurePending(s: SaveData, pond: PondDef) {
+  return !!s.bossLure && s.bossLure.boss === pond.boss.id && s.bossLure.have < s.bossLure.need;
 }
 
 // ---------- medals ----------

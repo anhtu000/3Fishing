@@ -143,6 +143,42 @@ const ART: Record<string, Art> = {
     h: 60,
     body: () => line('M12,30 C12,14 30,14 30,30 C30,46 48,46 48,30', '#ff8fa8', 12) + line('M12,30 C12,14 30,14 30,30 C30,46 48,46 48,30', '#ffb3c4', 5) + circle(48, 28, 2.5, OUTLINE, false),
   },
+  // Wardrobe baits (same 60 x 60 box as the worm).
+  bait_shrimp: {
+    w: 60,
+    h: 60,
+    body: () =>
+      path('M14,34 C12,18 30,10 44,16 C52,20 52,30 46,34 C40,40 28,44 20,42 Z', '#ff9f80') +
+      line('M22,22 C26,30 26,36 22,40 M30,18 C34,26 34,34 30,40 M38,18 C41,24 41,30 38,36', '#e0705a', 2.5) +
+      path('M14,34 L4,30 L6,42 Z', '#ff9f80', 'stroke-width="2.5"') +
+      circle(44, 22, 2.5, OUTLINE, false) + line('M48,18 Q58,8 56,4 M46,16 Q52,4 48,2', '#e0705a', 2),
+  },
+  bait_fly: {
+    w: 60,
+    h: 60,
+    body: () =>
+      path('M18,30 C18,22 42,22 42,30 C42,38 18,38 18,30 Z', '#3b3346') +
+      path('M22,26 C14,8 30,6 32,24 Z', '#bfe8ff', 'opacity="0.9" stroke-width="2.5"') +
+      path('M38,26 C46,8 30,6 28,24 Z', '#bfe8ff', 'opacity="0.9" stroke-width="2.5"') +
+      line('M24,30 L36,30', '#ffd23f', 3) + path('M42,30 L54,24 L52,36 Z', '#ff6b6b', 'stroke-width="2.5"'),
+  },
+  bait_cricket: {
+    w: 60,
+    h: 60,
+    body: () =>
+      path('M12,34 C12,24 40,22 46,30 C50,36 40,42 26,42 C18,42 12,40 12,34 Z', '#7fcf5a') +
+      line('M20,40 L14,52 M30,42 L28,54 M36,40 L46,52', '#4f9a3a', 3) +
+      circle(46, 30, 7, '#8fdc6a') + circle(48, 28, 2, OUTLINE, false) + line('M50,24 Q58,10 56,6 M48,23 Q50,10 46,6', '#4f9a3a', 2),
+  },
+  bait_goldworm: {
+    w: 60,
+    h: 60,
+    body: () =>
+      line('M12,30 C12,14 30,14 30,30 C30,46 48,46 48,30', '#e0a81c', 12) +
+      line('M12,30 C12,14 30,14 30,30 C30,46 48,46 48,30', '#ffe36e', 5) +
+      circle(48, 28, 2.5, OUTLINE, false) +
+      flat('M52,10 L54,16 L60,18 L54,20 L52,26 L50,20 L44,18 L50,16 Z', '#ffffff'),
+  },
   sparkle: {
     w: 64,
     h: 64,

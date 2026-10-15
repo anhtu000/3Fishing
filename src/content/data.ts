@@ -193,7 +193,8 @@ export const JUNK_LINES = [
 
 /** Coin prices for extra slots. One currency only (Poki: dual currencies confuse web players). */
 export const INCUBATOR_SLOT_COST = [0, 10000, 40000, 150000];
-export const TEAM_SLOT_COST = [0, 0, 0, 500, 2500];
+// Team slots 4 and 5: big late-game buys (slot 4 about 25k, slot 5 far more).
+export const TEAM_SLOT_COST = [0, 0, 0, 25000, 150000];
 export const START_TEAM_SLOTS = 3;
 
 export interface QuestDef {
@@ -233,6 +234,9 @@ export const STREAK: { coins: number; egg: number; hat?: string; pet?: string }[
 /** Medals, boss stars and the wardrobe open with the second pond, so the first 15 minutes stay as they are. */
 export const LATE_GAME_POND = 'misty';
 
+/** Fish to catch in the pond to lure a boss back after a lost fight (by pond: Cozy, Misty, Frozen). */
+export const BOSS_LURE = [5, 8, 10];
+
 /** Boss rematch: stars 1-10 per boss; a win uses a ticket, 3 tickets a day. A loss is free. */
 export const BOSS_STARS = { max: 10, ticketsPerDay: 3, coins: 200, coinsPerStar: 0.25, shiny: 0.03, shinyPerStar: 0.02, legendaryFrom: 8 };
 
@@ -244,7 +248,7 @@ export const MEDAL_SILVER = [40, 25, 12, 6, 3];
 /** Every species of a pond at gold: fish there sell for this much more. */
 export const POND_GOLD_BONUS = 0.1;
 
-export type CosmeticKind = 'hat' | 'rod' | 'bobber';
+export type CosmeticKind = 'hat' | 'rod' | 'bobber' | 'bait';
 export interface CosmeticDef {
   id: string;
   kind: CosmeticKind;
@@ -275,7 +279,15 @@ export const COSMETICS: CosmeticDef[] = [
   { id: 'bobber:sky', kind: 'bobber', price: 6000, colors: [0x4fa8ff, 0xffffff] },
   { id: 'bobber:mint', kind: 'bobber', price: 30000, colors: [0x3fcf8e, 0xfff6d6] },
   { id: 'bobber:gold', kind: 'bobber', price: 150000, colors: [0xffc83d, 0xfff1b8] },
+  // Baits: only the look on the hook (no effect on what bites).
+  { id: 'bait:worm', kind: 'bait', price: 0 },
+  { id: 'bait:shrimp', kind: 'bait', price: 4000 },
+  { id: 'bait:fly', kind: 'bait', price: 15000 },
+  { id: 'bait:cricket', kind: 'bait', price: 35000 },
+  { id: 'bait:goldworm', kind: 'bait', price: 120000 },
 ];
+/** Texture key of a bait cosmetic. */
+export const baitKey = (id: string) => (id === 'bait:worm' || !id ? 'item:worm' : `item:bait_${id.slice(5)}`);
 export const cosmeticById = new Map(COSMETICS.map((c) => [c.id, c]));
 
 /**

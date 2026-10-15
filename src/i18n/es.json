@@ -61,7 +61,9 @@
     "todayFish": "¡Pez del día: {fish} en {pond}! x5 monedas y un huevo especial",
     "nestEgg": "¡Huevo especial en el nido! Eclosiona en {t}",
     "todayDone": "¡Pez del día atrapado! Mañana habrá otro",
-    "lateUnlock": "Nuevos objetivos: medallas en el Pezdex, revanchas de jefe con estrellas y el armario en Mejorar."
+    "lateUnlock": "Nuevos objetivos: medallas en el Pezdex, revanchas de jefe con estrellas y el armario en Mejorar.",
+    "slip": "¡Se ha soltado del anzuelo!",
+    "bossHeal": "¡Demasiado pronto! El jefe se cura"
   },
   "tut": {
     "cast": "Mantén... ¡y suelta!",
@@ -330,7 +332,8 @@
     "gotHat": "¡Sombrero nuevo! El gato ya lo lleva puesto.",
     "gotCaptain": "15 estrellas de jefe: ¡gorra de capitán desbloqueada!",
     "fromDaily3": "Este sombrero es el regalo del día 3.",
-    "fromStars15": "Consigue 15 estrellas de jefe en total para este sombrero."
+    "fromStars15": "Consigue 15 estrellas de jefe en total para este sombrero.",
+    "baits": "Cebos"
   },
   "rematch": {
     "fight": "Revancha ★{n}",
@@ -347,5 +350,11 @@
     "pondGold": "{pond}: ¡todos los peces de oro! Aquí se venden un +10 %",
     "pondGoldOn": "Estanque de oro: peces +10 %",
     "pondGoldHint": "Medalla de oro en cada pez: +10 % aquí"
+  },
+  "lure": {
+    "how": "Pesca {n} peces aquí para que vuelva {boss}.",
+    "ok": "OK",
+    "goal": "Atraer a {boss}: {n}/{max} peces",
+    "done": "¡{boss} ha vuelto! ¡Toca JEFE!"
   }
 }

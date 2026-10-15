@@ -123,7 +123,8 @@ export class Pond {
     // Frozen Lake swaps lily pads for ice floes (pets sit on them the same way).
     // Misty Creek has stepping stones instead.
     const gorge = PALETTES[id].land === 'gorge';
-    for (let i = 0; i < 3; i++) this.lilies.push(art(s, 0, 0, snow ? (i === 1 ? 'sc:floe' : 'sc:floeSmall') : gorge ? (i === 1 ? 'sc:stone' : 'sc:stoneSmall') : i === 1 ? 'sc:lilyFlower' : 'sc:lily', 0.75 + (i % 2) * 0.1).setDepth(18));
+    // Five pads (floes, stones): one per team pet, so pets 4 and 5 have room on the water too.
+    for (let i = 0; i < 5; i++) this.lilies.push(art(s, 0, 0, snow ? (i === 1 ? 'sc:floe' : 'sc:floeSmall') : gorge ? (i === 1 ? 'sc:stone' : 'sc:stoneSmall') : i === 1 ? 'sc:lilyFlower' : 'sc:lily', 0.75 + (i % 2) * 0.1).setDepth(18));
     if (PALETTES[id].mist) {
       for (let i = 0; i < 2; i++) this.fogs.push(art(s, 0, 0, 'sc:fog', 1).setDepth(i === 0 ? 4.5 : 19).setAlpha(0.6));
       for (let i = 0; i < 7; i++) this.flies.push(art(s, 0, 0, 'sc:firefly', 0.6 + (i % 3) * 0.2).setDepth(6).setBlendMode(Phaser.BlendModes.ADD));
@@ -228,8 +229,9 @@ export class Pond {
     this.dock.setPosition(dockX, deckY - 70 * dockScale).setScale(dockScale / TEX.get(`${this.pond.id}:dock`)!.scale);
     this.surface.setPosition(0, water);
     this.surface.width = (w + 300) * TEX.get(`${this.pond.id}:surface`)!.scale;
-    const lilyX = portrait ? [0.62, 0.78, 0.93] : [0.6, 0.73, 0.88];
-    this.lilies.forEach((l, i) => l.setPosition(w * lilyX[i], water + 10 + (i % 2) * 6));
+    // Pads spread from the dock end to the right edge. Phones have room for four: the fifth pet sits on the dock.
+    const lilyX = portrait ? [0.62, 0.78, 0.93, 0.48, -1] : [0.5, 0.74, 0.86, 0.38, 0.62];
+    this.lilies.forEach((l, i) => l.setVisible(lilyX[i] > 0).setPosition(w * lilyX[i], water + 10 + (i % 2) * 6));
     this.fogs.forEach((f, i) => f.setPosition(w * (0.3 + i * 0.5), water - 20 + i * 40).setScale((w / 800) * 1.1 * (1 / 1.3), 1 / 1.3));
     this.flies.forEach((f) => f.setPosition(Math.random() * w, water * (0.3 + Math.random() * 0.6)));
     for (const f of this.swimmers) {
@@ -272,18 +274,20 @@ export class Pond {
   private placePets() {
     const L = this.L;
     // Lily pads first (they are in view on every screen), then the dock behind the cat.
+    const pad = (i: number, fx: number, dy: number) => ({ x: this.lilies[i]?.visible ? this.lilies[i].x : L.w * fx, y: L.water + dy });
     const spots = [
-      { x: this.lilies[0]?.x ?? L.w * 0.62, y: L.water + 12 },
-      { x: this.lilies[2]?.x ?? L.w * 0.9, y: L.water + 16 },
-      { x: this.lilies[1]?.x ?? L.w * 0.78, y: L.water + 14 },
-      { x: Math.max(40, L.dockEnd - 215), y: L.deckY + 4 },
-      { x: Math.max(40, L.dockEnd - 215) + 50, y: L.deckY + 4 },
+      pad(0, 0.62, 12),
+      pad(2, 0.9, 16),
+      pad(1, 0.78, 14),
+      pad(3, 0.48, 16),
+      // Fifth pet: its own pad on wide screens; on phones the far end of the dock, clear of the cat.
+      this.lilies[4]?.visible ? pad(4, 0.62, 12) : { x: Math.max(36, L.dockEnd - 236), y: L.deckY + 4 },
     ];
     this.pets.forEach((p, i) => {
       const s = spots[i] ?? spots[spots.length - 1];
       p.img.setPosition(s.x, s.y);
       p.baseY = s.y;
-      p.img.setFlipX(i < 3 ? i % 2 === 1 : false);
+      p.img.setFlipX(i % 2 === 1);
     });
   }
 

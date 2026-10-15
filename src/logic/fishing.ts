@@ -25,6 +25,10 @@ export interface FishingEvents {
   surge?: (strength: number) => void;
   /** The fish winds up for a pull: the moment to let go. */
   surgeWarn?: () => void;
+  /** Boss: a press at the wrong moment (during the warning) heals it. */
+  bossHeal?: (amount: number) => void;
+  /** A normal fish shook off the hook. */
+  slip?: () => void;
   phase?: (bossPhase: number) => void;
   /** Onboarding: a tap on a fake nibble only shows a hint, the fish stays. */
   softEarly?: () => void;
@@ -44,7 +48,10 @@ export const RED_AT = 0.86;
  * 25-40 s, first-try win about 80-90% (bosstest: cozy 81/87/79%, misty 90/90/84%, frozen 91/93/83%
  * for novice/average/skilled). The line wears in the red; letting go on the warning saves it.
  */
-export const BOSS = { reel: 0.18, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
+/** Normal fish: share of fights where the fish shakes off the hook while reeling (not during onboarding). */
+export const SLIP = { chance: 0.2, from: 0.35, spread: 0.45 };
+
+export const BOSS = { misHeal: 0.025, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
 
 export class Fishing {
   phase: Phase = 'ready';
@@ -85,6 +92,9 @@ export class Fishing {
   private surgePower = 0;
   bossPhase = 0;
   bossLevel = 0;
+  /** Progress at which this fish shakes free (-1: it will not). */
+  private slipAt = -1;
+  private healedThisWarn = false;
   /** Rematch star (0 = the first fight). Each star pulls and surges a bit harder. */
   bossStar = 0;
   /** Line upgrade level (set by the game; bosses use it for the line's wear limit). */
@@ -119,6 +129,17 @@ export class Fishing {
           else this.finish('early');
         }
         break;
+      case 'reeling': {
+        // Boss: pressing when you should let go (during the warning) gives it back some health.
+        // At most once per warning, so one fumble costs a little, not the fight.
+        if (this.target.boss && !this.healedThisWarn && this.warning) {
+          this.healedThisWarn = true;
+          this.progress -= BOSS.misHeal;
+          this.events.bossHeal?.(BOSS.misHeal);
+          if (this.progress <= 0) this.finish('escape');
+        }
+        break;
+      }
       case 'bite': {
         this.perfect = this.windowLeft > this.windowTotal * 0.5;
         this.startReel();
@@ -251,6 +272,8 @@ export class Fishing {
     this.surgeLeft = 0;
     this.warning = false;
     this.bossPhase = 0;
+    const t = this.target;
+    this.slipAt = !t.boss && t.fights && !this.assist && !this.forgiving && this.rng.chance(SLIP.chance) ? SLIP.from + this.rng.next() * SLIP.spread : -1;
     this.set('reeling');
   }
 
@@ -273,6 +296,7 @@ export class Fishing {
       }
       if (this.surgeIn <= 0) {
         this.warning = false;
+        this.healedThisWarn = false;
         this.surgeLeft = 0.32;
         this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? BOSS.surge + this.bossLevel * BOSS.surgePerLevel + this.bossStar * BOSS.surgePerStar : 1.25);
         const gap = boss ? [1.3, 1.0, 0.75][this.bossPhase] : 1.5 - pull;
@@ -317,6 +341,11 @@ export class Fishing {
         this.bossPhase = ph;
         this.events.phase?.(ph);
       }
+    }
+    if (this.slipAt > 0 && this.progress >= this.slipAt) {
+      this.slipAt = -1;
+      this.events.slip?.();
+      return this.finish('escape');
     }
     if (this.progress >= 1) return this.finish('caught');
     if (this.progress <= 0) return this.finish('escape');

@@ -213,6 +213,8 @@ function runOne(p: Profile, seed: number) {
     } else {
       if (bossFight) {
         bossFails++;
+        // A lost boss leaves; a few catches in the pond lure it back.
+        game.loseBoss();
         bossFight = false;
         at('bossFail');
       }
