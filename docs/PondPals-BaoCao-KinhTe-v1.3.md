@@ -240,3 +240,70 @@ Vẫn còn cho bản sau: nội dung sau boss cuối (hồ 4 hoặc đấu lại
 
 Sim 150 lượt (người chơi trung bình): mở hồ 2 ở phút 13,6, hồ 3 ở phút 36, boss cuối ở phút 43,8. Nhịp gần như không đổi. Sim không mua thêm ô lò, nên giá ô mới không làm chậm nhịp. Người chơi thật ở hồ 1 (khoảng 200–260 xu/phút) cần chừng 40 phút để mua ô thứ 2, nên phần lớn sẽ mua khi đến hồ 2–3. Trong lúc đó trứng thừa nằm trong giỏ chờ ấp, không bị bán.
 
+## 11. v1.7 và phương án giữ chân D3, D7
+
+### Auto fishing (đã sửa)
+
+- Giữa hai lần quăng, auto nghỉ 2,5–4,5 giây. Mỗi lượt có 30% cơ hội cố ý bỏ lỡ cú cắn câu (không có cơ hội thứ hai).
+- Đo trên máy câu (10 phút, cùng cấp đồ): auto cũ 11,2 cá/phút; auto mới 5,3 cá/phút, trượt 27%. Người chơi tự câu thường được 6–9 lượt/phút, nên tự câu luôn nhanh hơn.
+
+### Sau khi hạ boss Frozen Lake, người chơi còn gì?
+
+| Động lực | Còn bao nhiêu (sim 60 phút) | Đánh giá |
+| --- | --- | --- |
+| Sổ cá | 23/24 loài, thiếu cá Huyền thoại hiếm | Xong trong vài phiên. Kỷ lục kích thước không có thưởng |
+| Thú | 9–10/15 con. Shiny 1–25%. Cấp 20 cần 190 con trùng | Mục tiêu dài nhất, nhưng kỹ năng thú chỉ giúp kiếm xu nhanh hơn, mà xu lại không còn chỗ tiêu |
+| Nâng cấp, ô lò ấp | Nâng cấp rẻ so với thu nhập ở Frozen (khoảng 3.000 xu/phút); ô lò 40k và 150k | Xu dồn lại không có chỗ tiêu, nên phần thưởng xu mất giá trị |
+| Hằng ngày | Quà 7 ngày, 3 nhiệm vụ, cá hôm nay, trứng tổ qua đêm 6 giờ, offline 8 giờ | Lý do để mở game, nhưng mỗi ngày chỉ 5–10 phút và phần thưởng lại quay về xu, trứng, thú |
+| Nội dung mới | Không có. Bản đồ chỉ ghi "Coral Cove sắp ra mắt" | Lỗ hổng chính |
+
+### Nội dung có đủ cho D2, D3 không?
+
+- **Người chơi bình thường** (phiên 10–20 phút): khoảng 45–50 phút nội dung trải ra 3–4 phiên. Ngày 1 tới hồ 2, ngày 2 tới hồ 3, ngày 3 hạ boss cuối. **D2 và D3 đủ**, D7 thì không.
+- **Người chơi say mê** (phiên đầu trên 45 phút): hết nội dung ngay ngày 1. D2–D7 chỉ còn các hệ thống hằng ngày và sưu tập, **không đủ**.
+- Đây là ước tính từ sim, chưa có số liệu người thật.
+
+### Phương án (không đụng 10–15 phút đầu)
+
+Mọi thứ dưới đây chỉ mở sau boss 1, hoặc sau boss cuối. Phút đầu vẫn giữ nguyên: hướng dẫn, nhịp thưởng, cá TRUY NÃ, thanh mục tiêu. Nút mới chỉ xuất hiện khi đã mở, không làm rối màn hình người mới.
+
+**Đợt 1 (nên làm trước khi nộp Poki):**
+
+1. **Đấu lại boss có sao (mở sau khi hạ boss của hồ đó)**
+   - Mỗi boss có thang ★1–★10. Mỗi sao mạnh hơn một chút: lực kéo và cú giật tăng, cần nâng cấp dây và cần.
+   - Mỗi ngày 3 lượt thưởng: trứng Sử thi, xu, cơ hội shiny. Vẫn đấu được thêm nhưng không có thưởng.
+   - Kết quả: một mục tiêu kỹ năng có trần rõ ràng, lý do quay lại mỗi ngày, và chỗ dùng cho nâng cấp.
+2. **Sổ sưu tập có huy chương**
+   - Mỗi loài có huy chương đồng / bạc / vàng: câu 10 con / câu 50 con / câu được con "khổng lồ" (size ≥ 1,4).
+   - Đủ 8 loài vàng trong một hồ: +10% giá cá vĩnh viễn ở hồ đó và một cúp trên cầu tàu.
+   - Kết quả: hàng chục mục tiêu nhỏ cho tuần đầu; cá thường trở lại có giá trị.
+3. **Cửa hàng trang phục (chỗ tiêu xu)**
+   - Mũ cho mèo, màu cần câu, phao, trang trí cầu tàu. Vẽ SVG như phần còn lại, giá 5k đến 500k xu.
+   - Vài món chỉ có từ quà điểm danh hoặc từ sao boss.
+   - Kết quả: xu có giá trị trở lại sau khi xong nội dung.
+4. **Mốc điểm danh D3 và D7**
+   - Ngày 3: một chiếc mũ độc quyền.
+   - Ngày 7: một thú độc quyền chỉ có từ chuỗi 7 ngày (ví dụ "Rùa cầu vồng", kỹ năng may mắn).
+   - Bảng quà hiện trước phần thưởng ngày 3 và ngày 7, để người chơi biết mình đang chờ gì.
+
+**Đợt 2 (trước Soft Release):**
+
+5. **Hồ 4 Coral Cove**: 8 cá, 5 thú, boss mới, khoảng 20 phút nội dung. Mở bằng xu và cả 3 boss.
+6. **Thám hiểm của thú**
+   - Gửi các thú không ở trong đội đi 2 hoặc 8 giờ. Khi về mang theo trứng, xu, đôi khi một con cá hiếm cho Sổ cá.
+   - Kết quả: thêm lý do quay lại sau vài giờ (D1→D2), và dùng tới đám thú không vào đội.
+7. **Lễ hội câu cá theo tuần**
+   - 7 ngày, mỗi tuần một chủ đề. Cá lễ hội xuất hiện ở mọi hồ; câu được thì tăng thanh tiến độ, mỗi ngày tối đa một phần.
+   - 7 mốc thưởng: mốc cuối là thú hoặc trang phục của lễ hội.
+   - Kết quả: hợp với mục tiêu D7, và tuần sau lại có lễ hội mới.
+
+### Kỳ vọng theo mốc
+
+| Mốc | Lý do quay lại |
+| --- | --- |
+| D1 → D2 | Trứng tổ qua đêm, thu nhập offline, cá hôm nay mới, quà ngày 2, hồ còn dang dở. Đợt 2 thêm thám hiểm |
+| D3 | Mũ ngày 3. Người chơi bình thường đang ở hồ 3 hoặc boss cuối. Người xong sớm có sao boss và huy chương |
+| D7 | Thú độc quyền ngày 7, lễ hội tuần về đích, huy chương vàng cả hồ, sao boss cao, cửa hàng trang phục |
+
+Ưu tiên nếu chỉ làm một phần: 1 (đấu lại boss có sao), 4 (mốc D3/D7), rồi 3 (cửa hàng). Ba mục này nhỏ, dùng lại cơ chế có sẵn, và trực tiếp giải quyết việc "xu không có chỗ tiêu" và "không có mục tiêu sau boss cuối".
+
