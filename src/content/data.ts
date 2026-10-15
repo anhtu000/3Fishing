@@ -136,7 +136,9 @@ export const PONDS: PondDef[] = [
 ];
 
 export const ALL_FISH: FishDef[] = PONDS.flatMap((p) => p.fish);
-export const ALL_PETS: PetDef[] = PONDS.flatMap((p) => p.pets);
+/** Pets that never come out of eggs: the 7-day login streak gives this one. */
+export const SPECIAL_PETS: PetDef[] = [{ id: 'rainbow_turtle', name: 'Rainbow Turtle', rarity: 4, perk: 'luck' }];
+export const ALL_PETS: PetDef[] = [...PONDS.flatMap((p) => p.pets), ...SPECIAL_PETS];
 export const fishById = new Map(ALL_FISH.map((f) => [f.id, f]));
 export const petById = new Map(ALL_PETS.map((p) => [p.id, p]));
 export const pondById = new Map(PONDS.map((p) => [p.id, p]));
@@ -212,16 +214,69 @@ export const QUEST_POOL: QuestDef[] = [
   { id: 'coins500', kind: 'coins', goal: 500, coins: 100, text: 'Earn {n} coins' },
 ];
 
-/** 7-day login streak (coins times the best pond's price multiplier). Day 5 and 7 eggs go to the overnight nest. */
-export const STREAK = [
+/**
+ * 7-day login streak (coins times the best pond's price multiplier). Day 3 gives an exclusive hat,
+ * day 5 an egg for the overnight nest, day 7 an exclusive pet (a level for it on later cycles).
+ */
+export const STREAK: { coins: number; egg: number; hat?: string; pet?: string }[] = [
   { coins: 50, egg: -1 },
   { coins: 100, egg: -1 },
-  { coins: 150, egg: -1 },
+  { coins: 150, egg: -1, hat: 'hat:clover' },
   { coins: 200, egg: -1 },
   { coins: 0, egg: 1 },
   { coins: 400, egg: -1 },
-  { coins: 0, egg: 2 },
+  { coins: 0, egg: -1, pet: 'rainbow_turtle' },
 ];
+
+// ---------- after the first ponds: long-term goals (D3, D7) ----------
+
+/** Medals, boss stars and the wardrobe open with the second pond, so the first 15 minutes stay as they are. */
+export const LATE_GAME_POND = 'misty';
+
+/** Boss rematch: stars 1-10 per boss; a win uses a ticket, 3 tickets a day. A loss is free. */
+export const BOSS_STARS = { max: 10, ticketsPerDay: 3, coins: 200, coinsPerStar: 0.25, shiny: 0.03, shinyPerStar: 0.02, legendaryFrom: 8 };
+
+/** A fish this much over its usual size is a giant (needed for a gold medal). */
+export const GIANT_SIZE = 1.4;
+/** Catches for bronze and silver, by rarity. Gold = silver + one giant. */
+export const MEDAL_BRONZE = [10, 8, 5, 3, 1];
+export const MEDAL_SILVER = [40, 25, 12, 6, 3];
+/** Every species of a pond at gold: fish there sell for this much more. */
+export const POND_GOLD_BONUS = 0.1;
+
+export type CosmeticKind = 'hat' | 'rod' | 'bobber';
+export interface CosmeticDef {
+  id: string;
+  kind: CosmeticKind;
+  /** Coins, or 0 for the default and the exclusives. */
+  price: number;
+  /** Exclusive: from the day-3 login gift, or for 15 boss stars in total. */
+  source?: 'daily3' | 'stars15';
+  /** Rods: shaft and handle. Bobbers: top and bottom. */
+  colors?: [number, number];
+}
+export const COSMETICS: CosmeticDef[] = [
+  { id: 'hat:rain', kind: 'hat', price: 0 },
+  { id: 'hat:straw', kind: 'hat', price: 5000 },
+  { id: 'hat:beanie', kind: 'hat', price: 12000 },
+  { id: 'hat:flower', kind: 'hat', price: 25000 },
+  { id: 'hat:pirate', kind: 'hat', price: 40000 },
+  { id: 'hat:wizard', kind: 'hat', price: 90000 },
+  { id: 'hat:tophat', kind: 'hat', price: 200000 },
+  { id: 'hat:crown', kind: 'hat', price: 500000 },
+  { id: 'hat:clover', kind: 'hat', price: 0, source: 'daily3' },
+  { id: 'hat:captain', kind: 'hat', price: 0, source: 'stars15' },
+  { id: 'rod:classic', kind: 'rod', price: 0, colors: [0xc98a4b, 0x8d5a2b] },
+  { id: 'rod:ocean', kind: 'rod', price: 8000, colors: [0x5fb4ef, 0x2d6aa0] },
+  { id: 'rod:cherry', kind: 'rod', price: 20000, colors: [0xff8fab, 0xc2557a] },
+  { id: 'rod:bamboo', kind: 'rod', price: 50000, colors: [0xa8d86a, 0x5d8a2e] },
+  { id: 'rod:gold', kind: 'rod', price: 300000, colors: [0xffd23f, 0xc99a1a] },
+  { id: 'bobber:classic', kind: 'bobber', price: 0, colors: [0xff4d5e, 0xffffff] },
+  { id: 'bobber:sky', kind: 'bobber', price: 6000, colors: [0x4fa8ff, 0xffffff] },
+  { id: 'bobber:mint', kind: 'bobber', price: 30000, colors: [0x3fcf8e, 0xfff6d6] },
+  { id: 'bobber:gold', kind: 'bobber', price: 150000, colors: [0xffc83d, 0xfff1b8] },
+];
+export const cosmeticById = new Map(COSMETICS.map((c) => [c.id, c]));
 
 /**
  * Rewarded ads. No cooldown timers: Poki controls ad frequency and asks games not to add their own.

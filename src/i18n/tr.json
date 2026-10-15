@@ -60,7 +60,8 @@
     "streak": "Mükemmel x{n}! +%{p} altın",
     "todayFish": "Günün balığı: {fish} ({pond})! x5 altın ve özel yumurta",
     "nestEgg": "Yuvada özel yumurta! {t} sonra çıkar",
-    "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir"
+    "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir",
+    "lateUnlock": "Yeni hedefler: Balıkdex'te madalyalar, yıldızlı boss rövanşları ve Geliştir'de gardırop!"
   },
   "tut": {
     "cast": "Basılı tut... sonra bırak!",
@@ -123,7 +124,8 @@
     "rest": "Dinlen",
     "join": "Takıma kat",
     "slot": "+1 takım yeri  {n}",
-    "shiny": "(parlak)"
+    "shiny": "(parlak)",
+    "special": "Özel"
   },
   "perk": {
     "luck": "Şanslı",
@@ -287,7 +289,8 @@
     "snowy_owlet": "Kar Baykuşu Yavrusu",
     "seal_pup": "Fok Yavrusu",
     "polar_cub": "Kutup Ayısı Yavrusu",
-    "aurora_hare": "Kutup Işığı Tavşanı"
+    "aurora_hare": "Kutup Işığı Tavşanı",
+    "rainbow_turtle": "Gökkuşağı Kaplumbağa"
   },
   "unit": {
     "d": "g",
@@ -314,5 +317,35 @@
     "empty": "Sepette henüz yumurta yok. Kuluçka dolunca yumurtalar burada bekler.",
     "tip": "Kuluçkaya koymak için bir yumurtaya dokun.",
     "full": "Kuluçka dolu. Bir yumurtayı çatlat ya da yer ekle!"
+  },
+  "wardrobe": {
+    "title": "Gardırop",
+    "hats": "Şapkalar",
+    "rods": "Oltalar",
+    "bobbers": "Şamandıralar",
+    "worn": "Giyildi",
+    "wear": "Giy",
+    "day3": "3. gün",
+    "newHat": "Yeni şapka!",
+    "gotHat": "Yeni şapka! Kedi şimdiden takıyor.",
+    "gotCaptain": "15 boss yıldızı: kaptan şapkası açıldı!",
+    "fromDaily3": "Bu şapka 3. günün hediyesi.",
+    "fromStars15": "Bu şapka için toplam 15 boss yıldızı topla."
+  },
+  "rematch": {
+    "fight": "Rövanş ★{n}",
+    "tickets": "Bugünkü boss biletleri: {n}/{max}",
+    "noTickets": "Boss bileti kalmadı. Yarın yenileri gelir!",
+    "best": "Yıldız {n}/{max}",
+    "cleared": "★{n} geçildi!"
+  },
+  "medal": {
+    "m1": "Bronz",
+    "m2": "Gümüş",
+    "m3": "Altın",
+    "got": "{medal} madalya: {fish}!",
+    "pondGold": "{pond}: tüm balıklar altın! Burada balıklar %10 fazla değerli",
+    "pondGoldOn": "Altın göl: balıklar +%10",
+    "pondGoldHint": "Her balığa altın madalya: burada +%10"
   }
 }

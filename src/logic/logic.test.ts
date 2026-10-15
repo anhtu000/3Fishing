@@ -207,3 +207,56 @@ test('auto-fish rests between casts and misses about 30% of bites', () => {
   assert.ok(missRate > 0.2 && missRate < 0.4, `miss ${missRate}`);
   assert.ok((out.caught ?? 0) / 20 < 7, 'well under a manual player');
 });
+
+test('late game: medals, pond gold bonus, rematch tickets and stars, wardrobe, streak gifts', () => {
+  const s = defaultSave();
+  s.tutorial = ['done'];
+  s.unlocked = ['cozy', 'misty'];
+  s.bosses = ['old_whiskers'];
+  const now = new Date(2026, 9, 15, 12).getTime();
+  const g = new PondGame(s, new Rng(5), () => now);
+  assert.equal(g.lateGame, true);
+  // Medals: bronze at 10 commons, silver at 40, gold needs a giant.
+  const minnow = PONDS[0].fish[0];
+  let last = 0;
+  for (let i = 0; i < 40; i++) last = Math.max(last, g.applyCatch({ kind: 'fish', fish: minnow, size: 1 }, false).medal);
+  assert.equal(last, 2, 'silver');
+  const giant = g.applyCatch({ kind: 'fish', fish: minnow, size: 1.45 }, false);
+  assert.equal(giant.medal, 3);
+  assert.equal(giant.giant, true);
+  // Pond gold: every species gold, then +10% on fish there.
+  for (const f of PONDS[0].fish) s.dex[f.id] = { n: 99, best: f.cm * 1.5 };
+  const a = g.applyCatch({ kind: 'fish', fish: minnow, size: 1 }, false).coins;
+  delete s.dex[PONDS[0].fish[7].id];
+  const b = g.applyCatch({ kind: 'fish', fish: minnow, size: 1 }, false).coins;
+  assert.ok(a > b, 'gold pond pays more');
+  // Rematch: star 1, three wins a day.
+  assert.equal(g.rematchStar(), 1);
+  assert.equal(g.ticketsLeft, 3);
+  const w = g.winRematch(1)!;
+  assert.ok(w.coins > 0 && w.tier === 3);
+  assert.equal(g.rematchStar(), 2);
+  g.winRematch(2);
+  g.winRematch(3);
+  assert.equal(g.ticketsLeft, 0);
+  assert.equal(g.winRematch(4), null, 'no tickets left');
+  const g2 = new PondGame(s, new Rng(5), () => now + 864e5);
+  assert.equal(g2.ticketsLeft, 3, 'new day, new tickets');
+  // Wardrobe.
+  s.coins = 6000;
+  assert.equal(g.wear('hat:straw'), 'bought');
+  assert.equal(s.style.hat, 'hat:straw');
+  assert.equal(g.wear('hat:crown'), 'noCoins');
+  assert.equal(g.wear('hat:clover'), 'locked');
+  assert.equal(g.wear('hat:rain'), 'worn');
+  // Streak: day 3 hat, day 7 pet.
+  const day = (d: number) => new Date(2026, 9, 15 + d, 12).getTime();
+  for (let d = 0; d < 7; d++) {
+    const gd = new PondGame(s, new Rng(1), () => day(d));
+    const r = gd.claimDailyGift()!;
+    if (d === 2) assert.equal(r.hat, 'hat:clover');
+    if (d === 6) assert.equal(r.pet?.id, 'rainbow_turtle');
+  }
+  assert.ok(s.pets.rainbow_turtle);
+  assert.equal(s.style.hat, 'hat:clover', 'gift hat is worn right away');
+});

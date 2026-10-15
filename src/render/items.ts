@@ -170,6 +170,16 @@ const ART: Record<string, Art> = {
   },
 };
 
+function medal(dark: string, light: string) {
+  return (
+    path('M30,6 L44,40 L36,44 L22,10 Z', '#ff6b8f', 'stroke-width="3.5"') +
+    path('M66,6 L52,40 L60,44 L74,10 Z', '#5fb4ef', 'stroke-width="3.5"') +
+    circle(48, 60, 28, dark) +
+    circle(48, 60, 19, light, false) +
+    flat('M48,46 L52,56 L62,57 L54,63 L57,73 L48,67 L39,73 L42,63 L34,57 L44,56 Z', dark)
+  );
+}
+
 // ----- UI icons (white-on-transparent glyphs are tinted in game; these are full-colour) -----
 const ICONS: Record<string, Art> = {
   i_rod: { w: 96, h: 96, body: () => line('M16,84 L80,12', '#8d5a2b', 8) + line('M16,84 L80,12', '#c98a4b', 4) + circle(30, 68, 9, '#5b6178') + line('M80,12 Q90,40 70,60', '#ffffff', 2.5) + flat('M66,58 L72,64 L64,66 Z', '#c9d1e6') },
@@ -193,6 +203,25 @@ const ICONS: Record<string, Art> = {
       path('M10,44 L86,44 L76,86 L20,86 Z', '#d9a35c') +
       line('M14,58 L82,58 M17,72 L79,72', '#b07a3c', 4) +
       line('M34,44 L36,86 M48,44 L48,86 M62,44 L60,86', '#b07a3c', 3),
+  },
+  i_medal1: { w: 96, h: 96, body: () => medal('#d98b4a', '#f2b47e') },
+  i_medal2: { w: 96, h: 96, body: () => medal('#a8b3c7', '#e3e9f2') },
+  i_medal3: { w: 96, h: 96, body: () => medal('#f2b81f', '#ffe36e') },
+  i_trophy: {
+    w: 96,
+    h: 96,
+    body: () =>
+      path('M26,16 L70,16 L68,44 C66,58 56,64 48,64 C40,64 30,58 28,44 Z', '#ffd23f') +
+      line('M26,24 C10,24 12,44 28,44 M70,24 C86,24 84,44 68,44', OUTLINE, 5) +
+      line('M26,24 C10,24 12,44 28,44 M70,24 C86,24 84,44 68,44', '#ffd23f', 2.5) +
+      path('M42,64 L54,64 L56,76 L40,76 Z', '#e0a81c') +
+      path('M28,76 L68,76 L70,88 L26,88 Z', '#8d5a2b') +
+      flat('M34,22 L42,22 L40,46 L34,40 Z', '#ffffff', 'opacity="0.45"'),
+  },
+  i_shirt: {
+    w: 96,
+    h: 96,
+    body: () => path('M30,14 L18,22 L8,42 L22,48 L26,40 L26,86 L70,86 L70,40 L74,48 L88,42 L78,22 L66,14 C62,22 54,26 48,26 C42,26 34,22 30,14 Z', '#7fd3e6') + circle(48, 52, 9, '#ffd23f'),
   },
   i_star: { w: 96, h: 96, body: () => path('M48,8 L59,34 L88,36 L65,54 L73,84 L48,67 L23,84 L31,54 L8,36 L37,34 Z', '#ffd23f') },
   i_lock: { w: 96, h: 96, body: () => line('M30,42 L30,30 C30,10 66,10 66,30 L66,42', OUTLINE, 9) + line('M30,42 L30,30 C30,10 66,10 66,30 L66,42', '#b9b4c9', 4) + path('M20,40 L76,40 L76,86 L20,86 Z', '#ffcf3a') + circle(48, 60, 6, OUTLINE, false) + flat('M45,62 L51,62 L50,74 L46,74 Z', OUTLINE) },
@@ -249,6 +278,21 @@ export function itemSize(key: string) {
   const a = ART[key] ?? ICONS[key];
   return { w: a.w, h: a.h };
 }
+const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
+
+/** Wardrobe bobber in two colours (same shape and size as item:bobber). */
+export function bobberSvg(top: number, bottom: number) {
+  return render({
+    w: 60,
+    h: 90,
+    body: () =>
+      line('M30,4 L30,20', OUTLINE, 4) +
+      path('M30,18 C46,18 52,34 52,48 L8,48 C8,34 14,18 30,18 Z', hex(top)) +
+      path('M8,48 L52,48 C52,64 44,76 30,76 C16,76 8,64 8,48 Z', hex(bottom)) +
+      flat('M16,30 Q22,24 28,24 L26,32 Q20,34 18,40 Z', '#ffffff', 'opacity="0.6"'),
+  });
+}
+
 export function eggSvg(tier: number) {
   return render(eggArt(tier));
 }

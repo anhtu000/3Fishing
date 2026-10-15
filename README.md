@@ -1,7 +1,7 @@
-# Game #3 — Pond Pals: Hatch & Fish (v1.7)
+# Game #3 — Pond Pals: Hatch & Fish (v1.8)
 
 Game câu cá thư giãn một chạm, ấp trứng ra thú cưng giúp câu. Đường phát hành A: Poki (độc quyền web).
-Tài liệu thiết kế: `docs/Pond-Pals-Tai-lieu-thiet-ke.md`. Báo cáo kinh tế, nhịp chơi và giữ chân: `docs/PondPals-BaoCao-KinhTe-v1.3.md` (mục 8: v1.4, mục 9: v1.5, mục 10: v1.6, mục 11: v1.7 và phương án D3/D7).
+Tài liệu thiết kế: `docs/Pond-Pals-Tai-lieu-thiet-ke.md`. Báo cáo kinh tế, nhịp chơi và giữ chân: `docs/PondPals-BaoCao-KinhTe-v1.3.md` (mục 8: v1.4, mục 9: v1.5, mục 10: v1.6, mục 11: phương án D3/D7, mục 12: v1.8).
 
 ## Chạy
 

@@ -127,6 +127,28 @@ const PETS: Record<string, PetDraw> = {
       highlight(66, 122, 16, 6)
     );
   },
+  // 7-day login gift: a turtle with a rainbow shell and a little star.
+  rainbow_turtle: (b) => {
+    const shell = `${b.id}rs`;
+    b.defs.push(linear(shell, [
+      [0, '#ff8fab'],
+      [0.25, '#ffd23f'],
+      [0.5, '#7fe07a'],
+      [0.75, '#5fb4ef'],
+      [1, '#a98bff'],
+    ], 0, 0, 1, 0));
+    return (
+      feet('#b5e7a0', 184, 44, 18) +
+      path('M26,150 C26,104 60,88 100,88 C140,88 174,104 174,150 C174,166 160,176 100,176 C40,176 26,166 26,150 Z', `url(#${shell})`) +
+      line('M48,120 C70,108 130,108 152,120 M36,142 C70,128 130,128 164,142', '#ffffff', 4, 'opacity="0.7"') +
+      path('M30,158 C60,170 140,170 170,158 C168,176 146,184 100,184 C54,184 32,176 30,158 Z', '#f3e6b8') +
+      circle(100, 70, 38, '#b5e7a0') +
+      face(100, 70, 16, 9.5, 'w') +
+      highlight(86, 48, 14, 6) +
+      flat('M150,86 l5,11 12,2 -9,8 2,12 -10,-6 -10,6 2,-12 -9,-8 12,-2 Z', '#ffe36e', `stroke="${OUTLINE}" stroke-width="3"`) +
+      highlight(64, 112, 18, 6)
+    );
+  },
   sunny_axolotl: (b) => {
     const g = shadeDefs(b, 'g', '#ffb3cf');
     const gill = '#ff6fa3';

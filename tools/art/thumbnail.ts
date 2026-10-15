@@ -5,7 +5,7 @@ import sharp from '/home/claude/.npm-global/lib/node_modules/sharp/dist/index.mj
 import { FISH_ART, fishSize, fishSvg } from '../../src/render/fish.ts';
 import { itemSvg, eggSvg } from '../../src/render/items.ts';
 import { petSvg } from '../../src/render/pets.ts';
-import { commonPieces, sceneryPieces } from '../../src/render/scenery.ts';
+import { commonPieces, hatPieces, sceneryPieces } from '../../src/render/scenery.ts';
 
 const [out = '/tmp/claude-0/thumbnail.png', sizeArg = '1024'] = process.argv.slice(2);
 const S = Number(sizeArg);
@@ -62,6 +62,7 @@ ${place(petSvg('puddle_frog'), 760, 600, 200, 200)}
 ${place(eggSvg(4), 860, 860, 110, 134, 'transform="rotate(12 915 927)"')}
 ${place(cozy.dock.svg, -120, 720, 520, 434)}
 ${place(pieces.cat.svg, 40, 500, 330, 363)}
+${place(hatPieces().rain.svg, 40, 500, 330, 363)}
 <path d="M250,746 Q330,560 470,470" fill="none" stroke="#3b2a4d" stroke-width="17" stroke-linecap="round"/>
 <path d="M250,746 Q330,560 470,470" fill="none" stroke="#c98a4b" stroke-width="9" stroke-linecap="round"/>
 <circle cx="283" cy="680" r="17" fill="#5b6178" stroke="#3b2a4d" stroke-width="5"/>

@@ -2,11 +2,11 @@
 // Art is drawn at `scale` times its design size, so it stays sharp on high-DPI phones and
 // full-screen desktops; sprites are shown with setScale(1 / scale) (see `art()` in ui/art.ts).
 import type Phaser from 'phaser';
-import { ALL_PETS, PONDS } from '../content/data';
+import { ALL_PETS, COSMETICS, PONDS } from '../content/data';
 import { FISH_ART, fishSize, fishSvg } from './fish';
-import { EGG_SIZE, ICON_KEYS, ITEM_KEYS, eggSvg, itemSize, itemSvg } from './items';
+import { EGG_SIZE, ICON_KEYS, ITEM_KEYS, bobberSvg, eggSvg, itemSize, itemSvg } from './items';
 import { PET_H, PET_W, petSvg } from './pets';
-import { commonPieces, sceneryPieces } from './scenery';
+import { commonPieces, hatPieces, sceneryPieces } from './scenery';
 
 export interface TexInfo {
   /** Design size (units). */
@@ -54,4 +54,7 @@ export function queueTextures(scene: Phaser.Scene) {
     }
   }
   for (const [k, v] of Object.entries(commonPieces())) queue(scene, `sc:${k}`, v.svg, v.w, v.h, k === 'cat' || k === 'catBlink' ? 1.6 : 1.3);
+  for (const [k, v] of Object.entries(hatPieces())) queue(scene, `hat:${k}`, v.svg, v.w, v.h, 1.6);
+  // Bobber colours from the wardrobe.
+  for (const c of COSMETICS) if (c.kind === 'bobber' && c.colors) queue(scene, `item:${c.id}`, bobberSvg(c.colors[0], c.colors[1]), 60, 90, 1.5);
 }

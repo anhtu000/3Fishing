@@ -60,7 +60,8 @@
     "streak": "¡Perfecto x{n}! +{p} % monedas",
     "todayFish": "¡Pez del día: {fish} en {pond}! x5 monedas y un huevo especial",
     "nestEgg": "¡Huevo especial en el nido! Eclosiona en {t}",
-    "todayDone": "¡Pez del día atrapado! Mañana habrá otro"
+    "todayDone": "¡Pez del día atrapado! Mañana habrá otro",
+    "lateUnlock": "Nuevos objetivos: medallas en el Pezdex, revanchas de jefe con estrellas y el armario en Mejorar."
   },
   "tut": {
     "cast": "Mantén... ¡y suelta!",
@@ -123,7 +124,8 @@
     "rest": "Descansar",
     "join": "Al equipo",
     "slot": "+1 hueco de equipo  {n}",
-    "shiny": "(brillante)"
+    "shiny": "(brillante)",
+    "special": "Especial"
   },
   "perk": {
     "luck": "Suertudo",
@@ -287,7 +289,8 @@
     "snowy_owlet": "Mochuelo nival",
     "seal_pup": "Foca bebé",
     "polar_cub": "Osezno polar",
-    "aurora_hare": "Liebre aurora"
+    "aurora_hare": "Liebre aurora",
+    "rainbow_turtle": "Tortuga arcoíris"
   },
   "unit": {
     "d": "d",
@@ -314,5 +317,35 @@
     "empty": "Aún no hay huevos en la cesta. Esperan aquí cuando la incubadora está llena.",
     "tip": "Toca un huevo para ponerlo en la incubadora.",
     "full": "La incubadora está llena. ¡Abre un huevo o añade un hueco!"
+  },
+  "wardrobe": {
+    "title": "Armario",
+    "hats": "Sombreros",
+    "rods": "Cañas",
+    "bobbers": "Flotadores",
+    "worn": "Puesto",
+    "wear": "Poner",
+    "day3": "Día 3",
+    "newHat": "¡Sombrero nuevo!",
+    "gotHat": "¡Sombrero nuevo! El gato ya lo lleva puesto.",
+    "gotCaptain": "15 estrellas de jefe: ¡gorra de capitán desbloqueada!",
+    "fromDaily3": "Este sombrero es el regalo del día 3.",
+    "fromStars15": "Consigue 15 estrellas de jefe en total para este sombrero."
+  },
+  "rematch": {
+    "fight": "Revancha ★{n}",
+    "tickets": "Tickets de jefe hoy: {n}/{max}",
+    "noTickets": "No quedan tickets de jefe. ¡Mañana hay más!",
+    "best": "Estrellas {n}/{max}",
+    "cleared": "¡★{n} superada!"
+  },
+  "medal": {
+    "m1": "Bronce",
+    "m2": "Plata",
+    "m3": "Oro",
+    "got": "Medalla de {medal}: ¡{fish}!",
+    "pondGold": "{pond}: ¡todos los peces de oro! Aquí se venden un +10 %",
+    "pondGoldOn": "Estanque de oro: peces +10 %",
+    "pondGoldHint": "Medalla de oro en cada pez: +10 % aquí"
   }
 }

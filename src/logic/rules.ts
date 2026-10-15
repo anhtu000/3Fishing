@@ -5,7 +5,10 @@ import {
   CATCH_WEIGHTS,
   FIGHT,
   BASKET_MAX,
+  GIANT_SIZE,
   HATCH_SEC,
+  MEDAL_BRONZE,
+  MEDAL_SILVER,
   NEST_INDEX,
   NEST_SEC,
   PERKS,
@@ -307,6 +310,22 @@ export function dexCount(s: SaveData, pond: PondDef) {
 
 export function bossReady(s: SaveData, pond: PondDef) {
   return !s.bosses.includes(pond.boss.id) && dexCount(s, pond) >= pond.bossAt;
+}
+
+// ---------- medals ----------
+
+/** 0 none, 1 bronze, 2 silver, 3 gold. Gold = silver count plus one giant (size >= GIANT_SIZE). */
+export function medalOf(s: SaveData, fish: FishDef): number {
+  const e = s.dex[fish.id];
+  if (!e) return 0;
+  const giant = e.best >= fish.cm * GIANT_SIZE - 0.05;
+  if (e.n >= MEDAL_SILVER[fish.rarity]) return giant ? 3 : 2;
+  return e.n >= MEDAL_BRONZE[fish.rarity] ? 1 : 0;
+}
+
+/** Every species of the pond at gold. */
+export function pondGold(s: SaveData, pond: PondDef) {
+  return pond.fish.every((f) => medalOf(s, f) === 3);
 }
 
 // ---------- quests ----------

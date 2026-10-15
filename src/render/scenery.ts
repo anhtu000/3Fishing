@@ -450,7 +450,7 @@ function surface(p: PondPalette): Piece {
 
 // ---------------- Cat angler ----------------
 
-/** Cat in a yellow rain hat, sitting on the dock edge, seen from the side facing right. */
+/** The cat (no hat: hats are separate pieces drawn on the same 200 x 220 canvas), sitting on the dock edge. */
 function cat(blink: boolean): Piece {
   return piece(200, 220, (id, defs) => {
     defs.push(linear(`${id}c`, [[0, '#ffffff'], [1, '#f1e6dc']]));
@@ -471,9 +471,6 @@ function cat(blink: boolean): Piece {
       path('M58,52 L56,18 L86,36 Z', '#f6a35c') +
       path('M142,52 L144,18 L114,36 Z', fur) +
       flat('M64,46 L62,28 L78,38 Z', '#ffb3c4') +
-      // rain hat
-      path('M38,48 C40,22 70,6 100,6 C130,6 160,22 162,48 C172,52 176,60 168,62 C130,54 70,54 32,62 C24,60 28,52 38,48 Z', '#ffcf3a') +
-      flat('M56,24 Q78,12 100,12 L98,20 Q76,22 60,32 Z', '#ffffff', 'opacity="0.45"') +
       // face
       (blink ? happyEye(84, 86, 9) + happyEye(124, 86, 9) : eye(84, 86, 11, '#2b1d38', 0.25) + eye(124, 86, 11, '#2b1d38', 0.25)) +
       ellipse(74, 104, 9, 5, '#ff7aa8', false, 'opacity="0.45"') +
@@ -511,6 +508,69 @@ export function sceneryPieces(pond: string): Record<string, Piece> {
 }
 
 /** Pieces shared by every pond. */
+// ---------------- Hats (wardrobe) ----------------
+// Same 200 x 220 canvas as the cat, so a hat sprite sits on the head at the cat's position and scale.
+
+function hatPiece(body: string): Piece {
+  return piece(200, 220, () => body);
+}
+
+const HATS: Record<string, () => string> = {
+  rain: () =>
+    path('M38,48 C40,22 70,6 100,6 C130,6 160,22 162,48 C172,52 176,60 168,62 C130,54 70,54 32,62 C24,60 28,52 38,48 Z', '#ffcf3a') +
+    flat('M56,24 Q78,12 100,12 L98,20 Q76,22 60,32 Z', '#ffffff', 'opacity="0.45"'),
+  straw: () =>
+    path('M14,58 C14,46 60,40 100,40 C140,40 186,46 186,58 C186,66 140,70 100,70 C60,70 14,66 14,58 Z', '#f2d48a') +
+    path('M58,52 C58,22 76,10 100,10 C124,10 142,22 142,52 Z', '#f7df9e') +
+    path('M58,40 L142,40 L142,52 L58,52 Z', '#ff6b6b', 'stroke-width="3.5"') +
+    line('M70,24 L130,24 M64,32 L136,32 M30,58 L60,62 M140,62 L170,58', '#d9b265', 2.5),
+  beanie: () =>
+    path('M44,60 C44,22 70,10 100,10 C130,10 156,22 156,60 Z', '#ff6b6b') +
+    line('M70,18 L66,56 M100,12 L100,56 M130,18 L134,56', '#e0505a', 4) +
+    path('M38,50 C70,44 130,44 162,50 L162,68 C130,62 70,62 38,68 Z', '#ff8f8f') +
+    line('M50,52 L50,64 M66,50 L66,62 M82,48 L82,60 M100,48 L100,60 M118,48 L118,60 M134,50 L134,62 M150,52 L150,64', '#e0505a', 3) +
+    circle(100, 12, 14, '#ffffff'),
+  flower: () =>
+    line('M44,50 Q100,22 156,50', '#5fb36a', 6) +
+    [[52, 44, '#ff8fab'], [74, 34, '#ffd23f'], [100, 30, '#a98bff'], [126, 34, '#ff8fab'], [148, 44, '#7fd3ff']]
+      .map(([x, y, c]) => [0, 72, 144, 216, 288].map((a) => circle((x as number) + Math.cos((a * Math.PI) / 180) * 8, (y as number) + Math.sin((a * Math.PI) / 180) * 8, 7, c as string, true, 'stroke-width="2.5"')).join('') + circle(x as number, y as number, 5, '#fff3a0', false))
+      .join(''),
+  pirate: () =>
+    path('M22,60 C36,30 68,18 100,18 C132,18 164,30 178,60 C150,50 130,58 100,48 C70,58 50,50 22,60 Z', '#3b3346') +
+    line('M34,54 C60,44 80,50 100,42 C120,50 140,44 166,54', '#ffd23f', 4) +
+    circle(100, 32, 9, '#ffffff') + flat('M95,30 L98,30 L98,33 L95,33 Z M102,30 L105,30 L105,33 L102,33 Z', OUTLINE) +
+    path('M136,26 C150,6 170,4 176,10 C164,14 152,24 142,34 Z', '#ff6b6b', 'stroke-width="3"'),
+  wizard: () =>
+    path('M42,62 Q100,48 158,62 L132,4 Q122,-2 114,8 Z', '#5b6fd8') +
+    ellipse(100, 62, 70, 10, '#4a5bc0') +
+    flat('M108,26 l3,7 7,1 -5,5 1,7 -6,-3 -6,3 1,-7 -5,-5 7,-1 Z', '#ffe36e') +
+    circle(84, 44, 3.5, '#ffe36e', false) + circle(128, 48, 3, '#ffe36e', false),
+  tophat: () =>
+    ellipse(100, 60, 66, 10, '#2b2433') +
+    path('M62,60 L66,4 L134,4 L138,60 Z', '#2b2433') +
+    path('M64,42 L136,42 L137,54 L63,54 Z', '#ff5d8f', 'stroke-width="3"') +
+    flat('M72,10 L80,10 L78,40 L70,40 Z', '#ffffff', 'opacity="0.18"'),
+  crown: () =>
+    path('M54,56 L48,16 L74,34 L100,6 L126,34 L152,16 L146,56 Z', '#ffd23f') +
+    flat('M60,48 L140,48 L140,52 L60,52 Z', '#ffffff', 'opacity="0.45"') +
+    circle(100, 42, 7, '#ff5d8f') + circle(74, 46, 5, '#5fd3ff') + circle(126, 46, 5, '#5fd38d') +
+    circle(48, 16, 5, '#ffd23f') + circle(100, 6, 5, '#ffd23f') + circle(152, 16, 5, '#ffd23f'),
+  clover: () =>
+    path('M44,58 C44,24 70,12 100,12 C130,12 156,24 156,58 Z', '#4fbf6a') +
+    path('M100,52 C130,48 170,50 182,60 C164,68 120,66 100,62 Z', '#3a9e55') +
+    line('M100,14 L100,56', '#3a9e55', 3) +
+    circle(92, 32, 7, '#ffffff') + circle(108, 32, 7, '#ffffff') + circle(100, 22, 7, '#ffffff') + line('M100,36 L104,46', '#ffffff', 3),
+  captain: () =>
+    path('M40,48 C40,24 70,14 100,14 C130,14 160,24 160,48 L150,60 L50,60 Z', '#ffffff') +
+    path('M50,46 L150,46 L150,60 L50,60 Z', '#2f3f73') +
+    path('M58,58 C80,74 120,74 142,58 Z', '#2b2433') +
+    circle(100, 32, 9, '#ffd23f') + line('M100,26 L100,40 M94,36 Q100,42 106,36', OUTLINE, 3),
+};
+
+export function hatPieces(): Record<string, Piece> {
+  return Object.fromEntries(Object.entries(HATS).map(([k, b]) => [k, hatPiece(b())]));
+}
+
 export function commonPieces(): Record<string, Piece> {
   return {
     cloud: cloud(),

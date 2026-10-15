@@ -3,17 +3,17 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { PONDS, petById, pondById } from '../content/data';
+import { BOSS_STARS, PONDS, cosmeticById, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
-import { anyUpgradeAffordable, questsClaimable, readyEggIndex, type CatchRoll } from '../logic/rules';
+import { anyUpgradeAffordable, pondGold, questsClaimable, readyEggIndex, type CatchRoll } from '../logic/rules';
 import { devPreset } from '../dev';
-import { bossName, duration, pondName, t } from '../i18n/t';
+import { bossName, duration, eggName, fishName, pondName, t } from '../i18n/t';
 import { save } from '../save';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
-import { basketPanel, dailyPanel, dexPanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
+import { basketPanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
 import { Rig } from '../world/Rig';
@@ -157,6 +157,9 @@ export class PlayScene extends BaseScene {
 
     this.buildCoach();
     this.wireInput();
+    // Wardrobe look and the gold-pond cup.
+    this.applyStyle();
+    this.pond.setTrophy(this.pg.lateGame && pondGold(s, this.pond.pond));
     this.startMusic();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.music?.stop());
 
@@ -179,6 +182,8 @@ export class PlayScene extends BaseScene {
       refresh: () => this.refresh(),
       travel: (id) => this.travel(id),
       startBoss: () => this.startBoss(),
+      startRematch: () => this.startBoss(true),
+      wardrobe: () => this.open(() => wardrobePanel(this, this.ctx)),
       hatch: (i) => this.doHatch(i),
       coinTo: () => this.hud.coinTarget(),
       gemTo: () => this.hud.gemTarget(),
@@ -298,6 +303,15 @@ export class PlayScene extends BaseScene {
       const after = () => {
         this.fishing.reset();
         this.afterCatch(res.roll);
+        // Medals (late game): a new medal, a gold pond.
+        if (res.pondGold) {
+          note(this, t('medal.pondGold', { pond: pondName(this.pond.pond.id) }), 3600);
+          app.audio.play('win');
+          this.pond.setTrophy(true);
+        } else if (res.medal && res.roll.kind === 'fish') {
+          note(this, t('medal.got', { medal: t(`medal.m${res.medal}`), fish: fishName(res.roll.fish.id) }));
+          app.audio.play('reward');
+        }
         // Today's fish: say where its egg went once the card is gone.
         if (res.today) {
           note(this, res.nestEgg ? t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) }) : t('msg.todayDone'));
@@ -501,7 +515,20 @@ export class PlayScene extends BaseScene {
     }
   }
 
+  /** Wardrobe: hat, rod colours and bobber on the cat. */
+  private applyStyle() {
+    const st = this.s.style;
+    this.rig.setStyle(st.hat, cosmeticById.get(st.rod)?.colors ?? [0xc98a4b, 0x8d5a2b], st.bobber);
+  }
+
   private refresh() {
+    this.applyStyle();
+    this.pond.setTrophy(this.pg.lateGame && pondGold(this.s, this.pond.pond));
+    // Second pond open: the long-term goals appear (once).
+    if (this.pg.lateGame && !this.s.tutorial.includes('late')) {
+      this.s.tutorial.push('late');
+      this.time.delayedCall(1200, () => note(this, t('msg.lateUnlock'), 4200));
+    }
     this.pond.setPets(this.s.team);
     this.pond.refreshKnown();
     this.pond.setBossTeaser(!this.s.bosses.includes(this.pond.pond.boss.id) && Object.keys(this.s.dex).filter((id) => this.pond.pond.fish.some((f) => f.id === id)).length >= 4);
@@ -565,6 +592,23 @@ export class PlayScene extends BaseScene {
         if (r.coins) flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
         if (r.where === 'nest') this.time.delayedCall(500, () => note(this, t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) })));
         app.audio.play('reward');
+        if (r.hat) {
+          this.applyStyle();
+          this.time.delayedCall(600, () => note(this, t('wardrobe.gotHat'), 3200));
+        }
+        // Day 7: the exclusive pet, shown like a hatch.
+        if (r.pet) {
+          const pet = r.pet;
+          this.time.delayedCall(400, () => {
+            this.modal++;
+            this.hud.setVisible(false);
+            hatchReveal(this, 4, pet.id, pet.result, false, this.s.pets[pet.id]?.level ?? 1).then(() => {
+              this.modal--;
+              this.hud.setVisible(true);
+              this.refresh();
+            });
+          });
+        }
       });
       p.once(Phaser.GameObjects.Events.DESTROY, () => this.announceToday());
       return p;
@@ -603,9 +647,15 @@ export class PlayScene extends BaseScene {
 
   // ---------- boss ----------
 
-  private startBoss() {
-    if (this.fishing.busy || !this.pg.bossReady) return;
-    this.completeStep('boss');
+  /** Star of the rematch in progress (0: the first fight with the pond's boss). */
+  private rematchStar = 0;
+
+  private startBoss(rematch = false) {
+    if (this.fishing.busy) return;
+    const star = rematch ? this.pg.rematchStar() : null;
+    if (rematch ? star === null || this.pg.ticketsLeft <= 0 : !this.pg.bossReady) return;
+    this.rematchStar = star ?? 0;
+    if (!rematch) this.completeStep('boss');
     const boss = this.pond.pond.boss;
     this.bossTries += 1;
     this.bossContinued = false;
@@ -613,7 +663,8 @@ export class PlayScene extends BaseScene {
     app.audio.play('boss');
     this.cameras.main.shake(500, 0.01);
     const vp = this.vp;
-    const banner = txt(this, vp.width / 2, vp.height * 0.22, t('boss.appears', { boss: bossName(boss.id) }), 70, { color: '#ffe066' }).setDepth(1500).setScale(0.4);
+    const title = this.rematchStar ? `${bossName(boss.id)}\n★ ${this.rematchStar}` : t('boss.appears', { boss: bossName(boss.id) });
+    const banner = txt(this, vp.width / 2, vp.height * 0.22, title, 70, { color: '#ffe066' }).setDepth(1500).setScale(0.4);
     this.tweens.add({ targets: banner, scale: 1, duration: 400, ease: 'Back.Out' });
     this.time.delayedCall(1500, () => {
       banner.destroy();
@@ -621,14 +672,71 @@ export class PlayScene extends BaseScene {
       this.rig.cast(0.55, 2);
       this.rig.setTarget(`fish:${boss.id}`, 0.95);
       this.fishing.lineLevel = this.s.upgrades.line;
-      this.fishing.startBoss(Math.max(0, PONDS.indexOf(this.pond.pond)));
-      this.hud.drawBoss(bossName(boss.id), 1, 0);
+      this.fishing.startBoss(Math.max(0, PONDS.indexOf(this.pond.pond)), this.rematchStar);
+      this.hud.drawBoss(this.bossLabel(), 1, 0);
       this.pond.setBossTeaser(false);
       if (this.s.autoFish) this.fishing.auto = false;
     });
   }
 
+  /** Rematch won: a ticket used, the star recorded, coins and an Epic/Legendary egg. */
+  private onRematchWin() {
+    const boss = this.pond.pond.boss;
+    const star = this.rematchStar;
+    this.rematchStar = 0;
+    this.hud.hideBoss();
+    this.fishing.auto = this.s.autoFish && this.pg.autoUnlocked;
+    const from = this.rig.landed();
+    const reward = this.pg.winRematch(star);
+    this.modal++;
+    this.stopPlay();
+    this.hud.setVisible(false);
+    const vp = this.vp;
+    const layer = this.add.container(0, 0).setDepth(1400);
+    const dim = this.add.rectangle(0, 0, vp.width, vp.height, 0x1a1030, 0.6).setOrigin(0).setInteractive();
+    const img = art(this, from.x, from.y, `fish:${boss.id}`, 0.6);
+    const ray = rays(this, vp.width / 2, vp.height * 0.34, 0xffe066, Math.min(800, vp.height * 0.9));
+    const plate = card(this, vp.width / 2, vp.height * 0.66, Math.min(520, vp.width - 60), vp.height * 0.3, 0xfff6e6, 30).setAlpha(0.96);
+    layer.add([dim, ray, plate, img]);
+    this.tweens.add({ targets: img, x: vp.width / 2, y: vp.height * 0.34, scale: fitScale(`fish:${boss.id}`, 420), angle: 360, duration: 700, ease: 'Cubic.Out' });
+    this.time.delayedCall(600, () => sparkles(this, vp.width / 2, vp.height * 0.34, 16, 220));
+    app.audio.play('win');
+    const head = txt(this, vp.width / 2, vp.height * 0.16, t('rematch.cleared', { n: star }), 60, { color: '#ffe066' });
+    const lines: Phaser.GameObjects.GameObject[] = [head];
+    if (reward) {
+      const egg = art(this, vp.width / 2 - 90, vp.height * 0.6, `egg:${reward.tier}`, 0.5);
+      const eggT = txt(this, vp.width / 2 + 40, vp.height * 0.6, eggName(reward.tier), 30, { color: '#9356e6', stroke: false });
+      const coin = art(this, vp.width / 2 - 90, vp.height * 0.69, 'item:coin', 0.5);
+      const coinT = txt(this, vp.width / 2 + 10, vp.height * 0.69, `+${fmt(reward.coins)}`, 36, { color: '#e39b00', stroke: false });
+      const tip = txt(this, vp.width / 2, vp.height * 0.77, t('rematch.tickets', { n: this.pg.ticketsLeft, max: BOSS_STARS.ticketsPerDay }), 26, { color: '#7a6a8a', stroke: false, wrap: Math.min(480, vp.width - 80) });
+      lines.push(egg, eggT, coin, coinT, tip);
+      if (reward.hat) this.time.delayedCall(900, () => note(this, t('wardrobe.gotCaptain'), 3200));
+    }
+    const btn = new CButton(this, vp.width / 2, vp.height * 0.88, {
+      w: 300,
+      h: 96,
+      label: t('boss.hooray'),
+      fontSize: 40,
+      color: COLORS.green,
+      onClick: () => {
+        layer.destroy();
+        this.modal--;
+        this.hud.setVisible(true);
+        this.fishing.reset();
+        this.refresh();
+        void this.resumePlay();
+      },
+    });
+    layer.add([...lines, btn]);
+  }
+
+  private bossLabel() {
+    const name = bossName(this.pond.pond.boss.id);
+    return this.rematchStar ? `${name}  ★${this.rematchStar}` : name;
+  }
+
   private onBossEnd(o: Outcome) {
+    if (o === 'caught' && this.rematchStar) return this.onRematchWin();
     const boss = this.pond.pond.boss;
     this.hud.hideBoss();
     this.fishing.auto = this.s.autoFish && this.pg.autoUnlocked;
@@ -709,7 +817,7 @@ export class PlayScene extends BaseScene {
               this.rig.setTarget(`fish:${boss.id}`, 0.95);
               this.fishing.lineLevel = this.s.upgrades.line;
               this.fishing.continueBoss(progress);
-              this.hud.drawBoss(bossName(boss.id), 1 - progress, this.fishing.bossPhase);
+              this.hud.drawBoss(this.bossLabel(), 1 - progress, this.fishing.bossPhase);
               app.gameplay.start();
             }),
         }),
@@ -729,7 +837,7 @@ export class PlayScene extends BaseScene {
           // Death and restart: gameplayStop, commercial break, gameplayStart.
           await this.breakPoint();
           app.gameplay.start();
-          this.startBoss();
+          this.startBoss(this.rematchStar > 0);
         },
       }),
     );
@@ -905,7 +1013,8 @@ export class PlayScene extends BaseScene {
       questBadge: questsClaimable(s),
       canUpgrade: anyUpgradeAffordable(s),
       petBadge: Object.keys(s.pets).length > this.seenPets,
-      dexBadge: Object.keys(s.dex).length > this.seenDex,
+      // Fishdex badge: new species, or boss rematch tickets waiting.
+      dexBadge: Object.keys(s.dex).length > this.seenDex || (this.pg.rematchStar() !== null && this.pg.ticketsLeft > 0),
       // Map badge: a pond to open, or today's fish waiting in another pond.
       mapBadge: PONDS.some((p) => !s.unlocked.includes(p.id) && this.pg.canUnlock(p) && s.coins >= p.unlockCost) || (!!this.pg.today && !this.pg.todayFish),
       bossReady: this.pg.bossReady,

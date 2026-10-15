@@ -60,7 +60,8 @@
     "streak": "Perfect x{n}! +{p}% coins",
     "todayFish": "Today's fish: {fish} in {pond}! x5 coins and a special egg",
     "nestEgg": "Special egg in the nest! Hatches in {t}",
-    "todayDone": "Today's fish caught! A new one tomorrow"
+    "todayDone": "Today's fish caught! A new one tomorrow",
+    "lateUnlock": "New goals: medals in the Fishdex, boss rematches with stars, and the wardrobe in Upgrades!"
   },
   "tut": {
     "cast": "Hold... then let go!",
@@ -123,7 +124,8 @@
     "rest": "Rest",
     "join": "Join team",
     "slot": "+1 team slot  {n}",
-    "shiny": "(shiny)"
+    "shiny": "(shiny)",
+    "special": "Special"
   },
   "perk": {
     "luck": "Lucky",
@@ -287,7 +289,8 @@
     "snowy_owlet": "Snowy Owlet",
     "seal_pup": "Seal Pup",
     "polar_cub": "Polar Cub",
-    "aurora_hare": "Aurora Hare"
+    "aurora_hare": "Aurora Hare",
+    "rainbow_turtle": "Rainbow Turtle"
   },
   "unit": {
     "d": "d",
@@ -314,5 +317,35 @@
     "empty": "No eggs in the basket yet. Eggs wait here when the incubator is full.",
     "tip": "Tap an egg to put it in the incubator.",
     "full": "The incubator is full. Hatch an egg or add a slot!"
+  },
+  "wardrobe": {
+    "title": "Wardrobe",
+    "hats": "Hats",
+    "rods": "Rods",
+    "bobbers": "Bobbers",
+    "worn": "Worn",
+    "wear": "Wear",
+    "day3": "Day 3",
+    "newHat": "New hat!",
+    "gotHat": "New hat! The cat is wearing it now.",
+    "gotCaptain": "15 boss stars: Captain's hat unlocked!",
+    "fromDaily3": "This hat is the day-3 login gift.",
+    "fromStars15": "Earn 15 boss stars in total for this hat."
+  },
+  "rematch": {
+    "fight": "Rematch ★{n}",
+    "tickets": "Boss tickets today: {n}/{max}",
+    "noTickets": "No boss tickets left. New ones tomorrow!",
+    "best": "Stars {n}/{max}",
+    "cleared": "★{n} cleared!"
+  },
+  "medal": {
+    "m1": "Bronze",
+    "m2": "Silver",
+    "m3": "Gold",
+    "got": "{medal} medal: {fish}!",
+    "pondGold": "{pond}: every fish is gold! Fish here sell for +10%",
+    "pondGoldOn": "Gold pond: fish +10%",
+    "pondGoldHint": "Gold medals for every fish: +10% here"
   }
 }

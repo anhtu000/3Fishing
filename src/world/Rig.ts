@@ -13,6 +13,8 @@ const ROD_REST = 0;
 
 export class Rig {
   cat: Phaser.GameObjects.Image;
+  hat: Phaser.GameObjects.Image;
+  private bobberKey = 'item:bobber';
   rod: Phaser.GameObjects.Graphics;
   private lineG: Phaser.GameObjects.Graphics;
   bobber: Phaser.GameObjects.Image;
@@ -44,20 +46,10 @@ export class Rig {
   ) {
     // The rod is drawn with lines, not a texture: a long thin diagonal sprite lost pixels on some GPUs.
     this.rod = scene.add.graphics().setDepth(24);
-    const k = ROD_K;
-    const tx = (380 - 20) * k;
-    const ty = (14 - 200) * k;
-    const r = this.rod;
-    r.lineStyle(11 * k, INK, 1).lineBetween(0, 0, tx, ty);
-    r.lineStyle(6 * k, 0xc98a4b, 1).lineBetween(0, 0, tx, ty);
-    r.lineStyle(2 * k, 0xffffff, 0.35).lineBetween(tx * 0.3, ty * 0.3 - 1.5, tx * 0.95, ty * 0.95 - 1.5);
-    r.lineStyle(7 * k, 0x8d5a2b, 1).lineBetween(0, 0, 100 * k, -52 * k);
-    r.fillStyle(INK, 1).fillCircle(50 * k, -25 * k, 15 * k);
-    r.fillStyle(0x5b6178, 1).fillCircle(50 * k, -25 * k, 11 * k);
-    r.fillStyle(0xc9d1e6, 1).fillCircle(50 * k, -25 * k, 4.5 * k);
-    r.fillStyle(INK, 1).fillCircle(tx, ty, 6.5 * k);
-    r.fillStyle(0xff6b6b, 1).fillCircle(tx, ty, 4.5 * k);
+    this.drawRod(0xc98a4b, 0x8d5a2b);
     this.cat = art(scene, 0, 0, 'sc:cat', CAT_K).setOrigin(0.5, 200 / 220).setDepth(23);
+    // The hat is its own sprite on the cat's canvas (wardrobe), drawn just above the cat.
+    this.hat = art(scene, 0, 0, 'hat:rain', CAT_K).setOrigin(0.5, 200 / 220).setDepth(23.05);
     this.lineG = scene.add.graphics().setDepth(25);
     this.target = scene.add.image(0, 0, '__DEFAULT').setDepth(12.5).setVisible(false);
     this.hook = art(scene, 0, 0, 'item:hook', 0.55).setOrigin(0.5, 0.06).setDepth(12.6).setVisible(false);
@@ -91,9 +83,35 @@ export class Rig {
     this.bubbles.setDepth(13);
   }
 
+  /** Shaft and handle colours (wardrobe rods). */
+  private drawRod(shaft: number, handle: number) {
+    const k = ROD_K;
+    const tx = (380 - 20) * k;
+    const ty = (14 - 200) * k;
+    const r = this.rod.clear();
+    r.lineStyle(11 * k, INK, 1).lineBetween(0, 0, tx, ty);
+    r.lineStyle(6 * k, shaft, 1).lineBetween(0, 0, tx, ty);
+    r.lineStyle(2 * k, 0xffffff, 0.35).lineBetween(tx * 0.3, ty * 0.3 - 1.5, tx * 0.95, ty * 0.95 - 1.5);
+    r.lineStyle(7 * k, handle, 1).lineBetween(0, 0, 100 * k, -52 * k);
+    r.fillStyle(INK, 1).fillCircle(50 * k, -25 * k, 15 * k);
+    r.fillStyle(0x5b6178, 1).fillCircle(50 * k, -25 * k, 11 * k);
+    r.fillStyle(0xc9d1e6, 1).fillCircle(50 * k, -25 * k, 4.5 * k);
+    r.fillStyle(INK, 1).fillCircle(tx, ty, 6.5 * k);
+    r.fillStyle(0xff6b6b, 1).fillCircle(tx, ty, 4.5 * k);
+  }
+
+  /** What the cat wears: hat, rod and bobber ids from the wardrobe. */
+  setStyle(hat: string, rod: [number, number], bobber: string) {
+    setArt(this.hat, hat, CAT_K);
+    this.drawRod(rod[0], rod[1]);
+    this.bobberKey = bobber === 'bobber:classic' ? 'item:bobber' : `item:${bobber}`;
+    setArt(this.bobber, this.bobberKey, 0.6);
+  }
+
   layout() {
     const L = this.pond.L;
     this.cat.setPosition(L.dockEnd - 95, L.deckY + 6);
+    this.hat.setPosition(this.cat.x, this.cat.y);
     this.placeRod(ROD_REST);
   }
 
@@ -213,6 +231,7 @@ export class Rig {
       }
     }
     this.cat.scaleY = this.cat.scaleX * (1 + Math.sin(this.t * 2) * 0.012);
+    this.hat.setPosition(this.cat.x, this.cat.y).setScale(this.cat.scaleX, this.cat.scaleY);
 
     // Rod angle: pulled back while charging, flicks forward on the cast, bends with the fish.
     let angle = ROD_REST + Math.sin(this.t * 1.5) * 1.5;

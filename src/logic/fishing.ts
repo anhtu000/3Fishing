@@ -44,7 +44,7 @@ export const RED_AT = 0.86;
  * 25-40 s, first-try win about 80-90% (bosstest: cozy 81/87/79%, misty 90/90/84%, frozen 91/93/83%
  * for novice/average/skilled). The line wears in the red; letting go on the warning saves it.
  */
-export const BOSS = { reel: 0.18, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28 };
+export const BOSS = { reel: 0.18, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
 
 export class Fishing {
   phase: Phase = 'ready';
@@ -85,6 +85,8 @@ export class Fishing {
   private surgePower = 0;
   bossPhase = 0;
   bossLevel = 0;
+  /** Rematch star (0 = the first fight). Each star pulls and surges a bit harder. */
+  bossStar = 0;
   /** Line upgrade level (set by the game; bosses use it for the line's wear limit). */
   lineLevel = 0;
   /** The fish is about to pull (shown as a thrash): let go now. */
@@ -148,8 +150,9 @@ export class Fishing {
   }
 
   /** Boss fight: skips the cast and bite, straight to a long reel. */
-  startBoss(level = 0) {
+  startBoss(level = 0, star = 0) {
     this.bossLevel = level;
+    this.bossStar = star;
     this.target = { rarity: 4, fights: true, boss: true };
     this.perfect = false;
     this.startReel();
@@ -256,7 +259,7 @@ export class Fishing {
     const f = fightOf(target.rarity);
     const s = this.stats();
     const boss = !!target.boss;
-    const pull = boss ? BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel : target.fights ? f.pull : 0.06;
+    const pull = boss ? BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel + this.bossStar * BOSS.pullPerStar : target.fights ? f.pull : 0.06;
     const gentle = this.assist ? 0.5 : 1;
 
     // Fish surges: the fish thrashes (warning), then pulls hard. Holding the line during the pull
@@ -271,7 +274,7 @@ export class Fishing {
       if (this.surgeIn <= 0) {
         this.warning = false;
         this.surgeLeft = 0.32;
-        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? BOSS.surge + this.bossLevel * BOSS.surgePerLevel : 1.25);
+        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? BOSS.surge + this.bossLevel * BOSS.surgePerLevel + this.bossStar * BOSS.surgePerStar : 1.25);
         const gap = boss ? [1.3, 1.0, 0.75][this.bossPhase] : 1.5 - pull;
         this.surgeIn = gap + this.rng.next() * 0.9;
         this.events.surge?.(this.surgePower);
@@ -306,7 +309,7 @@ export class Fishing {
       const hold = boss ? BOSS.hold + BOSS.holdPerLine * this.lineLevel : s.lineHold * (this.assist ? 2 : 1);
       if (this.redTime >= hold) return this.finish('snap');
     } else {
-      this.redTime = Math.max(0, this.redTime - dt * (boss ? BOSS.wear : 2));
+      this.redTime = Math.max(0, this.redTime - dt * (boss ? Math.max(0.12, BOSS.wear - this.bossStar * BOSS.wearPerStar) : 2));
     }
     if (boss) {
       const ph = this.progress > 0.66 ? 2 : this.progress > 0.33 ? 1 : 0;

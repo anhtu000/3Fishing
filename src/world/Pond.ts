@@ -5,7 +5,7 @@ import { app } from '@core';
 import { pondById, petById, type PondDef } from '../content/data';
 import { PALETTES } from '../render/scenery';
 import { TEX } from '../render/textures';
-import { art, setArt } from '../ui/kit';
+import { art, fitScale, setArt } from '../ui/kit';
 
 export interface PondLayout {
   w: number;
@@ -46,6 +46,8 @@ export class Pond {
   /** One picture per pond on the far bank: cottage, waterfall, ice-fishing hut. */
   private landmark!: Phaser.GameObjects.Image;
   private aurora: Phaser.GameObjects.Image | null = null;
+  /** Gold cup on the dock when every species of this pond has a gold medal. */
+  private trophy: Phaser.GameObjects.Image | null = null;
   private hillsNear!: Phaser.GameObjects.Image;
   private trees: Phaser.GameObjects.Image[] = [];
   private reeds: Phaser.GameObjects.Image[] = [];
@@ -85,6 +87,7 @@ export class Pond {
     const s = this.scene;
     this.pond = pondById.get(pondId as 'cozy')!;
     const id = this.pond.id;
+    this.setTrophy(false);
     for (const o of [this.hillsFar, this.landmark, this.aurora, this.hillsNear, this.sand, this.surface, this.dock, ...this.trees, ...this.reeds, ...this.weeds, ...this.rocks, ...this.rays, ...this.lilies, ...this.fogs, ...this.flies]) o?.destroy();
     for (const f of this.swimmers) f.img.destroy();
     this.bossShadow?.destroy();
@@ -134,6 +137,23 @@ export class Pond {
     }
     this.refreshKnown();
     if (this.L) this.layout(app.viewport.info.width, app.viewport.info.height);
+  }
+
+  setTrophy(on: boolean) {
+    if (on && !this.trophy) {
+      this.trophy = art(this.scene, 0, 0, 'icon:i_trophy').setOrigin(0.5, 0.95).setDepth(16.5);
+      this.trophy.setScale(fitScale('icon:i_trophy', 58));
+      this.placeTrophy();
+    } else if (!on && this.trophy) {
+      this.trophy.destroy();
+      this.trophy = null;
+    }
+  }
+
+  private placeTrophy() {
+    if (!this.trophy || !this.L) return;
+    const portrait = this.L.h > this.L.w;
+    this.trophy.setPosition((portrait ? -70 : -40) + 112 * (portrait ? 0.95 : 1), this.L.deckY + 4);
   }
 
   /** Re-tint ambient fish after the Fishdex changes. */
@@ -246,6 +266,7 @@ export class Pond {
       this.snowFx.setDepth(6.5);
     }
     this.placePets();
+    this.placeTrophy();
   }
 
   private placePets() {

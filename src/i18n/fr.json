@@ -60,7 +60,8 @@
     "streak": "Parfait x{n} ! +{p} % de pièces",
     "todayFish": "Poisson du jour : {fish} ({pond}) ! x5 pièces et un œuf spécial",
     "nestEgg": "Œuf spécial dans le nid ! Éclot dans {t}",
-    "todayDone": "Poisson du jour attrapé ! Un nouveau demain"
+    "todayDone": "Poisson du jour attrapé ! Un nouveau demain",
+    "lateUnlock": "Nouveaux objectifs : médailles dans le Poissodex, revanches de boss avec étoiles et garde-robe dans Améliorer !"
   },
   "tut": {
     "cast": "Maintiens... puis lâche !",
@@ -123,7 +124,8 @@
     "rest": "Repos",
     "join": "Rejoindre",
     "slot": "+1 place d'équipe  {n}",
-    "shiny": "(brillant)"
+    "shiny": "(brillant)",
+    "special": "Spécial"
   },
   "perk": {
     "luck": "Chanceux",
@@ -287,7 +289,8 @@
     "snowy_owlet": "Petite chouette des neiges",
     "seal_pup": "Bébé phoque",
     "polar_cub": "Ourson polaire",
-    "aurora_hare": "Lièvre aurore"
+    "aurora_hare": "Lièvre aurore",
+    "rainbow_turtle": "Tortue arc-en-ciel"
   },
   "unit": {
     "d": "j",
@@ -314,5 +317,35 @@
     "empty": "Aucun œuf dans le panier. Les œufs attendent ici quand l'incubateur est plein.",
     "tip": "Touche un œuf pour le mettre dans l'incubateur.",
     "full": "L'incubateur est plein. Fais éclore un œuf ou ajoute une place !"
+  },
+  "wardrobe": {
+    "title": "Garde-robe",
+    "hats": "Chapeaux",
+    "rods": "Cannes",
+    "bobbers": "Flotteurs",
+    "worn": "Porté",
+    "wear": "Porter",
+    "day3": "Jour 3",
+    "newHat": "Nouveau chapeau !",
+    "gotHat": "Nouveau chapeau ! Le chat le porte déjà.",
+    "gotCaptain": "15 étoiles de boss : chapeau de capitaine débloqué !",
+    "fromDaily3": "Ce chapeau est le cadeau du jour 3.",
+    "fromStars15": "Gagne 15 étoiles de boss au total pour ce chapeau."
+  },
+  "rematch": {
+    "fight": "Revanche ★{n}",
+    "tickets": "Tickets de boss aujourd'hui : {n}/{max}",
+    "noTickets": "Plus de tickets de boss. De nouveaux demain !",
+    "best": "Étoiles {n}/{max}",
+    "cleared": "★{n} réussie !"
+  },
+  "medal": {
+    "m1": "Bronze",
+    "m2": "Argent",
+    "m3": "Or",
+    "got": "Médaille {medal} : {fish} !",
+    "pondGold": "{pond} : tous les poissons en or ! Ils se vendent +10 % ici",
+    "pondGoldOn": "Étang en or : poissons +10 %",
+    "pondGoldHint": "Médaille d'or pour chaque poisson : +10 % ici"
   }
 }

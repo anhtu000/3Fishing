@@ -307,3 +307,16 @@ Mọi thứ dưới đây chỉ mở sau boss 1, hoặc sau boss cuối. Phút �
 
 Ưu tiên nếu chỉ làm một phần: 1 (đấu lại boss có sao), 4 (mốc D3/D7), rồi 3 (cửa hàng). Ba mục này nhỏ, dùng lại cơ chế có sẵn, và trực tiếp giải quyết việc "xu không có chỗ tiêu" và "không có mục tiêu sau boss cuối".
 
+## 12. v1.8: đợt 1 giữ chân D3/D7 (đã làm)
+
+Mọi thứ dưới đây chỉ mở khi người chơi đã mở hồ 2 (Misty Creek, khoảng phút 13 với người chơi trung bình). Khi mở, game báo một lần: "Mục tiêu mới". Sim xác nhận 15 phút đầu không đổi gì: cùng mốc, cùng số thao tác, cùng số thưởng mỗi phút.
+
+| Hệ thống | Cách chơi | Lý do quay lại |
+| --- | --- | --- |
+| **Đấu lại boss có sao** | Boss đã hạ có thể đấu lại ở ★1 rồi ★2... đến ★10. Mỗi sao kéo mạnh hơn và cú giật mạnh hơn một chút. Mỗi ngày 3 vé; chỉ thắng mới tốn vé, thua thì đấu lại miễn phí. Thắng: xu (200 × hệ số hồ × (1 + 0,25 × sao)) và trứng Sử thi (Huyền thoại từ ★8), cơ hội shiny 3% + 2%/sao. Nút ở Sổ cá. Nút Sổ cá có chấm đỏ khi còn vé | 3 boss × 10 sao = 30 lần thắng, ít nhất 10 ngày. Sim tỉ lệ thắng (người chơi trung bình, đồ tăng dần): Cozy ★1 99% → ★10 45%; Frozen ★1 86% → ★10 14% |
+| **Huy chương sưu tập** | Mỗi loài có đồng / bạc / vàng. Số con cần cho đồng: 10 / 8 / 5 / 3 / 1 theo độ hiếm (Thường → Huyền thoại); bạc: 40 / 25 / 12 / 6 / 3; vàng = bạc + một con khổng lồ (size ≥ 1,4). Đủ vàng cả 8 loài của một hồ: cá hồ đó bán +10% vĩnh viễn, và cầu tàu có cúp vàng | Hàng chục mục tiêu nhỏ; cá Thường vẫn có giá trị; vàng cả hồ là mục tiêu tuần |
+| **Tủ đồ** (trong Nâng cấp) | 8 mũ (5k–500k), 4 màu cần (8k–300k), 3 phao (6k–150k), cộng các món mặc định. Mũ hiện trên con mèo, cần và phao đổi màu ngay. 2 mũ độc quyền: mũ cỏ bốn lá (quà ngày 3) và mũ thuyền trưởng (tổng 15 sao boss) | Xu có chỗ tiêu sau khi hết nội dung (tổng khoảng 1,6 triệu xu) |
+| **Mốc điểm danh** | Ngày 3: mũ cỏ bốn lá (đội luôn). Ngày 7: thú độc quyền Rùa cầu vồng (Huyền thoại, may mắn). Tuần sau thì ngày 7 cho thú thêm cấp. Bảng quà cho thấy trước cả hai | Mục tiêu rõ cho D3 và D7 |
+
+Khác: thú có hàng "Đặc biệt" trong bảng Thú; bảng Nâng cấp ghi đúng thời gian cắn câu (0,75 s + 0,02 s mỗi cấp phao).
+

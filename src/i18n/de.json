@@ -60,7 +60,8 @@
     "streak": "Perfekt x{n}! +{p} % Münzen",
     "todayFish": "Fisch des Tages: {fish} ({pond})! x5 Münzen und ein besonderes Ei",
     "nestEgg": "Besonderes Ei im Nest! Schlüpft in {t}",
-    "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen"
+    "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen",
+    "lateUnlock": "Neue Ziele: Medaillen im Fischdex, Boss-Revanchen mit Sternen und der Kleiderschrank bei Verbessern!"
   },
   "tut": {
     "cast": "Halten... dann loslassen!",
@@ -123,7 +124,8 @@
     "rest": "Pause",
     "join": "Ins Team",
     "slot": "+1 Teamplatz  {n}",
-    "shiny": "(glänzend)"
+    "shiny": "(glänzend)",
+    "special": "Besonders"
   },
   "perk": {
     "luck": "Glückspilz",
@@ -287,7 +289,8 @@
     "snowy_owlet": "Schnee-Eulchen",
     "seal_pup": "Robbenbaby",
     "polar_cub": "Eisbärjunges",
-    "aurora_hare": "Polarlichthase"
+    "aurora_hare": "Polarlichthase",
+    "rainbow_turtle": "Regenbogenschildkröte"
   },
   "unit": {
     "d": "T",
@@ -314,5 +317,35 @@
     "empty": "Noch keine Eier im Korb. Eier warten hier, wenn der Brutkasten voll ist.",
     "tip": "Tippe auf ein Ei, um es in den Brutkasten zu legen.",
     "full": "Der Brutkasten ist voll. Lass ein Ei schlüpfen oder kaufe einen Platz!"
+  },
+  "wardrobe": {
+    "title": "Kleiderschrank",
+    "hats": "Hüte",
+    "rods": "Ruten",
+    "bobbers": "Posen",
+    "worn": "Getragen",
+    "wear": "Tragen",
+    "day3": "Tag 3",
+    "newHat": "Neuer Hut!",
+    "gotHat": "Neuer Hut! Die Katze trägt ihn schon.",
+    "gotCaptain": "15 Boss-Sterne: Kapitänsmütze freigeschaltet!",
+    "fromDaily3": "Dieser Hut ist das Geschenk von Tag 3.",
+    "fromStars15": "Sammle insgesamt 15 Boss-Sterne für diesen Hut."
+  },
+  "rematch": {
+    "fight": "Revanche ★{n}",
+    "tickets": "Boss-Tickets heute: {n}/{max}",
+    "noTickets": "Keine Boss-Tickets mehr. Morgen gibt es neue!",
+    "best": "Sterne {n}/{max}",
+    "cleared": "★{n} geschafft!"
+  },
+  "medal": {
+    "m1": "Bronze",
+    "m2": "Silber",
+    "m3": "Gold",
+    "got": "{medal}medaille: {fish}!",
+    "pondGold": "{pond}: alle Fische in Gold! Fische hier bringen +10 %",
+    "pondGoldOn": "Goldteich: Fische +10 %",
+    "pondGoldHint": "Gold für jeden Fisch: +10 % hier"
   }
 }

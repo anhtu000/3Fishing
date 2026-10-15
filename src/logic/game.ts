@@ -2,7 +2,7 @@
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
 import { claimDaily, dailyStatus, dayKey } from '../../core/time';
-import { AD, INCUBATOR_SLOT_COST, OFFLINE_CAP, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { AD, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
@@ -23,6 +23,8 @@ import {
   luckOf,
   perkValue,
   petForEgg,
+  medalOf,
+  pondGold,
   questEgg,
   questProgress,
   refreshQuests,
@@ -64,6 +66,12 @@ export interface CatchResult {
   today: boolean;
   /** An egg went into the overnight nest. */
   nestEgg: boolean;
+  /** Medal reached with this catch (0 none; 1-3 bronze, silver, gold), late game only. */
+  medal: number;
+  /** A giant (size >= GIANT_SIZE). */
+  giant: boolean;
+  /** This catch completed the pond (every species at gold). */
+  pondGold: boolean;
 }
 
 /** Bonus per perfect hook in a row, capped. */
@@ -180,7 +188,7 @@ export class PondGame {
   applyCatch(roll: CatchRoll, perfect: boolean): CatchResult {
     const s = this.s;
     const pond = this.pond;
-    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false };
+    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false, medal: 0, giant: false, pondGold: false };
     s.stats.catches += 1;
     this.streak = perfect ? this.streak + 1 : 0;
     res.streak = this.streak;
@@ -193,6 +201,8 @@ export class PondGame {
     switch (roll.kind) {
       case 'fish': {
         s.stats.fish += 1;
+        const medalBefore = medalOf(s, roll.fish);
+        const goldBefore = pondGold(s, pond);
         const cm = Math.round(roll.fish.cm * roll.size * 10) / 10;
         res.cm = cm;
         const entry = s.dex[roll.fish.id];
@@ -208,7 +218,8 @@ export class PondGame {
           }
         }
         res.streakBonus = Math.min(STREAK_MAX, this.streak) * STREAK_STEP;
-        res.coins = Math.round(fishPrice(roll.fish, roll.size, pond, this.perk('merchant')) * (1 + res.streakBonus / 100));
+        const goldBonus = pondGold(s, pond) ? 1 + POND_GOLD_BONUS : 1;
+        res.coins = Math.round(fishPrice(roll.fish, roll.size, pond, this.perk('merchant')) * (1 + res.streakBonus / 100) * goldBonus);
         if (s.bounty === roll.fish.id) {
           res.bounty = true;
           res.coins = res.coins * 3 + 40 * pond.priceMult;
@@ -225,6 +236,12 @@ export class PondGame {
           res.nestEgg = addNestEgg(s, tier, pond.id, TODAY_FISH.shiny);
           // Nest taken (a daily-gift egg): the incubator or basket, then coins.
           if (!res.nestEgg && !storeEgg(s, tier, pond.id, TODAY_FISH.shiny)) res.coins += eggCoins(3, pond);
+        }
+        res.giant = roll.size >= GIANT_SIZE;
+        if (this.lateGame) {
+          const m = medalOf(s, roll.fish);
+          if (m > medalBefore) res.medal = m;
+          res.pondGold = !goldBefore && pondGold(s, pond);
         }
         fishSpeedsEggs(s);
         q('catch');
@@ -354,7 +371,7 @@ export class PondGame {
   }
 
   /** Claims today's login gift. Eggs go to the overnight nest (incubator, then coins, if it is taken). */
-  claimDailyGift(): { coins: number; egg: number; where: 'nest' | 'incubator' | 'basket' | 'sold' | null } | null {
+  claimDailyGift(): { coins: number; egg: number; where: 'nest' | 'incubator' | 'basket' | 'sold' | null; hat: string | null; pet: { id: string; result: HatchResult } | null } | null {
     const s = this.s;
     const today = dayKey(new Date(this.now()));
     const st = dailyStatus(s.daily, today);
@@ -364,6 +381,14 @@ export class PondGame {
     const coins = r.coins * rewardMult(s);
     this.earn(coins);
     let where: 'nest' | 'incubator' | 'basket' | 'sold' | null = null;
+    // Day 3: an exclusive hat (coins if already owned). Day 7: an exclusive pet (a level on later weeks).
+    let hat: string | null = null;
+    if (r.hat) {
+      if (this.grantCosmetic(r.hat)) hat = r.hat;
+      else this.earn(500 * rewardMult(s));
+    }
+    let pet: { id: string; result: HatchResult } | null = null;
+    if (r.pet) pet = { id: r.pet, result: addPet(s, r.pet, false, rewardMult(s)) };
     if (r.egg >= 0) {
       if (addNestEgg(s, r.egg, this.pond.id, 0.1)) where = 'nest';
       else {
@@ -375,7 +400,81 @@ export class PondGame {
         this.earn(eggCoins(r.egg, this.pond));
       }
     }
-    return { coins, egg: r.egg, where };
+    return { coins, egg: r.egg, where, hat, pet };
+  }
+
+  /** Medals, boss stars and the wardrobe open with the second pond (after the first 10-15 minutes). */
+  get lateGame() {
+    return this.s.unlocked.includes(LATE_GAME_POND);
+  }
+
+  // ---------- boss rematch ----------
+
+  /** Rematch tickets left today. */
+  get ticketsLeft() {
+    const day = dayKey(new Date(this.now()));
+    if (this.s.tickets.day !== day) this.s.tickets = { day, used: 0 };
+    return Math.max(0, BOSS_STARS.ticketsPerDay - this.s.tickets.used);
+  }
+
+  /** The star the next rematch of this pond's boss is fought at (null: not open). */
+  rematchStar(pond = this.pond): number | null {
+    if (!this.lateGame || !this.s.bosses.includes(pond.boss.id)) return null;
+    return Math.min(BOSS_STARS.max, (this.s.bossStars[pond.boss.id] ?? 0) + 1);
+  }
+
+  get starsTotal() {
+    return Object.values(this.s.bossStars).reduce((a, b) => a + b, 0);
+  }
+
+  /** A rematch won: uses a ticket, records the star, pays coins and an Epic (Legendary from star 8) egg. */
+  winRematch(star: number) {
+    const s = this.s;
+    const pond = this.pond;
+    if (this.ticketsLeft <= 0) return null;
+    s.tickets.used += 1;
+    const before = this.starsTotal;
+    s.bossStars[pond.boss.id] = Math.max(s.bossStars[pond.boss.id] ?? 0, star);
+    const coins = Math.round(BOSS_STARS.coins * pond.priceMult * (1 + BOSS_STARS.coinsPerStar * star));
+    this.earn(coins);
+    const tier = star >= BOSS_STARS.legendaryFrom ? 4 : 3;
+    const where = storeEgg(s, tier, pond.id, BOSS_STARS.shiny + BOSS_STARS.shinyPerStar * star);
+    if (!where) this.earn(eggCoins(tier, pond));
+    // 15 stars in total: the captain's hat.
+    let hat: string | null = null;
+    if (before < 15 && this.starsTotal >= 15 && this.grantCosmetic('hat:captain')) hat = 'hat:captain';
+    return { coins, tier, where, hat, stars: s.bossStars[pond.boss.id] };
+  }
+
+  // ---------- wardrobe ----------
+
+  owns(id: string) {
+    return this.s.style.owned.includes(id);
+  }
+
+  /** Gives a cosmetic and wears it (exclusives and gifts). False if already owned. */
+  grantCosmetic(id: string) {
+    const c = cosmeticById.get(id);
+    if (!c || this.owns(id)) return false;
+    this.s.style.owned.push(id);
+    this.s.style[c.kind] = id;
+    return true;
+  }
+
+  /** Buys (if needed) and wears a cosmetic. */
+  wear(id: string): 'worn' | 'bought' | 'noCoins' | 'locked' {
+    const c = cosmeticById.get(id);
+    if (!c) return 'locked';
+    if (!this.owns(id)) {
+      if (c.source) return 'locked';
+      if (this.s.coins < c.price) return 'noCoins';
+      this.s.coins -= c.price;
+      this.s.style.owned.push(id);
+      this.s.style[c.kind] = id;
+      return 'bought';
+    }
+    this.s.style[c.kind] = id;
+    return 'worn';
   }
 
   /** Puts the chosen basket egg into a free incubator slot. */
