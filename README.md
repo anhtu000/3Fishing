@@ -1,7 +1,7 @@
-# Game #3 — Pond Pals: Hatch & Fish (v1.2)
+# Game #3 — Pond Pals: Hatch & Fish (v1.4)
 
 Game câu cá thư giãn một chạm, ấp trứng ra thú cưng giúp câu. Đường phát hành A: Poki (độc quyền web).
-Tài liệu thiết kế: `Pond-Pals-Tai-lieu-thiet-ke.md` (cùng thư mục cha) và bản Docs.
+Tài liệu thiết kế: `docs/Pond-Pals-Tai-lieu-thiet-ke.md`. Báo cáo kinh tế, nhịp chơi và giữ chân: `docs/PondPals-BaoCao-KinhTe-v1.3.md` (mục 8 là v1.4).
 
 ## Chạy
 
@@ -12,6 +12,8 @@ npm run build          # bản Poki (SDK v2) -> dist/poki, kèm kiểm tra dung 
 npm run build:single   # một file HTML để thử trên điện thoại
 npm test               # test khung chung + luật game
 npm run sim            # mô phỏng cân bằng 1 giờ chơi
+bun tools/econ.ts 150  # mô phỏng 3 kiểu người chơi: mốc tiến trình, thưởng, thao tác mỗi phút
+bun tools/bosstest.ts  # tỉ lệ thắng boss lần đầu và thời lượng trận
 npm run audio          # tạo lại âm thanh (cần python3, numpy, ffmpeg)
 ```
 
