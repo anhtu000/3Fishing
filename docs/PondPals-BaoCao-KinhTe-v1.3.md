@@ -194,14 +194,14 @@ Vấn đề ở v1.3: quà điểm danh và nhiệm vụ ngày trả số xu c�
 | --- | --- | --- |
 | Quà điểm danh 7 ngày | 50–400 xu cố định; trứng ngày 5 và 7 vào lò ấp | Xu nhân hệ số hồ xa nhất đã mở (×1 / ×3 / ×9). Trứng ngày 5 (Không thường) và ngày 7 (Hiếm) vào **tổ qua đêm**, nở sau 6 giờ, 10% ra thú shiny |
 | Nhiệm vụ ngày (3 cái) | 60–150 xu × hệ số hồ đang đứng | Nhân hệ số hồ xa nhất. Nhiệm vụ thứ 3 tặng thêm một trứng (Không thường; Hiếm khi đã mở hồ 2), có huy hiệu trứng trên nút |
-| **Cá hôm nay** (mới) | Không có | Mỗi hồ mỗi ngày có một loài Hiếm (50%), Sử thi (35%) hoặc Huyền thoại (15%). Poster vàng "TODAY'S FISH ×5 + egg" thay chỗ poster TRUY NÃ. Mỗi lượt quăng có 10% cơ hội nó cắn câu (Huyền thoại 6%). Câu được thì nhận ×5 xu + 100 × hệ số hồ, cộng một trứng Hiếm (Sử thi nếu là cá Huyền thoại) vào tổ qua đêm, nở sau 6 giờ, **25% ra shiny**. Đầu phiên game báo tên cá hôm nay. Mỗi hồ có cá riêng, nên người đã mở 3 hồ có 3 mục tiêu mỗi ngày |
+| **Cá hôm nay** (mới) | Không có | Mỗi ngày một con cho cả game, chọn lúc đầu ngày trong số các hồ đã mở và giữ cố định cả ngày (đi hồ khác hay mở hồ mới không đổi). Loài Hiếm (50%), Sử thi (35%) hoặc Huyền thoại (15%). Ở đúng hồ đó thì poster vàng "TODAY'S FISH ×5 + egg" thay chỗ poster TRUY NÃ; mỗi lượt quăng có 10% cơ hội nó cắn câu (Huyền thoại 6%). Câu được: ×5 xu + 100 × hệ số hồ, cộng trứng Hiếm (Sử thi nếu là cá Huyền thoại) vào tổ qua đêm, nở sau 6 giờ, **25% ra shiny**. Đầu phiên game báo tên cá và tên hồ; bản đồ gắn nhãn vàng ở hồ đó, nút Bản đồ có chấm đỏ khi cá ở hồ khác |
 | **Tổ qua đêm** (mới) | Không có | Một ô trứng riêng (nút màu gỗ dưới các lò ấp), không chiếm chỗ lò ấp nên không chặn trứng trong phiên. Hiện giờ dạng "5h58". Có nút "Nở ngay" bằng quảng cáo thưởng (tùy chọn, nút miễn phí "Câu tiếp" nằm trên) |
 | Thu nhập offline | Tối đa 2 giờ | Tối đa 8 giờ (vẫn 50%, x2 bằng quảng cáo) |
 
 Vòng quay lại hằng ngày sau khi xong hồ đầu:
 
 1. Mở game: thu nhập offline (tối đa 8 giờ), rồi quà điểm danh. Trứng ngày 5 và 7 vào tổ.
-2. Game báo cá hôm nay. Câu nó để nhận xu lớn và trứng tổ (cơ hội shiny 25%).
+2. Game báo cá hôm nay và nó ở hồ nào. Đến hồ đó câu nó để nhận xu lớn và trứng tổ (cơ hội shiny 25%).
 3. Làm 3 nhiệm vụ, nhiệm vụ thứ 3 cho thêm trứng.
 4. Rời game. Hôm sau quay lại thì trứng tổ đã nở, có quà ngày mới và cá hôm nay mới.
 
@@ -212,3 +212,19 @@ Kiểm tra:
 - Đủ chữ cho 6 ngôn ngữ (test đối chiếu khóa dịch pass).
 
 Vẫn còn cho bản sau: nội dung sau boss cuối (hồ 4 hoặc đấu lại boss mạnh dần mỗi ngày).
+
+## 9. Bổ sung v1.5
+
+- **Giỏ trứng:**
+  - Trứng câu được vẫn vào ô lò ấp trống như cũ. Lò đầy thì trứng vào giỏ (tối đa 12 trứng) thay vì bị bán.
+  - Ô lò trống khi giỏ có trứng sẽ hiện "+" và nhấp nháy. Bấm vào ô đó hoặc nút giỏ (hiện số trứng) để mở bảng giỏ và chọn trứng nào đem ấp. Bảng xếp trứng hiếm lên đầu, ghi thời gian nở, có nút mua thêm ô lò.
+  - Trứng từ nhiệm vụ, quà ngày, boss, quảng cáo và cá hôm nay cũng vào giỏ khi lò đầy. Giỏ đầy mới bán lấy xu.
+  - Sim: nhịp mở hồ gần như không đổi (hồ 3 ở phút 36 với người chơi trung bình).
+- **Cá hôm nay đổi từ mỗi hồ một con sang một con cho cả game mỗi ngày** (chi tiết ở bảng mục 8).
+  - Lý do: v1.4 đổi poster mỗi khi sang hồ khác nên trông như bị reset. Người có 3 hồ còn nhận 3 phần thưởng mỗi ngày, trong khi tổ chỉ chứa 1 trứng.
+  - Nay cá được chọn một lần lúc đầu ngày rồi giữ nguyên, nên đi hồ khác hay mở hồ mới không làm đổi cá. Đây cũng là lý do đi lại các hồ cũ.
+- **Cảnh vật riêng cho từng hồ** (không chỉ đổi màu):
+  - Cozy: đồi tròn, nhà nhỏ mái đỏ có khói và hàng rào.
+  - Misty: núi đá lởm chởm, vách đá có rêu, thác nước, trăng lưỡi liềm, đá kê chân thay lá súng, gỗ trôi dưới đáy.
+  - Frozen: núi tuyết, đồi tuyết lấp lánh, chòi câu cá trên băng và lều tuyết, cực quang, cụm tinh thể băng dưới đáy.
+

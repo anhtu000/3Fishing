@@ -31,7 +31,7 @@ import {
   rollSize,
   teamPerk,
   tickEggs,
-  todayFishFor,
+  pickTodayFish,
   upgradeCost,
   type CastZone,
   type CatchRoll,
@@ -110,14 +110,32 @@ export class PondGame {
     return this.s.tutorial.includes('done') && this.s.luckyDay !== dayKey(new Date(this.now()));
   }
 
-  /** Today's special fish in this pond, or null once caught today (or before the tutorial ends). */
-  get todayFish(): FishDef | null {
+  /**
+   * Today's fish (one a day for the whole game) and the pond it lives in, or null once caught today
+   * (or before the tutorial ends). Fixed for the day once picked.
+   */
+  get today(): { fish: FishDef; pond: PondDef } | null {
     const s = this.s;
     if (!s.tutorial.includes('done')) return null;
     const day = dayKey(new Date(this.now()));
-    if (s.todayFish.day !== day) s.todayFish = { day, caught: [] };
-    if (s.todayFish.caught.includes(this.pond.id)) return null;
-    return todayFishFor(this.pond, day);
+    const tf = s.todayFish;
+    let pond = pondById.get(tf?.pond as 'cozy');
+    let fish = pond?.fish.find((f) => f.id === tf.fish);
+    if (!tf || tf.day !== day || !pond || !fish) {
+      const open = PONDS.filter((p) => s.unlocked.includes(p.id));
+      const pick = pickTodayFish(open.length ? open : [PONDS[0]], day);
+      pond = pick.pond;
+      fish = pick.fish;
+      s.todayFish = { day, pond: pond.id, fish: fish.id, caught: false };
+    }
+    if (s.todayFish.caught) return null;
+    return { fish, pond };
+  }
+
+  /** Today's fish when it lives in the pond you are in. */
+  get todayFish(): FishDef | null {
+    const t = this.today;
+    return t && t.pond.id === this.pond.id ? t.fish : null;
   }
 
   luck(zone: CastZone, lucky = false) {
@@ -201,7 +219,7 @@ export class PondGame {
         if (today && today.id === roll.fish.id) {
           res.today = true;
           res.coins = res.coins * TODAY_FISH.priceMult + TODAY_FISH.bonus * pond.priceMult;
-          s.todayFish.caught.push(pond.id);
+          s.todayFish.caught = true;
           // An overnight egg: Rare (Epic for a Legendary), with a good shiny chance.
           const tier = roll.fish.rarity >= 4 ? 3 : 2;
           res.nestEgg = addNestEgg(s, tier, pond.id, TODAY_FISH.shiny);

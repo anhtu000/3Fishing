@@ -58,7 +58,7 @@
     "again": "Missed! It bites again...",
     "softEarly": "Not yet! Wait for the big splash",
     "streak": "Perfect x{n}! +{p}% coins",
-    "todayFish": "Today's fish: {fish}! Catch it for x5 coins and a special egg",
+    "todayFish": "Today's fish: {fish} in {pond}! x5 coins and a special egg",
     "nestEgg": "Special egg in the nest! Hatches in {t}",
     "todayDone": "Today's fish caught! A new one tomorrow"
   },

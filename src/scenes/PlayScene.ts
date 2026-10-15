@@ -546,12 +546,13 @@ export class PlayScene extends BaseScene {
   private announcedDay = '';
   /** Once a session per day: name today's fish. */
   private announceToday() {
-    const f = this.pg.todayFish;
-    if (!f || this.announcedDay === dayKey()) return;
+    const today = this.pg.today;
+    if (!today || this.announcedDay === dayKey()) return;
+    const f = today.fish;
     this.announcedDay = dayKey();
     // After the daily gift's own note has gone.
     this.time.delayedCall(2600, () => {
-      note(this, t('msg.todayFish', { fish: t(`fish.${f.id}`) }));
+      note(this, t('msg.todayFish', { fish: t(`fish.${f.id}`), pond: pondName(today.pond.id) }));
       app.audio.play('pop');
     });
   }
@@ -905,7 +906,8 @@ export class PlayScene extends BaseScene {
       canUpgrade: anyUpgradeAffordable(s),
       petBadge: Object.keys(s.pets).length > this.seenPets,
       dexBadge: Object.keys(s.dex).length > this.seenDex,
-      mapBadge: PONDS.some((p) => !s.unlocked.includes(p.id) && this.pg.canUnlock(p) && s.coins >= p.unlockCost),
+      // Map badge: a pond to open, or today's fish waiting in another pond.
+      mapBadge: PONDS.some((p) => !s.unlocked.includes(p.id) && this.pg.canUnlock(p) && s.coins >= p.unlockCost) || (!!this.pg.today && !this.pg.todayFish),
       bossReady: this.pg.bossReady,
       showHint: tutDone && !f.auto,
       adsOk: app.ads.rewardedAvailable && !app.clean,

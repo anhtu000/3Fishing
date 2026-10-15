@@ -58,7 +58,7 @@
     "again": "Mancato! Abbocca di nuovo...",
     "softEarly": "Non ancora! Aspetta il grande schizzo",
     "streak": "Perfetto x{n}! +{p}% monete",
-    "todayFish": "Pesce del giorno: {fish}! x5 monete e un uovo speciale",
+    "todayFish": "Pesce del giorno: {fish} ({pond})! x5 monete e un uovo speciale",
     "nestEgg": "Uovo speciale nel nido! Si schiude tra {t}",
     "todayDone": "Pesce del giorno pescato! Domani ce n'è un altro"
   },

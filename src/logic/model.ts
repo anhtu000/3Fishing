@@ -71,8 +71,11 @@ export interface SaveData {
   bounty: string | null;
   /** Catches until the next WANTED fish appears. */
   bountyIn: number;
-  /** Today's fish: one special species per pond per day. Ponds where it was caught today. */
-  todayFish: { day: string; caught: string[] };
+  /**
+   * Today's fish: one special species a day for the whole game. Picked once at the start of the day
+   * from the ponds open then, so travelling or opening a new pond does not change it.
+   */
+  todayFish: { day: string; pond: string; fish: string; caught: boolean };
   /** Seed state for gameplay rolls, so a reload cannot re-roll a result. */
   rng: number;
 }
@@ -101,7 +104,7 @@ export function defaultSave(): SaveData {
     autoFish: false,
     bounty: null,
     bountyIn: 8,
-    todayFish: { day: '', caught: [] },
+    todayFish: { day: '', pond: '', fish: '', caught: false },
     rng: 0,
   };
 }

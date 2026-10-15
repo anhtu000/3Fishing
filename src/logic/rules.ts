@@ -271,14 +271,17 @@ export function rewardMult(s: SaveData) {
   return Math.max(1, ...s.unlocked.map((id) => pondById.get(id as 'cozy')?.priceMult ?? 1));
 }
 
-/** Today's special fish for a pond: Rare most days, Epic some, Legendary now and then. */
-export function todayFishFor(pond: PondDef, day: string) {
+/** Today's special fish: a pond among the open ones, then Rare most days, Epic some, Legendary now and then. */
+export function pickTodayFish(unlocked: PondDef[], day: string) {
   let h = 2166136261;
-  for (const c of day + pond.id) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  for (const c of day) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
+  const pond = unlocked[h % unlocked.length];
+  h = Math.imul(h ^ (h >>> 13), 0x5bd1e995) >>> 0;
   const r = (h % 1000) / 1000;
   const tier = r < 0.5 ? 2 : r < 0.85 ? 3 : 4;
-  return pond.fish.find((f) => f.rarity === tier) ?? pond.fish[pond.fish.length - 1];
+  const fish = pond.fish.find((f) => f.rarity === tier) ?? pond.fish[pond.fish.length - 1];
+  return { pond, fish };
 }
 
 export function fishSpeedsEggs(s: SaveData) {

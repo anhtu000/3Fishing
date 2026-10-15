@@ -58,7 +58,7 @@
     "again": "Verpasst! Er beißt noch mal...",
     "softEarly": "Noch nicht! Warte auf den großen Platscher",
     "streak": "Perfekt x{n}! +{p} % Münzen",
-    "todayFish": "Fisch des Tages: {fish}! x5 Münzen und ein besonderes Ei",
+    "todayFish": "Fisch des Tages: {fish} ({pond})! x5 Münzen und ein besonderes Ei",
     "nestEgg": "Besonderes Ei im Nest! Schlüpft in {t}",
     "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen"
   },

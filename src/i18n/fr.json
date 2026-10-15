@@ -58,7 +58,7 @@
     "again": "Raté ! Il remord...",
     "softEarly": "Pas encore ! Attends la grosse éclaboussure",
     "streak": "Parfait x{n} ! +{p} % de pièces",
-    "todayFish": "Poisson du jour : {fish} ! x5 pièces et un œuf spécial",
+    "todayFish": "Poisson du jour : {fish} ({pond}) ! x5 pièces et un œuf spécial",
     "nestEgg": "Œuf spécial dans le nid ! Éclot dans {t}",
     "todayDone": "Poisson du jour attrapé ! Un nouveau demain"
   },

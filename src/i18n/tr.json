@@ -58,7 +58,7 @@
     "again": "Kaçırdın! Yine vuruyor...",
     "softEarly": "Daha değil! Büyük sıçramayı bekle",
     "streak": "Mükemmel x{n}! +%{p} altın",
-    "todayFish": "Günün balığı: {fish}! x5 altın ve özel yumurta",
+    "todayFish": "Günün balığı: {fish} ({pond})! x5 altın ve özel yumurta",
     "nestEgg": "Yuvada özel yumurta! {t} sonra çıkar",
     "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir"
   },

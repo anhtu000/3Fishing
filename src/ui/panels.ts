@@ -328,6 +328,14 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
       const name = fitText(txt(scene, mx + 250, y - 60, pondName(p.id), 34, { color: DARK, stroke: false }).setOrigin(0, 0.5), pw - 330);
       const info = fitText(txt(scene, mx + 250, y - 18, t('map.info', { m: p.priceMult, n: dexCount(s, p) }), 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5), pw - 330);
       items.push(name, info);
+      // Today's fish lives here: a gold tag on the picture.
+      if (g.today?.pond.id === p.id) {
+        const tag = scene.add.graphics();
+        tag.fillStyle(INK, 1).fillRoundedRect(mx + 6, y - 112, 208, 44, 18);
+        tag.fillStyle(0xffd86b, 1).fillRoundedRect(mx + 10, y - 108, 200, 36, 16);
+        const tt = fitText(txt(scene, mx + 110, y - 91, t('today.label'), 22, { color: '#b4521a', stroke: false }), 184);
+        items.push(tag, tt);
+      }
       const here = s.pond === p.id;
       const unlocked = s.unlocked.includes(p.id);
       const canUnlock = g.canUnlock(p);

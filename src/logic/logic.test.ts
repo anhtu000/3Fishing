@@ -102,27 +102,37 @@ test('fishing machine: holding forever snaps the line, striking on a nibble scar
   assert.equal(outcome, 'early');
 });
 
-test("today's fish: one per pond per day, pays x5 and lays an overnight egg", () => {
+test("today's fish: one a day for the whole game, fixed for the day, pays x5 and lays an overnight egg", () => {
   const s = defaultSave();
   s.tutorial = ['done'];
   s.stats.catches = 10;
+  s.unlocked = ['cozy', 'misty', 'frozen'];
   const now = new Date(2026, 9, 15, 12).getTime();
   const g = new PondGame(s, new Rng(3), () => now);
-  const today = g.todayFish!;
-  assert.ok(today && today.rarity >= 2, 'a Rare or better fish');
-  const plain = g.applyCatch({ kind: 'fish', fish: PONDS[0].fish[0], size: 1 }, false);
-  assert.equal(plain.today, false);
-  const r = g.applyCatch({ kind: 'fish', fish: today, size: 1 }, false);
+  const today = g.today!;
+  assert.ok(today && today.fish.rarity >= 2, 'a Rare or better fish');
+  // Travelling does not change it; it only bites in its own pond.
+  for (const p of PONDS) {
+    s.pond = p.id;
+    assert.equal(g.today!.fish.id, today.fish.id);
+    assert.equal(g.todayFish?.id ?? null, p.id === today.pond.id ? today.fish.id : null);
+  }
+  s.pond = today.pond.id;
+  const r = g.applyCatch({ kind: 'fish', fish: today.fish, size: 1 }, false);
   assert.equal(r.today, true);
   assert.equal(r.nestEgg, true);
   assert.ok(s.eggs[4] && s.eggs[4].total === 6 * 3600 && s.eggs[4].shiny === 0.25);
-  assert.equal(g.todayFish, null, 'caught for today');
+  assert.equal(g.today, null, 'caught for today, in every pond');
+  for (const p of PONDS) {
+    s.pond = p.id;
+    assert.equal(g.todayFish, null);
+  }
   assert.equal(readyEggIndex(s), -1);
   tickEggs(s, 6 * 3600, 0);
   assert.equal(readyEggIndex(s), 4, 'the nest egg hatches like any other');
   // Next day: a fresh one.
   const g2 = new PondGame(s, new Rng(3), () => now + 24 * 3600 * 1000);
-  assert.ok(g2.todayFish);
+  assert.ok(g2.today);
 });
 
 test('daily rewards scale with the best pond, the third quest gives an egg', () => {
