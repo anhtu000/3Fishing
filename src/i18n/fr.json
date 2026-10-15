@@ -117,7 +117,7 @@
     "team": "ÉQUIPE",
     "teamLine": "Équipe {n}/{max}  ·  les animaux aident à chaque lancer",
     "level": "Niv. {n}",
-    "rarityLevel": "{rarity}  ·  Niveau {n}/5",
+    "rarityLevel": "{rarity}  ·  Niveau {n}/{max}",
     "empty": "Pêche des œufs et fais-les éclore\npour trouver des amis !",
     "xp": "XP {n}/{max}",
     "rest": "Repos",

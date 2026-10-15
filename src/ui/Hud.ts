@@ -201,7 +201,8 @@ export class Hud {
     // Below Poki's pill (top-left on phones, 62 px tall at a 24 px offset).
     const sy = portrait ? 250 : 150;
     const step = portrait ? 104 : 96;
-    [this.side.quests, this.side.golden, this.side.mystery, this.side.auto].forEach((b, i) => b.setPosition(sx, sy + i * step));
+    // The mystery-egg ad is gone (ads for eggs: only "hatch now"), so three side buttons.
+    [this.side.quests, this.side.golden, this.side.auto].forEach((b, i) => b.setPosition(sx, sy + i * step));
     this.portrait = portrait;
     this.wDesign = w;
     this.hDesign = h;
@@ -282,9 +283,9 @@ export class Hud {
     const tutDone = s.tutorial.includes('done');
     this.side.quests.setVisible(s.quests.list.length > 0 && (tutDone || s.stats.playSec > 180)).setBadge(extra.questBadge);
     this.side.golden.setVisible(tutDone && extra.adsOk && extra.goldenLeft <= 0);
-    // Offers are gated by game state, never by an ad timer: bait while not already active, an egg while a slot is free.
-    const freeSlot = s.eggs.some((e, i) => i < s.incubatorSlots && !e);
-    this.side.mystery.setVisible(tutDone && extra.adsOk && s.stats.catches >= 12 && freeSlot);
+    // Offers are gated by game state, never by an ad timer: bait while not already active.
+    // No ad for eggs here: the only egg ad is "hatch now" on an egg that is warming up.
+    this.side.mystery.setVisible(false);
     this.side.auto.setVisible(extra.autoUnlocked).setColor(extra.autoOn ? COLORS.green : COLORS.grey);
     this.boss.setVisible(extra.bossReady && !f.busy);
     this.bottom[0].setGlow(extra.canUpgrade && !f.busy).setBadge(extra.canUpgrade ? -1 : 0);

@@ -117,7 +117,7 @@
     "team": "SQUADRA",
     "teamLine": "Squadra {n}/{max}  ·  gli amici aiutano a ogni lancio",
     "level": "Liv. {n}",
-    "rarityLevel": "{rarity}  ·  Livello {n}/5",
+    "rarityLevel": "{rarity}  ·  Livello {n}/{max}",
     "empty": "Pesca uova e falle schiudere\nper trovare nuovi amici!",
     "xp": "EXP {n}/{max}",
     "rest": "Riposo",

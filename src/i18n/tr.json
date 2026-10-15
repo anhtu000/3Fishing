@@ -117,7 +117,7 @@
     "team": "TAKIM",
     "teamLine": "Takım {n}/{max}  ·  dostlar her atışta yardım eder",
     "level": "Sv. {n}",
-    "rarityLevel": "{rarity}  ·  Seviye {n}/5",
+    "rarityLevel": "{rarity}  ·  Seviye {n}/{max}",
     "empty": "Yumurta yakala ve çatlat,\nyeni dostlar bul!",
     "xp": "TP {n}/{max}",
     "rest": "Dinlen",

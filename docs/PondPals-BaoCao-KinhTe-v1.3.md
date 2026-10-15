@@ -228,3 +228,15 @@ Vẫn còn cho bản sau: nội dung sau boss cuối (hồ 4 hoặc đấu lại
   - Misty: núi đá lởm chởm, vách đá có rêu, thác nước, trăng lưỡi liềm, đá kê chân thay lá súng, gỗ trôi dưới đáy.
   - Frozen: núi tuyết, đồi tuyết lấp lánh, chòi câu cá trên băng và lều tuyết, cực quang, cụm tinh thể băng dưới đáy.
 
+## 10. Bổ sung v1.6: chỉnh kinh tế trứng và thú
+
+| Hạng mục | Trước | v1.6 |
+| --- | --- | --- |
+| Giá thêm ô lò ấp | 150 / 600 / 2.000 xu | **10.000** / 40.000 / 150.000 xu (ô 2 / 3 / 4) |
+| Quảng cáo liên quan trứng | Nút quà tím (xem quảng cáo nhận một trứng, chiếm ô lò trống) và nút "Nở ngay" | Bỏ nút quà tím. Chỉ còn **"Nở ngay"** (xem quảng cáo để trứng đang ấp nở luôn) |
+| Cấp tối đa của thú | 5 (hệ số kỹ năng ×1,0 / 1,2 / 1,4 / 1,6 / 1,8) | **20**. Hệ số = 1 + 1,07 × √((cấp − 1) / 19): cấp 2 ×1,25, cấp 5 ×1,49, cấp 10 ×1,74, cấp 20 **×2,07** (cao hơn mức tối đa cũ ×1,8 khoảng 15%). Cấp đầu tăng nhanh như trước, cấp sau chậm dần |
+| Điểm kinh nghiệm để lên cấp | Số thú trùng = cấp hiện tại (lên cấp 5 cần 10 con trùng) | Giữ công thức. Lên cấp 20 cần tổng 190 con trùng: mục tiêu dài hạn cho người chơi lâu năm |
+| Tần suất ra trứng khi câu | 15% | **18%** (+20%, lấy bớt từ cá: 70 → 67%) |
+
+Sim 150 lượt (người chơi trung bình): mở hồ 2 ở phút 13,6, hồ 3 ở phút 36, boss cuối ở phút 43,8. Nhịp gần như không đổi. Sim không mua thêm ô lò, nên giá ô mới không làm chậm nhịp. Người chơi thật ở hồ 1 (khoảng 200–260 xu/phút) cần chừng 40 phút để mua ô thứ 2, nên phần lớn sẽ mua khi đến hồ 2–3. Trong lúc đó trứng thừa nằm trong giỏ chờ ấp, không bị bán.
+

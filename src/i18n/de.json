@@ -117,7 +117,7 @@
     "team": "TEAM",
     "teamLine": "Team {n}/{max}  ·  Tiere helfen bei jedem Wurf",
     "level": "St. {n}",
-    "rarityLevel": "{rarity}  ·  Stufe {n}/5",
+    "rarityLevel": "{rarity}  ·  Stufe {n}/{max}",
     "empty": "Angle Eier und lass sie schlüpfen,\num tierische Freunde zu finden!",
     "xp": "EP {n}/{max}",
     "rest": "Pause",

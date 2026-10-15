@@ -1,7 +1,7 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { HATCH_SEC, NEST_INDEX, PERKS, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, STREAK, UPGRADES, UPGRADE_IDS, petById, type PetDef, type UpgradeId } from '../content/data';
+import { HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, STREAK, UPGRADES, UPGRADE_IDS, petById, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
 import { dexCount, perkValue, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
@@ -207,11 +207,11 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     if (p && st) {
       dimg.setTexture(`pet:${p.id}`).setScale(fitScale(`pet:${p.id}`, 170));
       fitText(dname.setText(`${petName(p.id)}${st.shiny ? ` ${t('pets.shiny')}` : ''}`), pw - 290);
-      fitText(drar.setText(t('pets.rarityLevel', { rarity: rarityName(p.rarity).toLocaleUpperCase(), n: st.level })).setColor(RARITY_CSS[p.rarity]), pw - 290);
+      fitText(drar.setText(t('pets.rarityLevel', { rarity: rarityName(p.rarity).toLocaleUpperCase(), n: st.level, max: PET_MAX_LEVEL })).setColor(RARITY_CSS[p.rarity]), pw - 290);
       fitText(dperk.setText(perkLine(p, st.level)), pw - 290);
       const need = xpForLevel(st.level);
-      drawBar(xpG, 180, 18, st.level >= 5 ? 1 : st.xp / need, COLORS.pink);
-      xpT.setText(st.level >= 5 ? t('upg.max') : t('pets.xp', { n: st.xp, max: need }));
+      drawBar(xpG, 180, 18, st.level >= PET_MAX_LEVEL ? 1 : st.xp / need, COLORS.pink);
+      xpT.setText(st.level >= PET_MAX_LEVEL ? t('upg.max') : t('pets.xp', { n: st.xp, max: need }));
       const inTeam = s.team.includes(p.id);
       toggle.setLabel(inTeam ? t('pets.rest') : t('pets.join')).setColor(inTeam ? COLORS.grey : COLORS.green);
     }

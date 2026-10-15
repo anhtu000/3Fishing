@@ -154,7 +154,12 @@ export const PERKS: Record<PerkKind, { name: string; values: number[]; unit: 'pc
   angler: { name: 'Angler', values: [1, 1.6, 2.4, 3.5, 5], unit: 'perMin' },
   nurture: { name: 'Nurture', values: [5, 10, 18, 28, 40], unit: 'pct' },
 };
-export const PET_MAX_LEVEL = 5;
+export const PET_MAX_LEVEL = 20;
+/**
+ * Perk multiplier at the top level (level 1 = x1). Gains come early and slow down (square root), so
+ * level 2-5 feel like before and level 20 ends about 15% above the old level-5 cap (x1.8 -> x2.07).
+ */
+export const PET_TOP_MULT = 2.07;
 
 export type UpgradeId = 'rod' | 'line' | 'bait' | 'float';
 export const UPGRADES: Record<UpgradeId, { name: string; c0: number; max: number; icon: string }> = {
@@ -167,7 +172,8 @@ export const UPGRADE_IDS = Object.keys(UPGRADES) as UpgradeId[];
 export const UPGRADE_GROWTH = 1.15;
 
 /** What can come up on the hook, base weights before scripted beats. */
-export const CATCH_WEIGHTS = { fish: 70, egg: 15, junk: 10, chest: 5 };
+// Eggs: 15 -> 18 (+20%).
+export const CATCH_WEIGHTS = { fish: 67, egg: 18, junk: 10, chest: 5 };
 
 export const JUNK_NAMES: Record<string, string> = {
   boot: 'Rubber Boot',
@@ -184,7 +190,7 @@ export const JUNK_LINES = [
 ];
 
 /** Coin prices for extra slots. One currency only (Poki: dual currencies confuse web players). */
-export const INCUBATOR_SLOT_COST = [0, 150, 600, 2000];
+export const INCUBATOR_SLOT_COST = [0, 10000, 40000, 150000];
 export const TEAM_SLOT_COST = [0, 0, 0, 500, 2500];
 export const START_TEAM_SLOTS = 3;
 

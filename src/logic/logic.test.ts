@@ -2,11 +2,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Rng } from '../../core/rng';
-import { PONDS, RARITY_WEIGHTS } from '../content/data';
+import { PERKS, PONDS, RARITY_WEIGHTS } from '../content/data';
 import { Fishing, FishingBot } from './fishing';
 import { PondGame } from './game';
 import { defaultSave } from './model';
-import { addEgg, addPet, fishPrice, luckOf, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
+import { addEgg, addPet, fishPrice, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
 
 test('price follows B x S x P x (1 + M)', () => {
   const pond = PONDS[1];
@@ -46,9 +46,18 @@ test('duplicate pets level up, max level pays coins', () => {
   const r = addPet(s, 'puddle_frog', false, 1);
   assert.equal(r.kind, 'xp');
   assert.equal(s.pets.puddle_frog.level, 2);
-  for (let i = 0; i < 20; i++) addPet(s, 'puddle_frog', false, 1);
-  assert.equal(s.pets.puddle_frog.level, 5);
+  for (let i = 0; i < 300; i++) addPet(s, 'puddle_frog', false, 1);
+  assert.equal(s.pets.puddle_frog.level, 20);
   assert.equal(addPet(s, 'puddle_frog', false, 3).kind, 'maxed');
+});
+
+test('pet perks: level 20 is about 15% above the old level-5 cap, early levels feel the same', () => {
+  const base = PERKS.merchant.values[0];
+  const old5 = base * 1.8;
+  const top = perkValue('merchant', 0, 20);
+  assert.ok(top / old5 >= 1.1 && top / old5 <= 1.2, `top ${top} vs old ${old5}`);
+  assert.ok(Math.abs(perkValue('merchant', 0, 2) - base * 1.2) / base < 0.06, 'level 2 close to before');
+  for (let l = 2; l <= 20; l++) assert.ok(perkValue('merchant', 0, l) > perkValue('merchant', 0, l - 1));
 });
 
 test('daily quests: three, different kinds, same for the same day', () => {

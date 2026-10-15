@@ -10,6 +10,7 @@ import {
   NEST_SEC,
   PERKS,
   PET_MAX_LEVEL,
+  PET_TOP_MULT,
   QUEST_POOL,
   RARITY_PRICE,
   RARITY_WEIGHTS,
@@ -43,7 +44,8 @@ export function anyUpgradeAffordable(s: SaveData) {
 // ---------- pets and perks ----------
 
 export function perkValue(perk: PerkKind, rarity: number, level: number) {
-  return PERKS[perk].values[rarity] * (1 + 0.2 * (level - 1));
+  const lv = Math.max(1, Math.min(PET_MAX_LEVEL, level));
+  return PERKS[perk].values[rarity] * (1 + (PET_TOP_MULT - 1) * Math.sqrt((lv - 1) / (PET_MAX_LEVEL - 1)));
 }
 
 /** Sum of a perk over the pets in the team. */

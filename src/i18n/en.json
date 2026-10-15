@@ -117,7 +117,7 @@
     "team": "TEAM",
     "teamLine": "Team {n}/{max}  ·  pets help every cast",
     "level": "Lv {n}",
-    "rarityLevel": "{rarity}  ·  Level {n}/5",
+    "rarityLevel": "{rarity}  ·  Level {n}/{max}",
     "empty": "Catch eggs and hatch them\nto find pet friends!",
     "xp": "XP {n}/{max}",
     "rest": "Rest",

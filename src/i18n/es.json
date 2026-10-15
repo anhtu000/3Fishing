@@ -117,7 +117,7 @@
     "team": "EQUIPO",
     "teamLine": "Equipo {n}/{max}  ·  ayudan en cada lanzamiento",
     "level": "Nv. {n}",
-    "rarityLevel": "{rarity}  ·  Nivel {n}/5",
+    "rarityLevel": "{rarity}  ·  Nivel {n}/{max}",
     "empty": "Pesca huevos y haz que eclosionen\npara encontrar amigos.",
     "xp": "EXP {n}/{max}",
     "rest": "Descansar",
