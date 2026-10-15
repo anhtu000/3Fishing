@@ -5,6 +5,8 @@ import {
   CATCH_WEIGHTS,
   FIGHT,
   HATCH_SEC,
+  NEST_INDEX,
+  NEST_SEC,
   PERKS,
   PET_MAX_LEVEL,
   QUEST_POOL,
@@ -232,12 +234,34 @@ export function tickEggs(s: SaveData, sec: number, nurturePct: number) {
 }
 
 /** Each fish caught takes 5 seconds off every egg. */
+/** Overnight nest egg (daily gift, today's fish). False when the nest is taken. */
+export function addNestEgg(s: SaveData, tier: number, pond: string, shiny: number): boolean {
+  if (s.eggs[NEST_INDEX]) return false;
+  s.eggs[NEST_INDEX] = { tier, pond, left: NEST_SEC, total: NEST_SEC, shiny };
+  return true;
+}
+
+/** Rewards for daily things scale with the best pond reached, so they stay worth it later on. */
+export function rewardMult(s: SaveData) {
+  return Math.max(1, ...s.unlocked.map((id) => pondById.get(id as 'cozy')?.priceMult ?? 1));
+}
+
+/** Today's special fish for a pond: Rare most days, Epic some, Legendary now and then. */
+export function todayFishFor(pond: PondDef, day: string) {
+  let h = 2166136261;
+  for (const c of day + pond.id) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
+  const r = (h % 1000) / 1000;
+  const tier = r < 0.5 ? 2 : r < 0.85 ? 3 : 4;
+  return pond.fish.find((f) => f.rarity === tier) ?? pond.fish[pond.fish.length - 1];
+}
+
 export function fishSpeedsEggs(s: SaveData) {
   for (const e of s.eggs) if (e && e.left > 0) e.left = Math.max(0, e.left - 5);
 }
 
 export function readyEggIndex(s: SaveData) {
-  return s.eggs.findIndex((e, i) => i < s.incubatorSlots && e && e.left <= 0);
+  return s.eggs.findIndex((e, i) => (i < s.incubatorSlots || i === NEST_INDEX) && e && e.left <= 0);
 }
 
 export function petForEgg(egg: EggSlot) {
@@ -288,6 +312,12 @@ export function questProgress(s: SaveData, kind: QuestDef['kind'], amount = 1) {
     if (before < def.goal && q.progress >= def.goal) done.push(def);
   }
   return done;
+}
+
+/** Egg tier the daily quest at this index gives (-1: none). The third quest gives one. */
+export function questEgg(s: SaveData, index: number) {
+  if (index !== 2) return -1;
+  return s.unlocked.length >= 2 ? 2 : 1;
 }
 
 export function questsClaimable(s: SaveData) {

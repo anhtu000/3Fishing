@@ -101,3 +101,50 @@ test('fishing machine: holding forever snaps the line, striking on a nibble scar
   f.press();
   assert.equal(outcome, 'early');
 });
+
+test("today's fish: one per pond per day, pays x5 and lays an overnight egg", () => {
+  const s = defaultSave();
+  s.tutorial = ['done'];
+  s.stats.catches = 10;
+  const now = new Date(2026, 9, 15, 12).getTime();
+  const g = new PondGame(s, new Rng(3), () => now);
+  const today = g.todayFish!;
+  assert.ok(today && today.rarity >= 2, 'a Rare or better fish');
+  const plain = g.applyCatch({ kind: 'fish', fish: PONDS[0].fish[0], size: 1 }, false);
+  assert.equal(plain.today, false);
+  const r = g.applyCatch({ kind: 'fish', fish: today, size: 1 }, false);
+  assert.equal(r.today, true);
+  assert.equal(r.nestEgg, true);
+  assert.ok(s.eggs[4] && s.eggs[4].total === 6 * 3600 && s.eggs[4].shiny === 0.25);
+  assert.equal(g.todayFish, null, 'caught for today');
+  assert.equal(readyEggIndex(s), -1);
+  tickEggs(s, 6 * 3600, 0);
+  assert.equal(readyEggIndex(s), 4, 'the nest egg hatches like any other');
+  // Next day: a fresh one.
+  const g2 = new PondGame(s, new Rng(3), () => now + 24 * 3600 * 1000);
+  assert.ok(g2.todayFish);
+});
+
+test('daily rewards scale with the best pond, the third quest gives an egg', () => {
+  const s = defaultSave();
+  s.unlocked = ['cozy', 'misty'];
+  const g = new PondGame(s, new Rng(1));
+  g.refreshDay();
+  s.quests.list.forEach((q) => (q.progress = 9999));
+  const r = g.claimQuest(2)!;
+  assert.ok(r.coins >= 3 * 60, 'x3 for Misty');
+  assert.equal(r.egg, 2);
+  assert.equal(g.claimQuest(2), null, 'only once');
+  const d = g.claimDailyGift()!;
+  assert.equal(d.coins, 50 * 3);
+  assert.equal(g.claimDailyGift(), null);
+});
+
+test('offline income is capped at 8 hours', () => {
+  const s = defaultSave();
+  s.pets.otter_pup = { level: 1, xp: 0 };
+  s.team = ['otter_pup'];
+  const g = new PondGame(s, new Rng(1));
+  assert.ok(g.offline(8 * 3600) > 0);
+  assert.equal(g.offline(24 * 3600), g.offline(8 * 3600));
+});

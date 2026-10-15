@@ -8,6 +8,8 @@ export interface EggSlot {
   /** Seconds left. 0 = ready to hatch. */
   left: number;
   total: number;
+  /** Chance the pet comes out shiny (default 1%). */
+  shiny?: number;
 }
 
 export interface PetState {
@@ -60,6 +62,8 @@ export interface SaveData {
   bounty: string | null;
   /** Catches until the next WANTED fish appears. */
   bountyIn: number;
+  /** Today's fish: one special species per pond per day. Ponds where it was caught today. */
+  todayFish: { day: string; caught: string[] };
   /** Seed state for gameplay rolls, so a reload cannot re-roll a result. */
   rng: number;
 }
@@ -87,6 +91,7 @@ export function defaultSave(): SaveData {
     autoFish: false,
     bounty: null,
     bountyIn: 8,
+    todayFish: { day: '', caught: [] },
     rng: 0,
   };
 }

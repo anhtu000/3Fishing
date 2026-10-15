@@ -57,7 +57,10 @@
     "newWanted": "Nuovo pesce RICERCATO!",
     "again": "Mancato! Abbocca di nuovo...",
     "softEarly": "Non ancora! Aspetta il grande schizzo",
-    "streak": "Perfetto x{n}! +{p}% monete"
+    "streak": "Perfetto x{n}! +{p}% monete",
+    "todayFish": "Pesce del giorno: {fish}! x5 monete e un uovo speciale",
+    "nestEgg": "Uovo speciale nel nido! Si schiude tra {t}",
+    "todayDone": "Pesce del giorno pescato! Domani ce n'è un altro"
   },
   "tut": {
     "cast": "Tieni premuto... poi molla!",
@@ -183,7 +186,9 @@
     "ready": "Pronto!",
     "keepFishing": "Continua a pescare",
     "hatchNow": "Schiudi ora",
-    "slot": "+1 posto uovo  {n}"
+    "slot": "+1 posto uovo  {n}",
+    "nestTitle": "Nido notturno",
+    "nestTip": "Le uova speciali si schiudono piano. Torna più tardi a vedere chi c'è dentro!"
   },
   "catch": {
     "intoIncubator": "Nell'incubatrice!",
@@ -199,7 +204,8 @@
     "junk2": "Non è un pesce. Però luccica.",
     "junk3": "Il laghetto ti ringrazia.",
     "junk4": "Un gatto può sognare.",
-    "wanted": "RICERCATO!"
+    "wanted": "RICERCATO!",
+    "today": "PESCE DEL GIORNO!"
   },
   "hatch": {
     "shinyNew": "NUOVO AMICO SCINTILLANTE!",
@@ -297,5 +303,9 @@
   "wanted": {
     "label": "RICERCATO",
     "reward": "monete x3"
+  },
+  "today": {
+    "label": "PESCE DEL GIORNO",
+    "reward": "x5 + uovo"
   }
 }

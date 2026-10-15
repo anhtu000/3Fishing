@@ -86,7 +86,7 @@ function catchInfo(r: CatchResult) {
 
 /** True when the catch deserves the big card; repeats of common fish get a quick pop instead. */
 export function isBigCatch(r: CatchResult) {
-  if (r.roll.kind === 'fish') return r.isNew || r.record || r.bounty || r.roll.fish.rarity >= 2;
+  if (r.roll.kind === 'fish') return r.isNew || r.record || r.bounty || r.today || r.roll.fish.rarity >= 2;
   return r.roll.kind !== 'junk';
 }
 
@@ -149,11 +149,11 @@ export function bigCatch(scene: Phaser.Scene, v: CatchView): Promise<void> {
         }
       }
     }
-    if (r.isNew || r.record || r.bounty) {
+    if (r.isNew || r.record || r.bounty || r.today) {
       const sticker = scene.add.container(cw / 2 - 40, -ch / 2 + 70);
       const st = shapeTexture(scene, 'sticker', 150, 70, (g) => drawChunky(g, 150, 70, 0xff4d6d, 24, 6, false, 5), 6);
       sticker.add(scene.add.image(0, 0, st.key).setScale(1 / st.res));
-      sticker.add(txt(scene, 0, -3, r.bounty ? t('catch.wanted') : r.isNew ? t('catch.new') : t('catch.record'), r.isNew && !r.bounty ? 34 : 26));
+      sticker.add(txt(scene, 0, -3, r.today ? t('catch.today') : r.bounty ? t('catch.wanted') : r.isNew ? t('catch.new') : t('catch.record'), r.isNew && !r.bounty && !r.today ? 34 : 26));
       sticker.setAngle(14);
       items.push(sticker);
       scene.tweens.add({ targets: sticker, scale: 1.12, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.InOut' });

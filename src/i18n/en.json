@@ -57,7 +57,10 @@
     "newWanted": "New WANTED fish posted!",
     "again": "Missed! It bites again...",
     "softEarly": "Not yet! Wait for the big splash",
-    "streak": "Perfect x{n}! +{p}% coins"
+    "streak": "Perfect x{n}! +{p}% coins",
+    "todayFish": "Today's fish: {fish}! Catch it for x5 coins and a special egg",
+    "nestEgg": "Special egg in the nest! Hatches in {t}",
+    "todayDone": "Today's fish caught! A new one tomorrow"
   },
   "tut": {
     "cast": "Hold... then let go!",
@@ -183,7 +186,9 @@
     "ready": "Ready!",
     "keepFishing": "Keep fishing",
     "hatchNow": "Hatch now",
-    "slot": "+1 egg slot  {n}"
+    "slot": "+1 egg slot  {n}",
+    "nestTitle": "Overnight nest",
+    "nestTip": "Special eggs hatch slowly. Come back later to see who's inside!"
   },
   "catch": {
     "intoIncubator": "Into the incubator!",
@@ -199,7 +204,8 @@
     "junk2": "Not a fish. Still shiny.",
     "junk3": "The pond says thank you.",
     "junk4": "A cat can dream.",
-    "wanted": "WANTED!"
+    "wanted": "WANTED!",
+    "today": "TODAY'S FISH!"
   },
   "hatch": {
     "shinyNew": "SHINY NEW PET!",
@@ -297,5 +303,9 @@
   "wanted": {
     "label": "WANTED",
     "reward": "x3 coins"
+  },
+  "today": {
+    "label": "TODAY'S FISH",
+    "reward": "x5 + egg"
   }
 }

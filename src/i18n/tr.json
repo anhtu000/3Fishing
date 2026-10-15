@@ -57,7 +57,10 @@
     "newWanted": "Yeni ARANAN balık!",
     "again": "Kaçırdın! Yine vuruyor...",
     "softEarly": "Daha değil! Büyük sıçramayı bekle",
-    "streak": "Mükemmel x{n}! +%{p} altın"
+    "streak": "Mükemmel x{n}! +%{p} altın",
+    "todayFish": "Günün balığı: {fish}! x5 altın ve özel yumurta",
+    "nestEgg": "Yuvada özel yumurta! {t} sonra çıkar",
+    "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir"
   },
   "tut": {
     "cast": "Basılı tut... sonra bırak!",
@@ -183,7 +186,9 @@
     "ready": "Hazır!",
     "keepFishing": "Avlanmaya devam",
     "hatchNow": "Şimdi çatlat",
-    "slot": "+1 yumurta yeri  {n}"
+    "slot": "+1 yumurta yeri  {n}",
+    "nestTitle": "Gece yuvası",
+    "nestTip": "Özel yumurtalar yavaş çıkar. Sonra gel, içinden kim çıkacak gör!"
   },
   "catch": {
     "intoIncubator": "Kuluçkaya gidiyor!",
@@ -199,7 +204,8 @@
     "junk2": "Balık değil. Ama parlıyor.",
     "junk3": "Gölet sana teşekkür ediyor.",
     "junk4": "Bir kedi hayal kurabilir.",
-    "wanted": "ARANIYOR!"
+    "wanted": "ARANIYOR!",
+    "today": "GÜNÜN BALIĞI!"
   },
   "hatch": {
     "shinyNew": "YENİ PARLAK DOST!",
@@ -297,5 +303,9 @@
   "wanted": {
     "label": "ARANIYOR",
     "reward": "altın x3"
+  },
+  "today": {
+    "label": "GÜNÜN BALIĞI",
+    "reward": "x5 + yumurta"
   }
 }

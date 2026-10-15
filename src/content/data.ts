@@ -206,7 +206,7 @@ export const QUEST_POOL: QuestDef[] = [
   { id: 'coins500', kind: 'coins', goal: 500, coins: 100, text: 'Earn {n} coins' },
 ];
 
-/** 7-day login streak. Day 7 gives a Rare egg. */
+/** 7-day login streak (coins times the best pond's price multiplier). Day 5 and 7 eggs go to the overnight nest. */
 export const STREAK = [
   { coins: 50, egg: -1 },
   { coins: 100, egg: -1 },
@@ -222,6 +222,14 @@ export const STREAK = [
  * Each reward is gated by the game state instead (golden bait while it is not active, a mystery egg
  * while an incubator slot is free).
  */
+/** The overnight nest: one extra egg slot for special eggs that hatch over hours, so there is a reason to come back. */
+export const NEST_INDEX = 4;
+export const NEST_SEC = 6 * 3600;
+/** Today's fish: chance per cast that it swims up instead (Legendary: lower), reward and egg. */
+export const TODAY_FISH = { chance: 0.1, chanceLegendary: 0.06, priceMult: 5, bonus: 100, shiny: 0.25 };
+/** Offline income cap (seconds). */
+export const OFFLINE_CAP = 8 * 3600;
+
 export const AD = {
   mysteryEggEverySec: 0,
   goldenBaitEverySec: 0,

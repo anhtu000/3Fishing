@@ -2,8 +2,8 @@
 import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
-import { claimDaily, dayKey } from '../../core/time';
-import { PONDS, STREAK, petById, pondById } from '../content/data';
+import { dayKey } from '../../core/time';
+import { PONDS, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
@@ -181,6 +181,7 @@ export class PlayScene extends BaseScene {
       hatch: (i) => this.doHatch(i),
       coinTo: () => this.hud.coinTarget(),
       gemTo: () => this.hud.gemTarget(),
+      eggTo: () => this.hud.eggTarget(),
       breakPoint: () => void this.breakPoint(),
     };
   }
@@ -296,6 +297,11 @@ export class PlayScene extends BaseScene {
       const after = () => {
         this.fishing.reset();
         this.afterCatch(res.roll);
+        // Today's fish: say where its egg went once the card is gone.
+        if (res.today) {
+          note(this, res.nestEgg ? t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) }) : t('msg.todayDone'));
+          app.audio.play('reward');
+        }
       };
       if (res.streak >= 2 && res.roll.kind === 'fish') this.time.delayedCall(500, () => say(this, this.vp.width / 2, this.pond.L.water - 170, t('msg.streak', { n: res.streak, p: res.streakBonus }), '#7dffb0', 34));
       if (res.newBounty) {
@@ -528,29 +534,35 @@ export class PlayScene extends BaseScene {
 
   private maybeDaily() {
     if (!this.s.tutorial.includes('done')) return;
-    if (this.s.daily.lastClaim === dayKey()) return;
+    if (this.s.daily.lastClaim === dayKey()) return this.announceToday();
     this.openDaily();
   }
 
+  private announcedDay = '';
+  /** Once a session per day: name today's fish. */
+  private announceToday() {
+    const f = this.pg.todayFish;
+    if (!f || this.announcedDay === dayKey()) return;
+    this.announcedDay = dayKey();
+    // After the daily gift's own note has gone.
+    this.time.delayedCall(2600, () => {
+      note(this, t('msg.todayFish', { fish: t(`fish.${f.id}`) }));
+      app.audio.play('pop');
+    });
+  }
+
   private openDaily() {
-    this.open(() =>
-      dailyPanel(this, this.ctx, (i) => {
-        const r = STREAK[i];
-        this.s.daily = claimDaily(this.s.daily);
-        if (r.coins) {
-          this.pg.earn(r.coins);
-          flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
-        }
-        if (r.egg >= 0) {
-          const stored = this.pg.s.eggs.some((e, k) => k < this.s.incubatorSlots && !e);
-          if (stored) {
-            const pond = this.pg.pond.id;
-            this.pg.s.eggs[this.pg.s.eggs.findIndex((e, k) => k < this.s.incubatorSlots && !e)] = { tier: r.egg, pond, left: [30, 120, 300, 600, 1200][r.egg], total: [30, 120, 300, 600, 1200][r.egg] };
-          } else this.pg.earn(10 * (r.egg + 1));
-        }
+    this.open(() => {
+      const p = dailyPanel(this, this.ctx, () => {
+        const r = this.pg.claimDailyGift();
+        if (!r) return;
+        if (r.coins) flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
+        if (r.where === 'nest') this.time.delayedCall(500, () => note(this, t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) })));
         app.audio.play('reward');
-      }),
-    );
+      });
+      p.once(Phaser.GameObjects.Events.DESTROY, () => this.announceToday());
+      return p;
+    });
   }
 
   // ---------- travel ----------
@@ -892,8 +904,11 @@ export class PlayScene extends BaseScene {
       bossReady: this.pg.bossReady,
       showHint: tutDone && !f.auto,
       adsOk: app.ads.rewardedAvailable && !app.clean,
-      wanted: s.bounty,
-      wantedKnown: !!(s.bounty && s.dex[s.bounty]),
+      ...(() => {
+        // Today's fish takes the poster while it is still out there; WANTED otherwise.
+        const id = this.pg.todayFish?.id ?? s.bounty;
+        return { wanted: id, wantedKnown: !!(id && s.dex[id]), wantedToday: !!this.pg.todayFish };
+      })(),
       goal: this.goalView(),
     });
     // Coach hand.

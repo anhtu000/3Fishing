@@ -311,7 +311,7 @@ Việc game tự làm, vì phụ thuộc thiết kế từng game:
 
 Ở Pond Pals, phần này nằm trong `src/scenes/PlayScene.ts` (`startPlay` / `stopPlay` / `resumePlay`) và `tools/art/thumbnail.ts`. Game mới nên sao chép cách làm này.
 
-## 13. Kiểm tra Pond Pals theo hướng dẫn này (15/10/2026, cập nhật v1.3)
+## 13. Kiểm tra Pond Pals theo hướng dẫn này (15/10/2026, cập nhật v1.4)
 
 | Quy định | Trước | Sau khi sửa |
 | --- | --- | --- |
@@ -333,6 +333,7 @@ Việc game tự làm, vì phụ thuộc thiết kế từng game:
 | Vòng chơi khoảng 3 phút, nội dung khoảng 1 giờ | 2 hồ, hạ boss cuối khoảng 20 phút | Thêm hồ 3 Frozen Lake (8 cá, 5 thú, boss Old Frostbeard, tuyết rơi, băng trôi). v1.3 (sim 150 lượt, người chơi trung bình): boss 1 ở phút 3,4, hồ 2 ở phút 12,7, hồ 3 ở phút 34, boss cuối ở phút 42 (người mới 50). Chi tiết ở `docs/PondPals-BaoCao-KinhTe-v1.3.md` |
 | Phút đầu không được khó (khuyến nghị Player Fit Test) | Người mới hỏng 46% ba lượt đầu | Nới cửa sổ cắn câu, 15 lượt đầu có cơ hội thứ hai và bấm sớm không mất cá: hỏng 0%. Thêm cá TRUY NÃ, chuỗi hoàn hảo, thanh mục tiêu; boss có cảnh báo "LET GO!" và dây mòn (25–41 s, thắng lần đầu 79–93%) |
 | Đa ngôn ngữ (khuyến nghị) | Chỉ tiếng Anh | EFIGS + Thổ Nhĩ Kỳ (en, fr, it, de, es, tr), kể cả tên cá/thú/hồ. Lấy ngôn ngữ từ `PokiSDK.getLanguage()`, người chơi đổi trong bảng cài đặt (nút bánh răng, ESC). Font có thêm ğ ş İ. Chữ dài tự co cho vừa khung; có test kiểm đủ khóa dịch |
+| Giữ chân hằng ngày (mục 8) | Quà ngày và nhiệm vụ trả xu cố định, offline tối đa 2 giờ | Cá hôm nay (mỗi hồ một loài/ngày, ×5 xu + trứng tổ 25% shiny), tổ qua đêm 6 giờ, quà ngày và nhiệm vụ nhân theo hồ xa nhất, nhiệm vụ thứ 3 tặng trứng, offline 8 giờ |
 
 **Chưa làm, cần trước các mốc sau:**
 

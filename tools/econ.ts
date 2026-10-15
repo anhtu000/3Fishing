@@ -230,16 +230,13 @@ function runOne(p: Profile, seed: number) {
         pause += 3.5;
       }
     }
-    for (const q of s.quests.list) {
-      const def = { catch20: 60, catch40: 120, rare3: 150, perfect10: 80, hatch2: 80, coins500: 100 }[q.id as 'catch20'] ?? 0;
-      const goal = { catch20: 20, catch40: 40, rare3: 3, perfect10: 10, hatch2: 2, coins500: 500 }[q.id as 'catch20'] ?? 1;
-      if (!q.claimed && q.progress >= goal && s.stats.playSec > 180) {
-        q.claimed = true;
-        game.earn(def * game.pond.priceMult);
+    s.quests.list.forEach((q, i) => {
+      if (q.claimed || s.stats.playSec <= 180) return;
+      if (game.claimQuest(i)) {
         at('questClaim');
         pause += 2;
       }
-    }
+    });
     const next = game.nextPond();
     const saving = !!next && game.canUnlock(next) && !s.unlocked.includes(next.id);
     if (saving && s.coins >= next!.unlockCost) {

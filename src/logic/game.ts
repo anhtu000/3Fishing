@@ -1,12 +1,13 @@
 // Game state plus the rules that change it. Pure TypeScript: the Play scene, tests and the balance
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
-import { dayKey } from '../../core/time';
-import { AD, INCUBATOR_SLOT_COST, PONDS, TEAM_SLOT_COST, UPGRADES, petById, pondById, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { claimDaily, dailyStatus, dayKey } from '../../core/time';
+import { AD, INCUBATOR_SLOT_COST, OFFLINE_CAP, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
   addEgg,
+  addNestEgg,
   addPet,
   bossReady,
   chestReward,
@@ -20,12 +21,15 @@ import {
   luckOf,
   perkValue,
   petForEgg,
+  questEgg,
   questProgress,
   refreshQuests,
   rollCatch,
+  rewardMult,
   rollSize,
   teamPerk,
   tickEggs,
+  todayFishFor,
   upgradeCost,
   type CastZone,
   type CatchRoll,
@@ -52,6 +56,10 @@ export interface CatchResult {
   streakBonus: number;
   /** A new WANTED fish was posted after this catch. */
   newBounty: string | null;
+  /** This was today's fish (x5 coins and an overnight egg). */
+  today: boolean;
+  /** An egg went into the overnight nest. */
+  nestEgg: boolean;
 }
 
 /** Bonus per perfect hook in a row, capped. */
@@ -98,6 +106,16 @@ export class PondGame {
     return this.s.tutorial.includes('done') && this.s.luckyDay !== dayKey(new Date(this.now()));
   }
 
+  /** Today's special fish in this pond, or null once caught today (or before the tutorial ends). */
+  get todayFish(): FishDef | null {
+    const s = this.s;
+    if (!s.tutorial.includes('done')) return null;
+    const day = dayKey(new Date(this.now()));
+    if (s.todayFish.day !== day) s.todayFish = { day, caught: [] };
+    if (s.todayFish.caught.includes(this.pond.id)) return null;
+    return todayFishFor(this.pond, day);
+  }
+
   luck(zone: CastZone, lucky = false) {
     return luckOf({ bait: this.s.upgrades.bait, petLuck: this.perk('luck'), zone, golden: this.goldenBait, lucky });
   }
@@ -127,6 +145,11 @@ export class PondGame {
       const want = pond.fish.find((f) => f.id === s.bounty);
       if (want && want.rarity <= roll.fish.rarity + 1 && this.rng.chance(0.18)) roll = { kind: 'fish', fish: want, size: rollSize(this.rng, luck) };
     }
+    // Today's fish swims up now and then (Legendary a bit less often).
+    const today = this.todayFish;
+    if (today && s.stats.catches >= 3 && roll.kind === 'fish' && roll.fish.id !== today.id && this.rng.chance(today.rarity >= 4 ? TODAY_FISH.chanceLegendary : TODAY_FISH.chance)) {
+      roll = { kind: 'fish', fish: today, size: rollSize(this.rng, luck) };
+    }
     const rarity = roll.kind === 'fish' ? roll.fish.rarity : roll.kind === 'egg' ? roll.tier : 0;
     return { roll, target: { rarity, fights: roll.kind === 'fish' } };
   }
@@ -135,7 +158,7 @@ export class PondGame {
   applyCatch(roll: CatchRoll, perfect: boolean): CatchResult {
     const s = this.s;
     const pond = this.pond;
-    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null };
+    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false };
     s.stats.catches += 1;
     this.streak = perfect ? this.streak + 1 : 0;
     res.streak = this.streak;
@@ -170,6 +193,17 @@ export class PondGame {
           s.bounty = null;
           s.bountyIn = BOUNTY_GAP;
         }
+        const today = this.todayFish;
+        if (today && today.id === roll.fish.id) {
+          res.today = true;
+          res.coins = res.coins * TODAY_FISH.priceMult + TODAY_FISH.bonus * pond.priceMult;
+          s.todayFish.caught.push(pond.id);
+          // An overnight egg: Rare (Epic for a Legendary), with a good shiny chance.
+          const tier = roll.fish.rarity >= 4 ? 3 : 2;
+          res.nestEgg = addNestEgg(s, tier, pond.id, TODAY_FISH.shiny);
+          // Nest taken (a daily-gift egg): the incubator, then coins.
+          if (!res.nestEgg && !addEgg(s, tier, pond.id)) res.coins += eggCoins(3, pond);
+        }
         fishSpeedsEggs(s);
         q('catch');
         if (roll.fish.rarity >= 2) q('rare');
@@ -195,7 +229,7 @@ export class PondGame {
     this.earn(res.coins, quests);
     s.gems += res.gems;
     res.questsDone = quests;
-    if (!s.bounty && !res.bounty) {
+    if (!s.bounty && !res.bounty && !this.todayFish) {
       s.bountyIn -= 1;
       if (s.bountyIn <= 0) res.newBounty = this.postBounty();
     }
@@ -262,20 +296,60 @@ export class PondGame {
     if (per <= 0) return 0;
     const value = expectedFishValue(this.pond, this.luck(0), this.perk('merchant'));
     // Pets fish at half pace while nobody is watching (design doc: idle at 50%).
-    return Math.floor((Math.min(seconds, 7200) / 60) * per * value * 0.5);
+    return Math.floor((Math.min(seconds, OFFLINE_CAP) / 60) * per * value * 0.5);
   }
 
   hatch(index: number): { petId: string; result: HatchResult; shiny: boolean; tier: number } | null {
     const egg = this.s.eggs[index];
     if (!egg || egg.left > 0) return null;
     const pet = petForEgg(egg);
-    const shiny = this.rng.chance(0.01);
+    const shiny = this.rng.chance(egg.shiny ?? 0.01);
     this.s.eggs[index] = null;
     this.s.stats.hatched += 1;
     questProgress(this.s, 'hatch');
     const pond = pondById.get(egg.pond as 'cozy') ?? PONDS[0];
     const result = addPet(this.s, pet.id, shiny, pond.priceMult);
     return { petId: pet.id, result, shiny, tier: egg.tier };
+  }
+
+  /**
+   * Claims a finished daily quest: coins times the best pond's multiplier. The third quest of the
+   * day also gives an egg (Uncommon, Rare once a second pond is open).
+   */
+  claimQuest(index: number): { coins: number; egg: number; eggStored: boolean } | null {
+    const s = this.s;
+    const q = s.quests.list[index];
+    const def = q && QUEST_POOL.find((d) => d.id === q.id);
+    if (!q || !def || q.claimed || q.progress < def.goal) return null;
+    q.claimed = true;
+    const coins = def.coins * rewardMult(s);
+    this.earn(coins);
+    const egg = questEgg(s, index);
+    const eggStored = egg >= 0 && addEgg(s, egg, this.pond.id);
+    if (egg >= 0 && !eggStored) this.earn(eggCoins(egg, this.pond));
+    return { coins, egg, eggStored };
+  }
+
+  /** Claims today's login gift. Eggs go to the overnight nest (incubator, then coins, if it is taken). */
+  claimDailyGift(): { coins: number; egg: number; where: 'nest' | 'incubator' | 'sold' | null } | null {
+    const s = this.s;
+    const today = dayKey(new Date(this.now()));
+    const st = dailyStatus(s.daily, today);
+    if (!st.canClaim) return null;
+    const r = STREAK[(st.streak - 1) % STREAK.length];
+    s.daily = claimDaily(s.daily, today);
+    const coins = r.coins * rewardMult(s);
+    this.earn(coins);
+    let where: 'nest' | 'incubator' | 'sold' | null = null;
+    if (r.egg >= 0) {
+      if (addNestEgg(s, r.egg, this.pond.id, 0.1)) where = 'nest';
+      else if (addEgg(s, r.egg, this.pond.id)) where = 'incubator';
+      else {
+        where = 'sold';
+        this.earn(eggCoins(r.egg, this.pond));
+      }
+    }
+    return { coins, egg: r.egg, where };
   }
 
   /** Rewarded ad: the egg is ready now. */

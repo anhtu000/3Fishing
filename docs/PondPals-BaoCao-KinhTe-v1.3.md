@@ -185,3 +185,30 @@ Rủi ro còn lại:
   - Cần thêm nội dung sau boss cuối trước Soft Release để giữ người chơi ngày 2 trở đi.
 
 Phiên bản: v1.3, commit `55eb80f`.
+
+## 8. Bổ sung v1.4: lý do quay lại mỗi ngày
+
+Vấn đề ở v1.3: quà điểm danh và nhiệm vụ ngày trả số xu cố định nên ở hồ 2–3 chỉ bằng chưa tới 1 phút câu, không có gì "chỉ có hôm nay", thu nhập offline tối đa 2 giờ, trứng lâu nhất chỉ 20 phút.
+
+| Hệ thống | v1.3 | v1.4 |
+| --- | --- | --- |
+| Quà điểm danh 7 ngày | 50–400 xu cố định; trứng ngày 5 và 7 vào lò ấp | Xu nhân hệ số hồ xa nhất đã mở (×1 / ×3 / ×9). Trứng ngày 5 (Không thường) và ngày 7 (Hiếm) vào **tổ qua đêm**, nở sau 6 giờ, 10% ra thú shiny |
+| Nhiệm vụ ngày (3 cái) | 60–150 xu × hệ số hồ đang đứng | Nhân hệ số hồ xa nhất. Nhiệm vụ thứ 3 tặng thêm một trứng (Không thường; Hiếm khi đã mở hồ 2), có huy hiệu trứng trên nút |
+| **Cá hôm nay** (mới) | Không có | Mỗi hồ mỗi ngày có một loài Hiếm (50%), Sử thi (35%) hoặc Huyền thoại (15%). Poster vàng "TODAY'S FISH ×5 + egg" thay chỗ poster TRUY NÃ. Mỗi lượt quăng có 10% cơ hội nó cắn câu (Huyền thoại 6%). Câu được thì nhận ×5 xu + 100 × hệ số hồ, cộng một trứng Hiếm (Sử thi nếu là cá Huyền thoại) vào tổ qua đêm, nở sau 6 giờ, **25% ra shiny**. Đầu phiên game báo tên cá hôm nay. Mỗi hồ có cá riêng, nên người đã mở 3 hồ có 3 mục tiêu mỗi ngày |
+| **Tổ qua đêm** (mới) | Không có | Một ô trứng riêng (nút màu gỗ dưới các lò ấp), không chiếm chỗ lò ấp nên không chặn trứng trong phiên. Hiện giờ dạng "5h58". Có nút "Nở ngay" bằng quảng cáo thưởng (tùy chọn, nút miễn phí "Câu tiếp" nằm trên) |
+| Thu nhập offline | Tối đa 2 giờ | Tối đa 8 giờ (vẫn 50%, x2 bằng quảng cáo) |
+
+Vòng quay lại hằng ngày sau khi xong hồ đầu:
+
+1. Mở game: thu nhập offline (tối đa 8 giờ), rồi quà điểm danh. Trứng ngày 5 và 7 vào tổ.
+2. Game báo cá hôm nay. Câu nó để nhận xu lớn và trứng tổ (cơ hội shiny 25%).
+3. Làm 3 nhiệm vụ, nhiệm vụ thứ 3 cho thêm trứng.
+4. Rời game. Hôm sau quay lại thì trứng tổ đã nở, có quà ngày mới và cá hôm nay mới.
+
+Kiểm tra:
+- 3 test logic mới (cá hôm nay, phần thưởng nhân theo hồ, trứng nhiệm vụ, trần offline 8 giờ). Tổng 17 test pass.
+- Chạy thật trong trình duyệt ở màn dọc và ngang: poster vàng, bảng quà ngày, tổ qua đêm, bảng nhiệm vụ có huy hiệu trứng, thẻ "TODAY'S FISH!" khi câu được. Không lỗi console.
+- Sự kiện Poki không trùng lặp; build 2,17 MB.
+- Đủ chữ cho 6 ngôn ngữ (test đối chiếu khóa dịch pass).
+
+Vẫn còn cho bản sau: nội dung sau boss cuối (hồ 4 hoặc đấu lại boss mạnh dần mỗi ngày).

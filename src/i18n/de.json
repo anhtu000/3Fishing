@@ -57,7 +57,10 @@
     "newWanted": "Neuer GESUCHT-Fisch!",
     "again": "Verpasst! Er beißt noch mal...",
     "softEarly": "Noch nicht! Warte auf den großen Platscher",
-    "streak": "Perfekt x{n}! +{p} % Münzen"
+    "streak": "Perfekt x{n}! +{p} % Münzen",
+    "todayFish": "Fisch des Tages: {fish}! x5 Münzen und ein besonderes Ei",
+    "nestEgg": "Besonderes Ei im Nest! Schlüpft in {t}",
+    "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen"
   },
   "tut": {
     "cast": "Halten... dann loslassen!",
@@ -183,7 +186,9 @@
     "ready": "Bereit!",
     "keepFishing": "Weiter angeln",
     "hatchNow": "Jetzt schlüpfen",
-    "slot": "+1 Eierplatz  {n}"
+    "slot": "+1 Eierplatz  {n}",
+    "nestTitle": "Nachtnest",
+    "nestTip": "Besondere Eier schlüpfen langsam. Schau später nach, wer drin ist!"
   },
   "catch": {
     "intoIncubator": "Ab in den Brutkasten!",
@@ -199,7 +204,8 @@
     "junk2": "Kein Fisch. Glänzt aber trotzdem.",
     "junk3": "Der Teich sagt danke.",
     "junk4": "Eine Katze darf ja träumen.",
-    "wanted": "GESUCHT!"
+    "wanted": "GESUCHT!",
+    "today": "FISCH DES TAGES!"
   },
   "hatch": {
     "shinyNew": "NEUES GLANZTIER!",
@@ -297,5 +303,9 @@
   "wanted": {
     "label": "GESUCHT",
     "reward": "Münzen x3"
+  },
+  "today": {
+    "label": "FISCH DES TAGES",
+    "reward": "x5 + Ei"
   }
 }

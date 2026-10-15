@@ -57,7 +57,10 @@
     "newWanted": "Nouveau poisson RECHERCHÉ !",
     "again": "Raté ! Il remord...",
     "softEarly": "Pas encore ! Attends la grosse éclaboussure",
-    "streak": "Parfait x{n} ! +{p} % de pièces"
+    "streak": "Parfait x{n} ! +{p} % de pièces",
+    "todayFish": "Poisson du jour : {fish} ! x5 pièces et un œuf spécial",
+    "nestEgg": "Œuf spécial dans le nid ! Éclot dans {t}",
+    "todayDone": "Poisson du jour attrapé ! Un nouveau demain"
   },
   "tut": {
     "cast": "Maintiens... puis lâche !",
@@ -183,7 +186,9 @@
     "ready": "Prêt !",
     "keepFishing": "Continuer à pêcher",
     "hatchNow": "Éclore maintenant",
-    "slot": "+1 place d'œuf  {n}"
+    "slot": "+1 place d'œuf  {n}",
+    "nestTitle": "Nid de nuit",
+    "nestTip": "Les œufs spéciaux éclosent lentement. Reviens plus tard voir qui est dedans !"
   },
   "catch": {
     "intoIncubator": "Direction l'incubateur !",
@@ -199,7 +204,8 @@
     "junk2": "Pas un poisson. Mais ça brille.",
     "junk3": "L'étang te dit merci.",
     "junk4": "Un chat peut rêver.",
-    "wanted": "RECHERCHÉ !"
+    "wanted": "RECHERCHÉ !",
+    "today": "POISSON DU JOUR !"
   },
   "hatch": {
     "shinyNew": "NOUVEL ANIMAL BRILLANT !",
@@ -297,5 +303,9 @@
   "wanted": {
     "label": "RECHERCHÉ",
     "reward": "pièces x3"
+  },
+  "today": {
+    "label": "POISSON DU JOUR",
+    "reward": "x5 + œuf"
   }
 }

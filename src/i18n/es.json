@@ -57,7 +57,10 @@
     "newWanted": "¡Nuevo pez SE BUSCA!",
     "again": "¡Fallaste! Vuelve a picar...",
     "softEarly": "¡Aún no! Espera el gran chapuzón",
-    "streak": "¡Perfecto x{n}! +{p} % monedas"
+    "streak": "¡Perfecto x{n}! +{p} % monedas",
+    "todayFish": "¡Pez del día: {fish}! x5 monedas y un huevo especial",
+    "nestEgg": "¡Huevo especial en el nido! Eclosiona en {t}",
+    "todayDone": "¡Pez del día atrapado! Mañana habrá otro"
   },
   "tut": {
     "cast": "Mantén... ¡y suelta!",
@@ -183,7 +186,9 @@
     "ready": "¡Listo!",
     "keepFishing": "Seguir pescando",
     "hatchNow": "Eclosionar ya",
-    "slot": "+1 hueco de huevo  {n}"
+    "slot": "+1 hueco de huevo  {n}",
+    "nestTitle": "Nido nocturno",
+    "nestTip": "Los huevos especiales eclosionan despacio. ¡Vuelve luego a ver quién sale!"
   },
   "catch": {
     "intoIncubator": "¡A la incubadora!",
@@ -199,7 +204,8 @@
     "junk2": "No es un pez. Pero brilla.",
     "junk3": "El estanque te da las gracias.",
     "junk4": "Un gato puede soñar.",
-    "wanted": "¡SE BUSCA!"
+    "wanted": "¡SE BUSCA!",
+    "today": "¡PEZ DEL DÍA!"
   },
   "hatch": {
     "shinyNew": "¡NUEVA MASCOTA BRILLANTE!",
@@ -297,5 +303,9 @@
   "wanted": {
     "label": "SE BUSCA",
     "reward": "monedas x3"
+  },
+  "today": {
+    "label": "PEZ DEL DÍA",
+    "reward": "x5 + huevo"
   }
 }

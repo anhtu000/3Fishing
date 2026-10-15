@@ -44,6 +44,10 @@ export class Hud {
   private chip: Phaser.GameObjects.Container;
   /** WANTED poster and next-goal tracker, the row under the status chip. */
   private wanted: Phaser.GameObjects.Container;
+  private wantedBg!: Phaser.GameObjects.Image;
+  private wantedLabel!: Phaser.GameObjects.Text;
+  private wantedReward!: Phaser.GameObjects.Text;
+  private wantedToday = false;
   private wantedFish: Phaser.GameObjects.Image;
   private wantedShown = '';
   private goal: Phaser.GameObjects.Container;
@@ -88,8 +92,9 @@ export class Hud {
     };
     this.boss = new CButton(scene, 0, 0, { w: 260, h: 92, icon: 'icon:i_crown', label: t('hud.boss'), fontSize: 40, color: COLORS.red, onClick: act.boss });
     this.boss.setGlow(true).setVisible(false);
-    for (let i = 0; i < 4; i++) {
-      const btn = new CButton(scene, 0, 0, { w: 96, h: 104, color: 0xfff6e6, onClick: () => act.egg(i) });
+    // Four incubator slots, then the overnight nest (index 4, a nest-coloured button).
+    for (let i = 0; i < 5; i++) {
+      const btn = new CButton(scene, 0, 0, { w: 96, h: 104, color: i === 4 ? 0xe9c98f : 0xfff6e6, onClick: () => act.egg(i) });
       const egg = art(scene, 0, -10, 'egg:0', 0.42);
       const time = txt(scene, 0, 34, '', 24);
       btn.add([egg, time]);
@@ -122,9 +127,10 @@ export class Hud {
     const wt = shapeTexture(scene, 'wanted', 250, 76, (g) => drawChunky(g, 250, 76, 0xfff1c9, 22, 6, false, 4.5), 6);
     const wantedBg = scene.add.image(0, 0, wt.key).setScale(1 / wt.res);
     this.wantedFish = art(scene, -76, -4, 'fish:pebble_minnow');
-    const wantedLabel = fitText(txt(scene, 34, -18, t('wanted.label'), 22, { color: '#c0392b', stroke: false }), 140);
-    const wantedReward = fitText(txt(scene, 34, 10, t('wanted.reward'), 22, { color: '#3b2a4d', stroke: false }), 140);
-    this.wanted = scene.add.container(0, 0, [wantedBg, this.wantedFish, wantedLabel, wantedReward]).setVisible(false);
+    this.wantedLabel = txt(scene, 34, -18, t('wanted.label'), 22, { color: '#c0392b', stroke: false });
+    this.wantedReward = txt(scene, 34, 10, t('wanted.reward'), 22, { color: '#3b2a4d', stroke: false });
+    this.wantedBg = wantedBg;
+    this.wanted = scene.add.container(0, 0, [wantedBg, this.wantedFish, this.wantedLabel, this.wantedReward]).setVisible(false);
     // Goal tracker: icon, short text, thin progress bar.
     const goalBg = scene.add.graphics();
     goalBg.fillStyle(INK, 0.55).fillRoundedRect(-150, -32, 300, 64, 22);
@@ -185,7 +191,8 @@ export class Hud {
     this.boss.setPosition(w / 2, portrait ? 292 : 252);
     this.placeStrip();
     this.chip.setPosition(w / 2, portrait ? 132 : 112);
-    this.eggs.forEach((e, i) => e.btn.setPosition(w - 60, (portrait ? 170 : 150) + i * 116));
+    this.eggY0 = portrait ? 170 : 150;
+    this.eggs.forEach((e, i) => e.btn.setPosition(w - 60, this.eggY0 + i * 116));
     this.meter.setPosition(w / 2, portrait ? h - 250 : h - 175);
     // Keep the hint text on screen whatever its length (translations).
     const hintText = this.hint.list[1] as Phaser.GameObjects.Text;
@@ -196,7 +203,7 @@ export class Hud {
     this.bossBar.setPosition(w / 2, portrait ? 170 : 130);
   }
 
-  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; goal: { icon: string; text: string; progress: number } | null }) {
+  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; goal: { icon: string; text: string; progress: number } | null }) {
     this.t += dt;
     const s = this.s;
     // Count-up numbers.
@@ -207,11 +214,16 @@ export class Hud {
       this.coins.label.setText(fmt(Math.round(this.shownCoins)));
     }
     // Eggs.
+    let row = 0;
     this.eggs.forEach((e, i) => {
-      const open = i < s.incubatorSlots;
+      const nest = i === 4;
+      const open = nest ? !!s.eggs[i] : i < s.incubatorSlots;
       const egg = s.eggs[i];
       const visible = open && (!!egg || i === 0 || s.stats.eggs > 0);
-      e.btn.setVisible(visible && s.stats.eggs > 0);
+      e.btn.setVisible(visible && (s.stats.eggs > 0 || nest));
+      // The nest sits right under the last open incubator slot.
+      if (nest) e.btn.setY(this.eggY0 + Math.min(row, s.incubatorSlots) * 116);
+      else row++;
       if (!egg) {
         e.egg.setAlpha(0.25);
         e.time.setText(i === 0 ? '' : '');
@@ -229,8 +241,9 @@ export class Hud {
         e.btn.setGlow(true);
       } else {
         const sec = Math.ceil(egg.left);
-        fitText(e.time.setText(sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`), 88);
-        e.egg.setAngle(Math.sin(this.t * 3) * 3 * (1 - egg.left / HATCH_SEC[egg.tier]));
+        const label = sec >= 3600 ? `${Math.floor(sec / 3600)}${t('unit.h')}${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}` : sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`;
+        fitText(e.time.setText(label), 88);
+        e.egg.setAngle(Math.sin(this.t * 3) * 3 * (1 - egg.left / (egg.total || HATCH_SEC[egg.tier])));
         e.btn.setGlow(false);
       }
     });
@@ -255,8 +268,13 @@ export class Hud {
     if (f.target.boss && f.busy) chip = '';
     this.setChip(chip);
     this.wanted.setVisible(!!extra.wanted && !f.target.boss);
-    if (extra.wanted && extra.wanted !== this.wantedShown) {
+    if (extra.wanted && (extra.wanted !== this.wantedShown || extra.wantedToday !== this.wantedToday)) {
       this.wantedShown = extra.wanted;
+      this.wantedToday = extra.wantedToday;
+      // Today's fish uses a gold poster: "TODAY'S FISH / x5 + egg".
+      this.wantedBg.setTint(extra.wantedToday ? 0xffd86b : 0xffffff);
+      fitText(this.wantedLabel.setText(t(extra.wantedToday ? 'today.label' : 'wanted.label')).setColor(extra.wantedToday ? '#b4521a' : '#c0392b').setScale(1), 140);
+      fitText(this.wantedReward.setText(t(extra.wantedToday ? 'today.reward' : 'wanted.reward')).setScale(1), 140);
       const key = `fish:${extra.wanted}`;
       this.wantedFish.setTexture(key).setScale(fitScale(key, 96));
       if (extra.wantedKnown) this.wantedFish.clearTint().setAlpha(1);
@@ -308,6 +326,7 @@ export class Hud {
     this.goal.setPosition(both ? x0 + 250 * k + gap + 150 * k : cx, y);
   }
 
+  private eggY0 = 170;
   private stripScale = 1;
   private wantedPop = false;
   private chipShown = '';

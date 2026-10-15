@@ -1,9 +1,9 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { HATCH_SEC, PERKS, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, STREAK, UPGRADES, UPGRADE_IDS, petById, type PetDef, type UpgradeId } from '../content/data';
+import { HATCH_SEC, NEST_INDEX, PERKS, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, STREAK, UPGRADES, UPGRADE_IDS, petById, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
-import { dexCount, perkValue, upgradeCost, xpForLevel } from '../logic/rules';
+import { dexCount, perkValue, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
 import { CButton, COLORS, CPanel, CREAM_DARK, INK, art, card, drawBar, fitScale, fitText, fmt, txt } from './kit';
 import { bossName, duration, eggName, fishName, perkText, petName, pondName, rarityName, t } from '../i18n/t';
@@ -18,6 +18,7 @@ export interface PanelCtx {
   hatch(i: number): void;
   coinTo(): { x: number; y: number };
   gemTo(): { x: number; y: number };
+  eggTo(): { x: number; y: number };
   /** A panel closed at a natural break: a midgame ad may show here. */
   breakPoint(): void;
 }
@@ -379,24 +380,26 @@ export function questsPanel(scene: Phaser.Scene, ctx: PanelCtx, onDaily: () => v
     const qt = fitText(txt(scene, -pw / 2 + 60, y - 30, t(`quests.${def.kind}`, { n: fmt(def.goal) }), 28, { color: DARK, stroke: false }).setOrigin(0, 0.5), pw - 300);
     const bar = scene.add.graphics().setPosition(-pw / 2 + 60 + 140, y + 20);
     const pt = txt(scene, -pw / 2 + 60 + 300, y + 20, '', 22, { color: DIM, stroke: false }).setOrigin(0, 0.5);
+    const eggTier = questEgg(s, i);
     const btn = new CButton(scene, pw / 2 - 110, y, {
       w: 170,
       h: 84,
       icon: 'item:coin',
       iconSize: 38,
-      label: fmt(def.coins * g.pond.priceMult),
+      label: fmt(def.coins * rewardMult(s)),
       fontSize: 30,
       color: COLORS.green,
       onClick: () => {
-        if (q.claimed || q.progress < def.goal) return;
-        q.claimed = true;
-        g.earn(def.coins * g.pond.priceMult);
+        const r = g.claimQuest(i);
+        if (!r) return;
         app.audio.play('reward');
         flyIcons(scene, 'item:coin', panel.toScene(btn.x, y), ctx.coinTo(), 6);
+        if (r.egg >= 0 && r.eggStored) flyIcons(scene, `egg:${r.egg}`, panel.toScene(btn.x, y), ctx.eggTo(), 1);
         refresh();
         ctx.refresh();
       },
     });
+
     const refresh = () => {
       drawBar(bar, 280, 22, q.progress / def.goal, COLORS.yellow);
       pt.setText(`${fmt(q.progress)}/${fmt(def.goal)}`);
@@ -406,6 +409,12 @@ export function questsPanel(scene: Phaser.Scene, ctx: PanelCtx, onDaily: () => v
     };
     rows.push(refresh);
     panel.content.add([bg, qt, bar, pt, btn]);
+    // The third quest also gives an egg: a badge on the button's corner.
+    if (eggTier >= 0) {
+      const eg = art(scene, pw / 2 - 40, y - 44, `egg:${eggTier}`);
+      eg.setScale(fitScale(`egg:${eggTier}`, 50)).setAngle(12);
+      panel.content.add(eg);
+    }
   });
   const st = dailyStatus(s.daily);
   const day = ((st.streak - 1) % 7) + 1;
@@ -451,7 +460,7 @@ export function dailyPanel(scene: Phaser.Scene, ctx: PanelCtx, claim: (dayIndex:
     const key = r.egg >= 0 ? `egg:${r.egg}` : 'item:coin';
     const icon = art(scene, x, y - 4, key);
     icon.setScale(fitScale(key, 70));
-    const label = txt(scene, x, y + 58, r.egg >= 0 ? eggName(r.egg) : `${r.coins}`, 20, { color: DARK, stroke: false });
+    const label = txt(scene, x, y + 58, r.egg >= 0 ? eggName(r.egg) : fmt(r.coins * rewardMult(s)), 20, { color: DARK, stroke: false });
     if (label.width > tw - 10) label.setScale((tw - 10) / label.width);
     const items: Phaser.GameObjects.GameObject[] = [bg, d, icon, label];
     if (done) {
@@ -484,21 +493,22 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
   const g = ctx.game;
   const s = g.s;
   const egg = s.eggs[index];
-  const panel = new CPanel(scene, { title: t('incubator.title'), w: 600, h: 860, color: COLORS.purple, onClose: () => ctx.refresh() });
+  const nest = index === NEST_INDEX;
+  const panel = new CPanel(scene, { title: t(nest ? 'incubator.nestTitle' : 'incubator.title'), w: 600, h: 860, color: nest ? COLORS.orange : COLORS.purple, onClose: () => ctx.refresh() });
   if (egg) {
     const img = art(scene, 0, panel.top + 120, `egg:${egg.tier}`, 1.0);
     scene.tweens.add({ targets: img, angle: { from: -4, to: 4 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
     const name = txt(scene, 0, panel.top + 240, eggName(egg.tier).toLocaleUpperCase(), 36, { color: RARITY_CSS[egg.tier] === '#7d8b99' ? DARK : RARITY_CSS[egg.tier], stroke: false });
     const left = txt(scene, 0, panel.top + 286, '', 28, { color: DIM, stroke: false });
     const bar = scene.add.graphics().setPosition(0, panel.top + 330);
-    const tip = txt(scene, 0, panel.top + 374, t('incubator.tip'), 24, { color: DIM, stroke: false, weight: '500' });
+    const tip = txt(scene, 0, panel.top + 374, t(nest ? 'incubator.nestTip' : 'incubator.tip'), 24, { color: DIM, stroke: false, weight: '500', wrap: 520 });
     panel.content.add([img, name, left, bar, tip]);
     const tick = () => {
       const e = s.eggs[index];
       if (!e) return;
       const sec = Math.ceil(e.left);
       left.setText(sec > 0 ? t('incubator.hatchesIn', { t: duration(sec) }) : t('incubator.ready'));
-      drawBar(bar, 380, 26, 1 - e.left / HATCH_SEC[e.tier], COLORS.purple);
+      drawBar(bar, 380, 26, 1 - e.left / (e.total || HATCH_SEC[e.tier]), COLORS.purple);
     };
     tick();
     const timer = scene.time.addEvent({ delay: 250, loop: true, callback: tick });
@@ -525,7 +535,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
     }
   }
   const cost = g.incubatorSlotCost();
-  if (Number.isFinite(cost)) {
+  if (Number.isFinite(cost) && !nest) {
     const b = new CButton(scene, 0, panel.bottom - 80, {
       w: 380,
       h: 80,
