@@ -6,3 +6,4 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 tools/sim/out/
+panels/
