@@ -157,7 +157,7 @@
   },
   "map": {
     "title": "Mappa",
-    "info": "Prezzo pesci x{m}  ·  {n}/8 pesci",
+    "info": "Prezzo pesci x{m}  ·  {n}/{max} pesci",
     "here": "Sei qui",
     "go": "Pesca qui",
     "unlock": "Sblocca {n}",
@@ -274,7 +274,19 @@
     "crystal_cisco": "Coregone cristallo",
     "polar_burbot": "Bottatrice polare",
     "frostfin_muskie": "Muskie pinnagelo",
-    "starlight_whitefish": "Coregone stellato"
+    "starlight_whitefish": "Coregone stellato",
+    "button_bream": "Abramide bottone",
+    "reed_pike": "Luccio del canneto",
+    "rosy_goby": "Ghiozzo rosa",
+    "moon_gar": "Aguglia lunare",
+    "pebble_chub": "Cavedano ciottolo",
+    "misty_minnow": "Sanguinerola nebbiosa",
+    "ember_trout": "Trota brace",
+    "dusk_catfish": "Pesce gatto del tramonto",
+    "tundra_dace": "Leucisco della tundra",
+    "glacier_trout": "Trota del ghiacciaio",
+    "icicle_pike": "Luccio ghiacciolo",
+    "northern_lightfish": "Pesce aurora boreale"
   },
   "pet": {
     "puddle_frog": "Rana pozzanghera",

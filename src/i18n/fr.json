@@ -157,7 +157,7 @@
   },
   "map": {
     "title": "Carte",
-    "info": "Prix des poissons x{m}  ·  {n}/8 poissons",
+    "info": "Prix des poissons x{m}  ·  {n}/{max} poissons",
     "here": "Tu es ici",
     "go": "Pêcher ici",
     "unlock": "Débloquer {n}",
@@ -274,7 +274,19 @@
     "crystal_cisco": "Corégone cristal",
     "polar_burbot": "Lotte polaire",
     "frostfin_muskie": "Maskinongé givré",
-    "starlight_whitefish": "Corégone étoilé"
+    "starlight_whitefish": "Corégone étoilé",
+    "button_bream": "Brème bouton",
+    "reed_pike": "Brochet des roseaux",
+    "rosy_goby": "Gobie rosé",
+    "moon_gar": "Orphie lunaire",
+    "pebble_chub": "Chevesne galet",
+    "misty_minnow": "Vairon brumeux",
+    "ember_trout": "Truite braise",
+    "dusk_catfish": "Silure du crépuscule",
+    "tundra_dace": "Vandoise de la toundra",
+    "glacier_trout": "Truite des glaciers",
+    "icicle_pike": "Brochet stalactite",
+    "northern_lightfish": "Poisson aurore boréale"
   },
   "pet": {
     "puddle_frog": "Grenouille flaque",

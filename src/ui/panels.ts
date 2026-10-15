@@ -256,7 +256,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     title: t('dex.title'),
     w: 660,
     // Late game: room for the medal line and the rematch button.
-    h: ctx.game.lateGame ? 1130 : 1000,
+    h: ctx.game.lateGame ? 1260 : 1200,
     color: COLORS.blue,
     // The commercial break on the way back to play is handled by the scene for every menu.
     onClose: () => ctx.refresh(),
@@ -291,33 +291,30 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
       const line = fitText(txt(scene, 0, panel.top + 152, `${gold ? t('medal.pondGoldOn') : t('medal.pondGoldHint')}${beaten ? `  ·  ${t('rematch.best', { n: best, max: BOSS_STARS.max })}` : ''}`, 22, { color: gold ? '#c48a00' : DIM, stroke: false, weight: '500' }), pw - 60);
       page.add(line);
     }
-    const cw = (pw - 70) / 2 - 8;
-    const chh = 160;
+    // Three columns: picture on top, name, rarity, then best size and count on one line.
+    const cols = 3;
+    const cw = (pw - 60) / cols - 10;
+    const chh = 196;
     pond.fish.forEach((f, i) => {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const x = (col - 0.5) * (cw + 14);
-      const y = panel.top + (g.lateGame ? 262 : 220) + row * (chh + 12);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = (col - (cols - 1) / 2) * (cw + 10);
+      const y = panel.top + (g.lateGame ? 280 : 240) + row * (chh + 10);
       const entry = s.dex[f.id];
       const bg = card(scene, x, y, cw, chh, 0xfffdf6, 22);
-      const frame = scene.add.graphics().lineStyle(5, RARITY_COLOR[f.rarity], 1).strokeRoundedRect(x - cw / 2 + 8, y - chh / 2 + 6, cw - 16, chh - 22, 16);
-      const img = art(scene, x - cw / 2 + 70, y - 6, `fish:${f.id}`);
-      img.setScale(fitScale(`fish:${f.id}`, 118));
-      const tx = x - cw / 2 + 136;
-      const tw = cw - 146;
-      const name = txt(scene, tx, y - 42, entry ? fishName(f.id) : t('dex.unknown'), 24, { color: DARK, stroke: false }).setOrigin(0, 0.5);
-      if (name.width > tw) name.setScale(tw / name.width);
-      const rar = txt(scene, tx, y - 10, rarityName(f.rarity), 20, { color: RARITY_CSS[f.rarity], stroke: false }).setOrigin(0, 0.5);
-      const rec = txt(scene, tx, y + 20, entry ? t('dex.best', { n: entry.best.toFixed(1) }) : '', 19, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
-      const cnt = txt(scene, tx, y + 44, entry ? t('dex.caught', { n: entry.n }) : '', 19, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
-      page.add(cnt);
+      const frame = scene.add.graphics().lineStyle(5, RARITY_COLOR[f.rarity], 1).strokeRoundedRect(x - cw / 2 + 7, y - chh / 2 + 6, cw - 14, chh - 20, 16);
+      const img = art(scene, x, y - 42, `fish:${f.id}`);
+      img.setScale(Math.min(fitScale(`fish:${f.id}`, cw - 36), fitScale(`fish:${f.id}`, 120)));
+      const name = fitText(txt(scene, x, y + 16, entry ? fishName(f.id) : t('dex.unknown'), 22, { color: DARK, stroke: false }), cw - 20);
+      const rar = fitText(txt(scene, x, y + 42, rarityName(f.rarity), 18, { color: RARITY_CSS[f.rarity], stroke: false }), cw - 20);
+      const info = fitText(txt(scene, x, y + 66, entry ? `${t('dex.best', { n: entry.best.toFixed(1) })}  ·  ×${entry.n}` : '', 16, { color: DIM, stroke: false, weight: '500' }), cw - 20);
       if (!entry) img.setTint(0x3b2a4d).setTintMode(Phaser.TintModes.FILL).setAlpha(0.35);
-      page.add([bg, frame, img, name, rar, rec]);
-      // Medals (late game): bronze 10 caught, silver more, gold = silver plus a giant.
+      page.add([bg, frame, img, name, rar, info]);
+      // Medals (late game): bronze, silver, gold (silver plus a giant).
       const m = g.lateGame ? medalOf(s, f) : 0;
       if (m > 0) {
-        const md = art(scene, x + cw / 2 - 34, y + chh / 2 - 44, `icon:i_medal${m}`);
-        md.setScale(fitScale(`icon:i_medal${m}`, 46));
+        const md = art(scene, x + cw / 2 - 28, y - chh / 2 + 30, `icon:i_medal${m}`);
+        md.setScale(fitScale(`icon:i_medal${m}`, 38));
         page.add(md);
       }
     });
@@ -391,7 +388,7 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
       pet.setScale(fitScale(`pet:${p.pets[0].id}`, 70));
       items.push(mini, fish, pet);
       const name = fitText(txt(scene, mx + 250, y - 60, pondName(p.id), 34, { color: DARK, stroke: false }).setOrigin(0, 0.5), pw - 330);
-      const info = fitText(txt(scene, mx + 250, y - 18, t('map.info', { m: p.priceMult, n: dexCount(s, p) }), 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5), pw - 330);
+      const info = fitText(txt(scene, mx + 250, y - 18, t('map.info', { m: p.priceMult, n: dexCount(s, p), max: p.fish.length }), 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5), pw - 330);
       items.push(name, info);
       // Today's fish lives here: a gold tag on the picture.
       if (g.today?.pond.id === p.id) {

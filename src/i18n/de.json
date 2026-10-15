@@ -157,7 +157,7 @@
   },
   "map": {
     "title": "Karte",
-    "info": "Fischpreis x{m}  ·  {n}/8 Fische",
+    "info": "Fischpreis x{m}  ·  {n}/{max} Fische",
     "here": "Du bist hier",
     "go": "Hier angeln",
     "unlock": "Freischalten {n}",
@@ -274,7 +274,19 @@
     "crystal_cisco": "Kristallmaräne",
     "polar_burbot": "Polarquappe",
     "frostfin_muskie": "Frostflossen-Muskie",
-    "starlight_whitefish": "Sternlicht-Renke"
+    "starlight_whitefish": "Sternlicht-Renke",
+    "button_bream": "Knopfbrasse",
+    "reed_pike": "Schilfhecht",
+    "rosy_goby": "Rosengrundel",
+    "moon_gar": "Mondhornhecht",
+    "pebble_chub": "Kiesel-Döbel",
+    "misty_minnow": "Nebel-Elritze",
+    "ember_trout": "Glut-Forelle",
+    "dusk_catfish": "Dämmerungswels",
+    "tundra_dace": "Tundra-Hasel",
+    "glacier_trout": "Gletscherforelle",
+    "icicle_pike": "Eiszapfenhecht",
+    "northern_lightfish": "Nordlichtfisch"
   },
   "pet": {
     "puddle_frog": "Pfützenfrosch",

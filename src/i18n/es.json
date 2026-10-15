@@ -157,7 +157,7 @@
   },
   "map": {
     "title": "Mapa",
-    "info": "Precio del pez x{m}  ·  {n}/8 peces",
+    "info": "Precio del pez x{m}  ·  {n}/{max} peces",
     "here": "Estás aquí",
     "go": "Pescar aquí",
     "unlock": "Desbloquear {n}",
@@ -274,7 +274,19 @@
     "crystal_cisco": "Cisco de cristal",
     "polar_burbot": "Lota polar",
     "frostfin_muskie": "Muskie aleta helada",
-    "starlight_whitefish": "Corégono estelar"
+    "starlight_whitefish": "Corégono estelar",
+    "button_bream": "Brema botón",
+    "reed_pike": "Lucio de junco",
+    "rosy_goby": "Gobio rosado",
+    "moon_gar": "Aguja lunar",
+    "pebble_chub": "Cacho guijarro",
+    "misty_minnow": "Piscardo brumoso",
+    "ember_trout": "Trucha brasa",
+    "dusk_catfish": "Bagre del ocaso",
+    "tundra_dace": "Cacho de la tundra",
+    "glacier_trout": "Trucha de glaciar",
+    "icicle_pike": "Lucio carámbano",
+    "northern_lightfish": "Pez de la aurora"
   },
   "pet": {
     "puddle_frog": "Rana de charco",

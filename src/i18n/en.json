@@ -157,7 +157,7 @@
   },
   "map": {
     "title": "Map",
-    "info": "Fish price x{m}  ·  {n}/8 fish",
+    "info": "Fish price x{m}  ·  {n}/{max} fish",
     "here": "You are here",
     "go": "Go fish here",
     "unlock": "Unlock {n}",
@@ -274,7 +274,19 @@
     "crystal_cisco": "Crystal Cisco",
     "polar_burbot": "Polar Burbot",
     "frostfin_muskie": "Frostfin Muskie",
-    "starlight_whitefish": "Starlight Whitefish"
+    "starlight_whitefish": "Starlight Whitefish",
+    "button_bream": "Button Bream",
+    "reed_pike": "Reed Pike",
+    "rosy_goby": "Rosy Goby",
+    "moon_gar": "Moon Gar",
+    "pebble_chub": "Pebble Chub",
+    "misty_minnow": "Misty Minnow",
+    "ember_trout": "Ember Trout",
+    "dusk_catfish": "Dusk Catfish",
+    "tundra_dace": "Tundra Dace",
+    "glacier_trout": "Glacier Trout",
+    "icicle_pike": "Icicle Pike",
+    "northern_lightfish": "Northern Lightfish"
   },
   "pet": {
     "puddle_frog": "Puddle Frog",

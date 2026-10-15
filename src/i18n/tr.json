@@ -157,7 +157,7 @@
   },
   "map": {
     "title": "Harita",
-    "info": "Balık fiyatı x{m}  ·  {n}/8 balık",
+    "info": "Balık fiyatı x{m}  ·  {n}/{max} balık",
     "here": "Buradasın",
     "go": "Burada avlan",
     "unlock": "Aç {n}",
@@ -274,7 +274,19 @@
     "crystal_cisco": "Kristal Sisko",
     "polar_burbot": "Kutup Gelincik Balığı",
     "frostfin_muskie": "Ayazyüzgeç Muskisi",
-    "starlight_whitefish": "Yıldız Işığı Akbalığı"
+    "starlight_whitefish": "Yıldız Işığı Akbalığı",
+    "button_bream": "Düğme Çapak",
+    "reed_pike": "Saz Turnası",
+    "rosy_goby": "Pembe Kayabalığı",
+    "moon_gar": "Ay Zargana",
+    "pebble_chub": "Çakıl Tatlısu Kefali",
+    "misty_minnow": "Sisli Golyan",
+    "ember_trout": "Köz Alabalığı",
+    "dusk_catfish": "Alacakaranlık Yayını",
+    "tundra_dace": "Tundra Akbalığı",
+    "glacier_trout": "Buzul Alabalığı",
+    "icicle_pike": "Saçak Turnası",
+    "northern_lightfish": "Kutup Işığı Balığı"
   },
   "pet": {
     "puddle_frog": "Su Birikintisi Kurbağası",

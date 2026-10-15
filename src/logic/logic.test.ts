@@ -10,7 +10,7 @@ import { addEgg, addPet, fishPrice, luckOf, perkValue, questsForDay, rarityWeigh
 
 test('price follows B x S x P x (1 + M)', () => {
   const pond = PONDS[1];
-  const fish = pond.fish[3]; // uncommon, B = 12
+  const fish = pond.fish.find((f) => f.rarity === 1)!; // uncommon, B = 12
   assert.equal(fishPrice(fish, 1.2, pond, 10), Math.round(12 * 1.2 * 3 * 1.1));
 });
 
