@@ -238,7 +238,7 @@ export class PondGame {
           const tier = roll.fish.rarity >= 4 ? 3 : 2;
           res.nestEgg = addNestEgg(s, tier, pond.id, TODAY_FISH.shiny);
           // Nest taken (a daily-gift egg): the incubator or basket, then coins.
-          if (!res.nestEgg && !storeEgg(s, tier, pond.id, TODAY_FISH.shiny)) res.coins += eggCoins(3, pond);
+          if (!res.nestEgg && !storeEgg(s, tier, pond.id, TODAY_FISH.shiny)) res.coins += eggCoins(3, this.s);
         }
         // Luring a boss back after a lost fight: any fish in its pond counts.
         if (s.bossLure && s.bossLure.boss === pond.boss.id && s.bossLure.have < s.bossLure.need) {
@@ -260,7 +260,7 @@ export class PondGame {
         s.stats.eggs += 1;
         res.eggWhere = storeEgg(s, roll.tier, pond.id);
         res.eggStored = !!res.eggWhere;
-        if (!res.eggStored) res.coins = eggCoins(roll.tier, pond);
+        if (!res.eggStored) res.coins = eggCoins(roll.tier, this.s);
         break;
       case 'junk':
         s.stats.junk += 1;
@@ -374,7 +374,7 @@ export class PondGame {
     this.earn(coins);
     const egg = questEgg(s, index);
     const eggStored = egg >= 0 && !!storeEgg(s, egg, this.pond.id);
-    if (egg >= 0 && !eggStored) this.earn(eggCoins(egg, this.pond));
+    if (egg >= 0 && !eggStored) this.earn(eggCoins(egg, this.s));
     return { coins, egg, eggStored };
   }
 
@@ -405,7 +405,7 @@ export class PondGame {
       }
       if (!where) {
         where = 'sold';
-        this.earn(eggCoins(r.egg, this.pond));
+        this.earn(eggCoins(r.egg, this.s));
       }
     }
     return { coins, egg: r.egg, where, hat, pet };
@@ -458,7 +458,7 @@ export class PondGame {
     this.earn(coins);
     const tier = star >= BOSS_STARS.legendaryFrom ? 4 : 3;
     const where = storeEgg(s, tier, pond.id, BOSS_STARS.shiny + BOSS_STARS.shinyPerStar * star);
-    if (!where) this.earn(eggCoins(tier, pond));
+    if (!where) this.earn(eggCoins(tier, this.s));
     // 15 stars in total: the captain's hat.
     let hat: string | null = null;
     if (before < 15 && this.starsTotal >= 15 && this.grantCosmetic('hat:captain')) hat = 'hat:captain';
@@ -567,7 +567,7 @@ export class PondGame {
   sellBasketEgg(index: number) {
     const b = this.s.basket[index];
     if (!b) return 0;
-    const coins = eggCoins(b.tier, pondById.get(b.pond as 'cozy') ?? this.pond);
+    const coins = eggCoins(b.tier, this.s);
     this.s.basket.splice(index, 1);
     this.earn(coins);
     return coins;
@@ -638,7 +638,7 @@ export class PondGame {
     if (!s.bosses.includes(pond.boss.id)) s.bosses.push(pond.boss.id);
     const stored = !!storeEgg(s, 3, pond.id);
     const prize = 250 * pond.priceMult;
-    const coins = (stored ? 0 : eggCoins(3, pond)) + prize;
+    const coins = (stored ? 0 : eggCoins(3, this.s)) + prize;
     this.earn(coins);
     return { eggStored: stored, coins, prize };
   }

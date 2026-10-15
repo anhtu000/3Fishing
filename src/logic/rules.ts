@@ -182,9 +182,11 @@ export function junkCoins(pond: PondDef) {
 }
 
 /** Coins for an egg that found no free incubator slot. */
-export function eggCoins(tier: number, pond: PondDef) {
-  return 10 * (tier + 1) * pond.priceMult;
+/** Coins for an egg sold (no room, or from the basket): by rarity only, times the best pond reached. */
+export function eggCoins(tier: number, s: SaveData) {
+  return 10 * (tier + 1) * rewardMult(s);
 }
+
 
 // ---------- fishing feel ----------
 

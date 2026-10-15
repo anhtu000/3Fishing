@@ -88,7 +88,7 @@ export const PONDS: PondDef[] = [
   {
     id: 'misty',
     name: 'Misty Creek',
-    priceMult: 3,
+    priceMult: 2,
     unlockCost: 1500,
     fish: [
       { id: 'fog_shiner', name: 'Fog Shiner', rarity: 0, cm: 11 },
@@ -118,8 +118,8 @@ export const PONDS: PondDef[] = [
   {
     id: 'frozen',
     name: 'Frozen Lake',
-    priceMult: 9,
-    unlockCost: 18000,
+    priceMult: 4,
+    unlockCost: 11000,
     fish: [
       { id: 'frost_minnow', name: 'Frost Minnow', rarity: 0, cm: 8 },
       { id: 'ice_perch', name: 'Ice Perch', rarity: 0, cm: 22 },
@@ -204,9 +204,9 @@ export const JUNK_LINES = [
 ];
 
 /** Coin prices for extra slots. One currency only (Poki: dual currencies confuse web players). */
-export const INCUBATOR_SLOT_COST = [0, 10000, 40000, 150000];
+export const INCUBATOR_SLOT_COST = [0, 10000, 30000, 80000];
 // Team slots 4 and 5: big late-game buys (slot 4 about 25k, slot 5 far more).
-export const TEAM_SLOT_COST = [0, 0, 0, 25000, 150000];
+export const TEAM_SLOT_COST = [0, 0, 0, 25000, 90000];
 export const START_TEAM_SLOTS = 3;
 
 export interface QuestDef {
@@ -274,7 +274,8 @@ export const CHALLENGES: ChallengeDef[] = PONDS.flatMap((pond, pi) =>
     fish: 4 + k + pi,
     species: Math.min(6, 2 + Math.floor(k / 2) + (pi > 0 && k >= 6 ? 1 : 0)),
     timeSec: 60 + k * 10 + pi * 10,
-    reward: Math.round((400 * pond.priceMult * (1 + 0.2 * k)) / 10) * 10,
+    // Rewards rise evenly over all 24 (600 .. 2900), not by the pond's price multiplier.
+    reward: 600 + 100 * (pi * 8 + k),
   })),
 );
 export const challengeById = new Map(CHALLENGES.map((c) => [c.id, c]));
@@ -310,26 +311,26 @@ export const COSMETICS: CosmeticDef[] = [
   { id: 'hat:beanie', kind: 'hat', price: 12000 },
   { id: 'hat:flower', kind: 'hat', price: 25000 },
   { id: 'hat:pirate', kind: 'hat', price: 40000 },
-  { id: 'hat:wizard', kind: 'hat', price: 90000 },
-  { id: 'hat:tophat', kind: 'hat', price: 200000 },
-  { id: 'hat:crown', kind: 'hat', price: 500000 },
+  { id: 'hat:wizard', kind: 'hat', price: 60000 },
+  { id: 'hat:tophat', kind: 'hat', price: 120000 },
+  { id: 'hat:crown', kind: 'hat', price: 300000 },
   { id: 'hat:clover', kind: 'hat', price: 0, source: 'daily3' },
   { id: 'hat:captain', kind: 'hat', price: 0, source: 'stars15' },
   { id: 'rod:classic', kind: 'rod', price: 0, colors: [0xc98a4b, 0x8d5a2b] },
   { id: 'rod:ocean', kind: 'rod', price: 8000, colors: [0x5fb4ef, 0x2d6aa0] },
   { id: 'rod:cherry', kind: 'rod', price: 20000, colors: [0xff8fab, 0xc2557a] },
   { id: 'rod:bamboo', kind: 'rod', price: 50000, colors: [0xa8d86a, 0x5d8a2e] },
-  { id: 'rod:gold', kind: 'rod', price: 300000, colors: [0xffd23f, 0xc99a1a] },
+  { id: 'rod:gold', kind: 'rod', price: 180000, colors: [0xffd23f, 0xc99a1a] },
   { id: 'bobber:classic', kind: 'bobber', price: 0, colors: [0xff4d5e, 0xffffff] },
   { id: 'bobber:sky', kind: 'bobber', price: 6000, colors: [0x4fa8ff, 0xffffff] },
   { id: 'bobber:mint', kind: 'bobber', price: 30000, colors: [0x3fcf8e, 0xfff6d6] },
-  { id: 'bobber:gold', kind: 'bobber', price: 150000, colors: [0xffc83d, 0xfff1b8] },
+  { id: 'bobber:gold', kind: 'bobber', price: 90000, colors: [0xffc83d, 0xfff1b8] },
   // Baits: only the look on the hook (no effect on what bites).
   { id: 'bait:worm', kind: 'bait', price: 0 },
   { id: 'bait:shrimp', kind: 'bait', price: 4000 },
   { id: 'bait:fly', kind: 'bait', price: 15000 },
   { id: 'bait:cricket', kind: 'bait', price: 35000 },
-  { id: 'bait:goldworm', kind: 'bait', price: 120000 },
+  { id: 'bait:goldworm', kind: 'bait', price: 80000 },
 ];
 /** Texture key of a bait cosmetic. */
 export const baitKey = (id: string) => (id === 'bait:worm' || !id ? 'item:worm' : `item:bait_${id.slice(5)}`);

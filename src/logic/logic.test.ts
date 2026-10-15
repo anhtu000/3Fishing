@@ -11,7 +11,7 @@ import { addEgg, addPet, fishPrice, luckOf, perkValue, questsForDay, rarityWeigh
 test('price follows B x S x P x (1 + M)', () => {
   const pond = PONDS[1];
   const fish = pond.fish.find((f) => f.rarity === 1)!; // uncommon, B = 12
-  assert.equal(fishPrice(fish, 1.2, pond, 10), Math.round(12 * 1.2 * 3 * 1.1));
+  assert.equal(fishPrice(fish, 1.2, pond, 10), Math.round(12 * 1.2 * 2 * 1.1));
 });
 
 test('upgrade cost grows by 15% per level', () => {
@@ -151,11 +151,11 @@ test('daily rewards scale with the best pond, the third quest gives an egg', () 
   g.refreshDay();
   s.quests.list.forEach((q) => (q.progress = 9999));
   const r = g.claimQuest(2)!;
-  assert.ok(r.coins >= 3 * 60, 'x3 for Misty');
+  assert.ok(r.coins >= 2 * 60, "x2 for Misty");
   assert.equal(r.egg, 2);
   assert.equal(g.claimQuest(2), null, 'only once');
   const d = g.claimDailyGift()!;
-  assert.equal(d.coins, 50 * 3);
+  assert.equal(d.coins, 50 * 2);
   assert.equal(g.claimDailyGift(), null);
 });
 

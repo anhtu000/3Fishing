@@ -339,3 +339,20 @@ Khác: thú có hàng "Đặc biệt" trong bảng Thú; bảng Nâng cấp ghi 
 
 Nhịp chơi (sim 150 lượt, người chơi trung bình): boss 1 ở phút 3,1, hồ 2 ở phút 14,9, hồ 3 ở phút 40,8, boss cuối ở phút 43,9 (v1.8: 3,5 / 13,6 / 36,0 / 43,8). Số thưởng lớn trong 10 phút đầu giữ nguyên (65).
 
+## 14. v1.10: giá trứng và cân lại xu giữa 3 hồ
+
+**Vì sao giá trứng trong giỏ chênh nhau (v1.9):** giá bán = 10 × (độ hiếm + 1) × hệ số giá của *hồ nơi câu được trứng*. Ví dụ hai quả Hiếm bán 270 và 90 là vì một quả câu ở Frozen (×9), một quả ở Misty (×3). Nay giá trứng chỉ theo độ hiếm, nhân với hệ số của hồ xa nhất đã mở, nên cùng độ hiếm thì cùng giá (Thường / Không thường / Hiếm / Sử thi / Huyền thoại = 10 / 20 / 30 / 40 / 50 × hệ số).
+
+**Cân lại xu:**
+
+| | Trước | v1.10 |
+| --- | --- | --- |
+| Hệ số giá Cozy / Misty / Frozen (cá, rác, rương, nhiệm vụ, quà ngày, thưởng boss, đấu lại boss, cá hôm nay, TRUY NÃ, thu nhập offline) | ×1 / ×3 / ×9 | ×1 / ×2 / ×4 |
+| Thưởng thử thách (lần đầu) | Cozy 400–960, Misty 1.200–2.880, Frozen 3.600–8.640 (gấp 21 lần giữa màn đầu và màn cuối) | Tăng đều qua 24 màn: 600, 700 ... 2.900 (gấp khoảng 5 lần). Cozy 600–1.300, Misty 1.400–2.100, Frozen 2.200–2.900 |
+| Giá mở Frozen Lake | 18.000 | 11.000 (giữ nhịp: người chơi trung bình mở ở phút 40,6, boss cuối phút 44,3; v1.9: 40,8 / 43,9) |
+| Ô lò ấp 3 / 4 | 40.000 / 150.000 | 30.000 / 80.000 (ô 2 giữ 10.000) |
+| Ô đội thú 5 | 150.000 | 90.000 (ô 4 giữ 25.000) |
+| Đồ đắt trong tủ đồ | phù thủy 90k, chóp cao 200k, vương miện 500k, cần vàng 300k, phao vàng 150k, giun vàng 120k | 60k, 120k, 300k, 180k, 90k, 80k |
+
+Thu nhập mỗi phút (sim, người chơi trung bình): Cozy khoảng 180–200, Misty khoảng 440–590, Frozen khoảng 1.100–1.200 xu (trước: Frozen khoảng 3.100). Tổng xu kiếm được trong 60 phút: khoảng 41.000 (trước 76.000). Các mốc tiến trình gần như không đổi. Giá đồ cuối game hạ theo, để vẫn tương xứng với thu nhập.
+

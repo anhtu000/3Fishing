@@ -1,7 +1,7 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { BOSS_STARS, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, pondById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
+import { BOSS_STARS, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
 import { dexCount, eggCoins, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
@@ -656,7 +656,7 @@ export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
       const x = (col - 1.5) * (cw + 12);
       const y = panel.top + 160 + row * 252;
       // Sell instead (same coins as an egg sold when there is no room).
-      const value = eggCoins(b.tier, pondById.get(b.pond as 'cozy') ?? g.pond);
+      const value = eggCoins(b.tier, s);
       const sell = new CButton(scene, x, y + 122, {
         w: cw,
         h: 52,
