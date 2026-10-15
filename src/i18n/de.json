@@ -345,15 +345,17 @@
     "gotHat": "Neuer Hut! Die Katze trägt ihn schon.",
     "gotCaptain": "15 Boss-Sterne: Kapitänsmütze freigeschaltet!",
     "fromDaily3": "Dieser Hut ist das Geschenk von Tag 3.",
-    "fromStars15": "Sammle insgesamt 15 Boss-Sterne für diesen Hut.",
-    "baits": "Köder"
+    "fromStars15": "Gewinne Boss-Revanchen, um Sterne (★) zu sammeln. 15 Sterne insgesamt schalten diesen Hut frei. Du hast {n}.",
+    "baits": "Köder",
+    "starsNeed": "★ {n}/{max}"
   },
   "rematch": {
-    "fight": "Revanche ★{n}",
+    "fight": "Revanche: Boss ★{n}",
     "tickets": "Boss-Tickets heute: {n}/{max}",
     "noTickets": "Keine Boss-Tickets mehr. Morgen gibt es neue!",
-    "best": "Sterne {n}/{max}",
-    "cleared": "★{n} geschafft!"
+    "best": "Boss-Sterne {n}/{max}",
+    "cleared": "★{n} geschafft!",
+    "what": "★ = Boss-Schwierigkeit. Jeder Revanche-Sieg gibt einen Stern: härterer Kampf, größere Belohnung."
   },
   "medal": {
     "m1": "Bronze",

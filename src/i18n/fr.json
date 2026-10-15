@@ -345,15 +345,17 @@
     "gotHat": "Nouveau chapeau ! Le chat le porte déjà.",
     "gotCaptain": "15 étoiles de boss : chapeau de capitaine débloqué !",
     "fromDaily3": "Ce chapeau est le cadeau du jour 3.",
-    "fromStars15": "Gagne 15 étoiles de boss au total pour ce chapeau.",
-    "baits": "Appâts"
+    "fromStars15": "Gagne des revanches de boss pour obtenir des étoiles (★). 15 étoiles au total débloquent ce chapeau. Tu en as {n}.",
+    "baits": "Appâts",
+    "starsNeed": "★ {n}/{max}"
   },
   "rematch": {
-    "fight": "Revanche ★{n}",
+    "fight": "Revanche : boss ★{n}",
     "tickets": "Tickets de boss aujourd'hui : {n}/{max}",
     "noTickets": "Plus de tickets de boss. De nouveaux demain !",
-    "best": "Étoiles {n}/{max}",
-    "cleared": "★{n} réussie !"
+    "best": "Étoiles de boss {n}/{max}",
+    "cleared": "★{n} réussie !",
+    "what": "★ = difficulté du boss. Chaque revanche gagnée ajoute une étoile : combat plus dur, plus grosse récompense."
   },
   "medal": {
     "m1": "Bronze",

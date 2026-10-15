@@ -259,7 +259,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     title: t('dex.title'),
     w: 660,
     // Late game: room for the medal line and the rematch button.
-    h: ctx.game.lateGame ? 1260 : 1200,
+    h: ctx.game.lateGame ? 1340 : 1200,
     color: COLORS.blue,
     // The commercial break on the way back to play is handled by the scene for every menu.
     onClose: () => ctx.refresh(),
@@ -321,6 +321,19 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
         page.add(md);
       }
     });
+    // Boss stars (late game, boss beaten): what ★ means, then one star per rematch level won.
+    if (g.lateGame && beaten) {
+      const best = s.bossStars[pond.boss.id] ?? 0;
+      const gridBottom = panel.top + 280 + (Math.ceil(pond.fish.length / 3) - 1) * 206 + 98;
+      page.add(fitText(txt(scene, 0, gridBottom + 42, t('rematch.what'), 20, { color: DIM, stroke: false, weight: '500', wrap: pw - 80 }), pw - 60));
+      const sz = Math.min(44, (pw - 100) / BOSS_STARS.max);
+      for (let k = 0; k < BOSS_STARS.max; k++) {
+        const st = art(scene, (k - (BOSS_STARS.max - 1) / 2) * (sz + 4), gridBottom + 108, 'icon:i_star');
+        st.setScale(fitScale('icon:i_star', sz));
+        if (k >= best) st.setTint(0xd8cfe0).setTintMode(Phaser.TintModes.FILL).setAlpha(0.8);
+        page.add(st);
+      }
+    }
     // Rematch (late game, boss beaten, in this pond): next star, 3 winning tickets a day.
     const star = g.rematchStar(pond);
     // A lost boss must be lured back first (a few catches in this pond).
@@ -330,7 +343,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     } else if (star !== null && pond.id === s.pond) {
       const left = g.ticketsLeft;
       const b = new CButton(scene, 0, panel.bottom - 84, {
-        w: 400,
+        w: 460,
         h: 90,
         icon: 'icon:i_crown',
         label: t('rematch.fight', { n: star }),
@@ -754,7 +767,7 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
         onClick: () => {
           const r = g.wear(c.id);
           if (r === 'noCoins') return note(scene, t('msg.needCoins', { n: fmt(c.price) }));
-          if (r === 'locked') return note(scene, t(c.source === 'daily3' ? 'wardrobe.fromDaily3' : 'wardrobe.fromStars15'));
+          if (r === 'locked') return note(scene, c.source === 'daily3' ? t('wardrobe.fromDaily3') : t('wardrobe.fromStars15', { n: g.starsTotal }));
           app.audio.play(r === 'bought' ? 'buy' : 'ui-tap');
           ctx.refresh();
           refreshAll();
@@ -798,7 +811,7 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
         coin.setVisible(!owned && !c.source);
         if (worn) label.setText(t('wardrobe.worn')).setColor('#3a9e55');
         else if (owned) label.setText(t('wardrobe.wear')).setColor(DARK);
-        else if (c.source) label.setText(c.source === 'daily3' ? t('wardrobe.day3') : '15★').setColor('#c2557a');
+        else if (c.source) label.setText(c.source === 'daily3' ? t('wardrobe.day3') : t('wardrobe.starsNeed', { n: Math.min(15, g.starsTotal), max: 15 })).setColor('#c2557a');
         else label.setText(fmt(c.price)).setColor(s.coins >= c.price ? DARK : '#c0392b');
         fitText(label, tw - (coin.visible ? 34 : 10));
         if (coin.visible) {

@@ -345,15 +345,17 @@
     "gotHat": "¡Sombrero nuevo! El gato ya lo lleva puesto.",
     "gotCaptain": "15 estrellas de jefe: ¡gorra de capitán desbloqueada!",
     "fromDaily3": "Este sombrero es el regalo del día 3.",
-    "fromStars15": "Consigue 15 estrellas de jefe en total para este sombrero.",
-    "baits": "Cebos"
+    "fromStars15": "Gana revanchas contra jefes para conseguir estrellas (★). 15 estrellas en total desbloquean este sombrero. Tienes {n}.",
+    "baits": "Cebos",
+    "starsNeed": "★ {n}/{max}"
   },
   "rematch": {
-    "fight": "Revancha ★{n}",
+    "fight": "Revancha: jefe ★{n}",
     "tickets": "Tickets de jefe hoy: {n}/{max}",
     "noTickets": "No quedan tickets de jefe. ¡Mañana hay más!",
-    "best": "Estrellas {n}/{max}",
-    "cleared": "¡★{n} superada!"
+    "best": "Estrellas de jefe {n}/{max}",
+    "cleared": "¡★{n} superada!",
+    "what": "★ = dificultad del jefe. Cada revancha ganada suma una estrella: lucha más dura, mayor premio."
   },
   "medal": {
     "m1": "Bronce",

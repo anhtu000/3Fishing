@@ -345,15 +345,17 @@
     "gotHat": "New hat! The cat is wearing it now.",
     "gotCaptain": "15 boss stars: Captain's hat unlocked!",
     "fromDaily3": "This hat is the day-3 login gift.",
-    "fromStars15": "Earn 15 boss stars in total for this hat.",
-    "baits": "Baits"
+    "fromStars15": "Win boss rematches to earn stars (★). 15 stars in total unlock this hat. You have {n}.",
+    "baits": "Baits",
+    "starsNeed": "★ {n}/{max}"
   },
   "rematch": {
-    "fight": "Rematch ★{n}",
+    "fight": "Rematch: boss ★{n}",
     "tickets": "Boss tickets today: {n}/{max}",
     "noTickets": "No boss tickets left. New ones tomorrow!",
-    "best": "Stars {n}/{max}",
-    "cleared": "★{n} cleared!"
+    "best": "Boss stars {n}/{max}",
+    "cleared": "★{n} cleared!",
+    "what": "★ = boss difficulty. Each rematch win adds a star: harder fight, bigger reward."
   },
   "medal": {
     "m1": "Bronze",

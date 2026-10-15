@@ -345,15 +345,17 @@
     "gotHat": "Yeni şapka! Kedi şimdiden takıyor.",
     "gotCaptain": "15 boss yıldızı: kaptan şapkası açıldı!",
     "fromDaily3": "Bu şapka 3. günün hediyesi.",
-    "fromStars15": "Bu şapka için toplam 15 boss yıldızı topla.",
-    "baits": "Yemler"
+    "fromStars15": "Yıldız (★) kazanmak için boss rövanşlarını kazan. Toplam 15 yıldız bu şapkayı açar. Sende {n} var.",
+    "baits": "Yemler",
+    "starsNeed": "★ {n}/{max}"
   },
   "rematch": {
-    "fight": "Rövanş ★{n}",
+    "fight": "Rövanş: boss ★{n}",
     "tickets": "Bugünkü boss biletleri: {n}/{max}",
     "noTickets": "Boss bileti kalmadı. Yarın yenileri gelir!",
-    "best": "Yıldız {n}/{max}",
-    "cleared": "★{n} geçildi!"
+    "best": "Boss yıldızı {n}/{max}",
+    "cleared": "★{n} geçildi!",
+    "what": "★ = boss zorluğu. Kazanılan her rövanş bir yıldız ekler: daha zor dövüş, daha büyük ödül."
   },
   "medal": {
     "m1": "Bronz",

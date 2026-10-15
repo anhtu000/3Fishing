@@ -345,15 +345,17 @@
     "gotHat": "Nuovo cappello! Il gatto lo indossa già.",
     "gotCaptain": "15 stelle boss: cappello da capitano sbloccato!",
     "fromDaily3": "Questo cappello è il regalo del giorno 3.",
-    "fromStars15": "Ottieni 15 stelle boss in totale per questo cappello.",
-    "baits": "Esche"
+    "fromStars15": "Vinci le rivincite contro i boss per ottenere stelle (★). 15 stelle in totale sbloccano questo cappello. Ne hai {n}.",
+    "baits": "Esche",
+    "starsNeed": "★ {n}/{max}"
   },
   "rematch": {
-    "fight": "Rivincita ★{n}",
+    "fight": "Rivincita: boss ★{n}",
     "tickets": "Biglietti boss oggi: {n}/{max}",
     "noTickets": "Biglietti boss finiti. Nuovi domani!",
-    "best": "Stelle {n}/{max}",
-    "cleared": "★{n} superata!"
+    "best": "Stelle boss {n}/{max}",
+    "cleared": "★{n} superata!",
+    "what": "★ = difficoltà del boss. Ogni rivincita vinta aggiunge una stella: lotta più dura, premio più grande."
   },
   "medal": {
     "m1": "Bronzo",

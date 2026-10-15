@@ -242,6 +242,12 @@ export class Pond {
     });
   }
 
+  private twinkle(x: number, y: number, tint: number) {
+    const sp = art(this.scene, x, y, 'item:sparkle', 0.05).setDepth(19.5).setTint(tint);
+    const k = sp.scaleX;
+    this.scene.tweens.add({ targets: sp, scale: k * 8, angle: 90, alpha: { from: 1, to: 0 }, duration: 700, ease: 'Sine.Out', onComplete: () => sp.destroy() });
+  }
+
   /** Re-tint ambient fish after the Fishdex changes. */
   refreshKnown() {
     if (this.livePool) return;
@@ -426,6 +432,9 @@ export class Pond {
       const onLily = !!this.lilies[lily]?.visible;
       const bob = onLily ? Math.sin(t * 1.6 + lily * 1.3) * 3 : 0;
       p.img.scaleY = p.img.scaleX * (1 + Math.sin(p.t * 2.2) * 0.025);
+      // Epic and Legendary pets twinkle now and then.
+      const rar = petById.get(p.id)?.rarity ?? 0;
+      if (rar >= 3 && Math.random() < dt * (rar === 4 ? 1.6 : 0.9)) this.twinkle(p.img.x + (Math.random() - 0.5) * 70, p.img.y - 20 - Math.random() * 60, rar === 4 ? 0xffe36e : 0xd9c2ff);
       if (!this.scene.tweens.isTweening(p.img)) p.img.y = p.baseY + bob;
     });
     if (this.bossShadow) {

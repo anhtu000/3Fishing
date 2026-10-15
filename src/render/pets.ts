@@ -1,4 +1,5 @@
 // Pet art: chibi creatures sitting and facing the player. ViewBox 200 x 200, feet on y ~ 186.
+import { petById } from '../content/data';
 import { OUTLINE, OUTLINE_W, circle, darken, ellipse, eye, f, flat, happyEye, lighten, line, linear, nextId, path, radial, svg } from './svg';
 
 export const PET_W = 200;
@@ -408,10 +409,75 @@ const PETS: Record<string, PetDraw> = {
 
 export const PET_IDS = Object.keys(PETS);
 
+/** Four-point sparkle. */
+function sparkle(x: number, y: number, r: number, color: string, opacity = 1) {
+  const k = r * 0.28;
+  return flat(`M${f(x)},${f(y - r)} Q${f(x + k)},${f(y - k)} ${f(x + r)},${f(y)} Q${f(x + k)},${f(y + k)} ${f(x)},${f(y + r)} Q${f(x - k)},${f(y + k)} ${f(x - r)},${f(y)} Q${f(x - k)},${f(y - k)} ${f(x)},${f(y - r)} Z`, color, `opacity="${opacity}"`);
+}
+
+/**
+ * Rarity look, layered around each pet's own drawing (same pet, fancier the rarer it is):
+ * Common: a soft ground shadow. Uncommon: + a mint glow on the ground and a sparkle.
+ * Rare: + a blue aura and sparkles. Epic: + a violet aura, star sparkles and a floating gem.
+ * Legendary: + golden sun rays, a golden aura and ground ring, and gold sparkles.
+ */
+function rarityLayers(b: Base, rarity: number): { back: string; front: string } {
+  let back = ellipse(100, 188, 58, 9, '#1d2a44', false, 'opacity="0.18"');
+  let front = '';
+  if (rarity >= 1) {
+    const g = `${b.id}rgGround`;
+    const col = ['#ffffff', '#7fe0b0', '#7fc6ff', '#c79bff', '#ffd23f'][rarity];
+    b.defs.push(radial(g, [
+      [0, col, 0.55],
+      [1, col, 0],
+    ]));
+    back = ellipse(100, 186, 84, 16, `url(#${g})`, false) + back;
+  }
+  if (rarity >= 2) {
+    const a = `${b.id}rgAura`;
+    const col = ['', '', '#8fd0ff', '#c9a4ff', '#ffe27a'][rarity];
+    b.defs.push(radial(a, [
+      [0, col, rarity === 4 ? 0.75 : 0.6],
+      [0.6, col, rarity === 4 ? 0.35 : 0.25],
+      [1, col, 0],
+    ]));
+    back = circle(100, 104, 96, `url(#${a})`, false) + back;
+  }
+  if (rarity === 4) {
+    // Sun rays behind everything.
+    let rays = '';
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2;
+      const a1 = ang - 0.11;
+      const a2 = ang + 0.11;
+      rays += `M100,104 L${f(100 + Math.cos(a1) * 98)},${f(104 + Math.sin(a1) * 98)} L${f(100 + Math.cos(a2) * 98)},${f(104 + Math.sin(a2) * 98)} Z `;
+    }
+    const rg = `${b.id}rgRays`;
+    b.defs.push(radial(rg, [
+      [0, '#fff3b0', 0.9],
+      [0.75, '#fff3b0', 0.45],
+      [1, '#fff3b0', 0],
+    ]));
+    back = flat(rays, `url(#${rg})`) + back;
+    back += ellipse(100, 188, 62, 11, 'none', false, 'stroke="#ffcf3a" stroke-width="4" opacity="0.8"');
+  }
+  if (rarity === 1) front += sparkle(170, 46, 9, '#ffffff', 0.95);
+  if (rarity === 2) front += sparkle(168, 40, 11, '#ffffff') + sparkle(30, 70, 7, '#dff3ff') + sparkle(176, 120, 6, '#dff3ff', 0.9);
+  if (rarity === 3) {
+    front += sparkle(30, 56, 10, '#f1e4ff') + sparkle(178, 118, 8, '#ffffff') + sparkle(24, 134, 6, '#f1e4ff', 0.9);
+    // Floating gem.
+    front += path('M166,22 L178,34 L166,52 L154,34 Z', '#b58bff', 'stroke-width="3.5"') + flat('M166,22 L172,34 L166,40 L160,34 Z', '#ffffff', 'opacity="0.55"') + sparkle(182, 18, 6, '#ffffff');
+  }
+  if (rarity === 4) front += sparkle(26, 48, 12, '#fff6c2') + sparkle(178, 36, 10, '#ffffff') + sparkle(182, 126, 8, '#ffe36e') + sparkle(20, 128, 7, '#ffe36e', 0.9) + sparkle(150, 14, 6, '#ffffff', 0.9);
+  return { back, front };
+}
+
 export function petSvg(id: string): string {
   const b: Base = { id: nextId('p'), defs: [] };
   const body = PETS[id](b);
-  return svg(PET_W, PET_H, b.defs.join(''), body);
+  const rarity = petById.get(id)?.rarity ?? 0;
+  const { back, front } = rarityLayers(b, rarity);
+  return svg(PET_W, PET_H, b.defs.join(''), back + body + front);
 }
 
 export function previewItems() {

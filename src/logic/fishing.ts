@@ -51,7 +51,7 @@ export const RED_AT = 0.86;
 /** Normal fish: share of fights where the fish shakes off the hook while reeling (not during onboarding). */
 export const SLIP = { chance: 0.2, from: 0.35, spread: 0.45 };
 
-export const BOSS = { misHeal: 0.025, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
+export const BOSS = { misHeal: 0.25, misGrace: 0.25, warn: 0.5, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
 
 export class Fishing {
   phase: Phase = 'ready';
@@ -131,8 +131,9 @@ export class Fishing {
         break;
       case 'reeling': {
         // Boss: pressing when you should let go (during the warning) gives it back some health.
-        // At most once per warning, so one fumble costs a little, not the fight.
-        if (this.target.boss && !this.healedThisWarn && this.warning) {
+        // At most once per warning (25% of its health back). The first moment of the warning is
+        // free: a tap already on its way when the boss starts thrashing is reaction time, not a fumble.
+        if (this.target.boss && !this.healedThisWarn && this.warning && this.surgeIn <= BOSS.warn - BOSS.misGrace) {
           this.healedThisWarn = true;
           this.progress -= BOSS.misHeal;
           this.events.bossHeal?.(BOSS.misHeal);
@@ -292,7 +293,7 @@ export class Fishing {
     // spikes the tension; letting go in time takes most of the pull. Bosses surge harder later on.
     if (target.fights && !this.assist) {
       this.surgeIn -= dt;
-      const warnAt = boss ? 0.5 : 0.4;
+      const warnAt = boss ? BOSS.warn : 0.4;
       if (!this.warning && this.surgeIn <= warnAt && this.surgeIn > 0) {
         this.warning = true;
         this.events.surgeWarn?.();

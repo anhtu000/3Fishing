@@ -356,3 +356,22 @@ Nhịp chơi (sim 150 lượt, người chơi trung bình): boss 1 ở phút 3,1
 
 Thu nhập mỗi phút (sim, người chơi trung bình): Cozy khoảng 180–200, Misty khoảng 440–590, Frozen khoảng 1.100–1.200 xu (trước: Frozen khoảng 3.100). Tổng xu kiếm được trong 60 phút: khoảng 41.000 (trước 76.000). Các mốc tiến trình gần như không đổi. Giá đồ cuối game hạ theo, để vẫn tương xứng với thu nhập.
 
+
+## 15. v1.11: art pet theo độ hiếm, boss hồi 25%, nhãn sao boss
+
+**Art pet theo độ hiếm.** Mọi pet có thêm lớp nền/hiệu ứng theo độ hiếm (ở bè, bảng Pets, màn nở trứng):
+- Common: bóng đổ. Uncommon: quầng sáng chân + 1 lấp lánh. Rare: hào quang xanh + 3 lấp lánh.
+- Epic: hào quang tím + viên đá quý bay + lấp lánh nhấp nháy trên bè.
+- Legendary: tia sáng vàng phía sau, vòng vàng dưới chân, lấp lánh vàng nhấp nháy.
+
+**Boss hồi 25% khi bấm trượt** (bấm giữ trong lúc boss cảnh báo, tối đa 1 lần/cảnh báo). Để đúng 25% không có ân hạn thì tỉ lệ thắng lần đầu còn 0–19%, vì cú bấm đã nhấn trước khi cảnh báo hiện cũng bị phạt. Thêm 0,25 s ân hạn đầu cảnh báo (thời gian phản xạ):
+
+| Boss | v1.10 (2,5%) | v1.11 (25% + ân hạn) mới/TB/giỏi |
+|---|---|---|
+| Cozy | 69/82/81% | 51/79/83% |
+| Misty | 88/88/85% | 67/80/85% |
+| Frozen | 88/89/85% | 64/80/84% |
+
+Đấu lại theo sao (đồ cuối game): ★1 ~58–77%, ★3 ~46–57%, ★5 ~40%, ★7 ~30%, ★10 ~10–22%.
+
+**Nhãn sao boss rõ nghĩa.** ★ là độ khó trận đấu lại, mỗi boss tính riêng (tối đa 10). Nút ghi "Rematch: boss ★N"; Fishdex có dòng giải thích và hàng 10 sao (sao đã đạt tô vàng); Wardrobe ghi tiến độ mũ Captain "★ n/15" và lời nhắc cách kiếm sao.
