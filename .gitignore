@@ -7,3 +7,5 @@ Thumbs.db
 !.vscode/extensions.json
 tools/sim/out/
 panels/
+# Local build outputs (Poki zips, phone tests): not in git
+builds/

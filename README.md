@@ -43,3 +43,28 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
   khi nhiều texture chung batch (thấy trên SwiftShader). Cần đo FPS trên điện thoại thật; nếu ổn thì giữ.
 - Sự kiện Poki: `gameplayStart` ở lần chạm đầu; mở menu/pause/kết quả boss gửi `gameplayStop`, quay lại chơi gửi `commercialBreak` rồi `gameplayStart`. Không có bộ đếm quảng cáo riêng.
 - Góc trên trái để trống cho nút Poki trên điện thoại.
+
+## Thư mục trên máy và GitHub
+
+- Thư mục làm việc: `D:\Projects\GameMaking\Game3_Fishing` chính là repo git này (nhánh `main`).
+- Remote: `origin` = https://github.com/anhtu000/3Fishing.git. **Chưa push**: khi tài khoản GitHub đúng đã đăng nhập trên máy, chạy:
+
+  ```
+  git push -u origin main
+  ```
+
+  Sau đó lấy code mới về bằng `git pull`.
+- `builds/` (không đưa lên git): bản build Poki `PondPals_Poki_vX.zip` và file thử trên điện thoại `PondPals_PhoneTest_vX.html` của bản mới nhất; các bản cũ nằm trong `builds/old/`.
+- Báo cáo kinh tế, nhịp chơi và giữ chân: `docs/PondPals-BaoCao-KinhTe-v1.3.md`. Hướng dẫn Poki: `docs/Poki-Huong-dan.md`. Thiết kế: `docs/Pond-Pals-Tai-lieu-thiet-ke.md`.
+
+## Lịch sử phiên bản
+
+- v1.0: game gốc (2 hồ, đồ họa SVG tự vẽ, ấp trứng, thú, boss).
+- v1.1: sửa theo quy định Poki (sự kiện SDK, không hẹn giờ quảng cáo, nút thưởng tím có biểu tượng phim, một loại tiền, ESC tạm dừng), thumbnail.
+- v1.2: hồ 3 Frozen Lake, 6 ngôn ngữ, bảng cài đặt chọn ngôn ngữ.
+- v1.3: phút đầu dễ hơn, cá TRUY NÃ, chuỗi hoàn hảo, thanh mục tiêu, boss có cảnh báo "LET GO!" và dây mòn, chỉnh giá mở hồ.
+- v1.4: cá hôm nay, tổ trứng qua đêm, quà ngày và nhiệm vụ nhân theo hồ, nhiệm vụ thứ 3 tặng trứng, offline tối đa 8 giờ.
+- v1.5: giỏ trứng, cá hôm nay một con cho cả game mỗi ngày, cảnh vật riêng cho từng hồ.
+- v1.6: ô lò ấp 10k/40k/150k, bỏ quảng cáo nhận trứng (chỉ còn "Nở ngay"), thú tối đa cấp 20, trứng ra nhiều hơn 20%.
+- v1.7: auto fishing chậm lại và trượt 30%.
+- v1.8: đấu lại boss có sao (vé hằng ngày), huy chương sưu tập và hồ vàng, tủ đồ (mũ, cần, phao), mũ ngày 3 và Rùa cầu vồng ngày 7.
