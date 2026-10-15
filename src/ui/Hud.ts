@@ -21,6 +21,8 @@ export interface HudActions {
   boss(): void;
   egg(i: number): void;
   basket(): void;
+  challenges(): void;
+  exitChallenge(): void;
   sound(): void;
 }
 
@@ -39,7 +41,12 @@ export class Hud {
   private shownCoins = 0;
   sound: CButton;
   bottom: CButton[] = [];
-  side: { quests: CButton; golden: CButton; mystery: CButton; auto: CButton };
+  side: { quests: CButton; golden: CButton; mystery: CButton; auto: CButton; challenge: CButton };
+  private chBar!: Phaser.GameObjects.Container;
+  private chTime!: Phaser.GameObjects.Text;
+  private chFish!: Phaser.GameObjects.Text;
+  private chKinds!: Phaser.GameObjects.Text;
+  private chExit!: CButton;
   boss: CButton;
   eggs: { btn: CButton; egg: Phaser.GameObjects.Image; time: Phaser.GameObjects.Text; tier: number }[] = [];
   private chip: Phaser.GameObjects.Container;
@@ -94,7 +101,16 @@ export class Hud {
       golden: roundButton(scene, 0, 0, 'icon:i_bait', 84, 0xffc83d, act.golden, true),
       mystery: roundButton(scene, 0, 0, 'icon:i_gift', 84, COLORS.purple, act.mystery, true),
       auto: roundButton(scene, 0, 0, 'icon:i_auto', 84, COLORS.grey, act.auto),
+      challenge: roundButton(scene, 0, 0, 'icon:i_trophy', 84, COLORS.purple, act.challenges),
     };
+    // Challenge run: timer, fish and kinds against the goal, and a way out.
+    const chBg = scene.add.graphics();
+    chBg.fillStyle(INK, 0.62).fillRoundedRect(-230, -40, 460, 80, 26);
+    this.chTime = txt(scene, -150, 0, '', 34, { color: '#ffe066' });
+    this.chFish = txt(scene, 10, 0, '', 28);
+    this.chKinds = txt(scene, 150, 0, '', 28);
+    this.chExit = new CButton(scene, 268, 0, { w: 64, h: 64, label: 'X', fontSize: 30, color: COLORS.red, onClick: act.exitChallenge });
+    this.chBar = scene.add.container(0, 0, [chBg, this.chTime, this.chFish, this.chKinds, this.chExit]).setVisible(false);
     this.boss = new CButton(scene, 0, 0, { w: 260, h: 92, icon: 'icon:i_crown', label: t('hud.boss'), fontSize: 40, color: COLORS.red, onClick: act.boss });
     this.boss.setGlow(true).setVisible(false);
     // Four incubator slots, then the overnight nest (index 4, a nest-coloured button).
@@ -151,7 +167,7 @@ export class Hud {
     this.goalBar = scene.add.graphics().setPosition(14, 16);
     this.goal = scene.add.container(0, 0, [goalBg, this.goalIcon, this.goalText, this.goalBar]).setVisible(false);
     this.root.add([this.wanted, this.goal]);
-    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.chip]);
+    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.side.challenge, this.chBar, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.chip]);
     this.shownCoins = s.coins;
     this.coins.label.setText(fmt(s.coins));
   }
@@ -202,7 +218,9 @@ export class Hud {
     const sy = portrait ? 250 : 150;
     const step = portrait ? 104 : 96;
     // The mystery-egg ad is gone (ads for eggs: only "hatch now"), so three side buttons.
-    [this.side.quests, this.side.golden, this.side.auto].forEach((b, i) => b.setPosition(sx, sy + i * step));
+    [this.side.quests, this.side.golden, this.side.auto, this.side.challenge].forEach((b, i) => b.setPosition(sx, sy + i * step));
+    this.chBar.setPosition(w / 2 - (portrait ? 20 : 0), portrait ? 206 : 178);
+    this.chBar.setScale(portrait ? Math.min(1, (w - 230) / 600) : 1);
     this.portrait = portrait;
     this.wDesign = w;
     this.hDesign = h;
@@ -221,7 +239,7 @@ export class Hud {
     this.bossBar.setPosition(w / 2, portrait ? 170 : 130);
   }
 
-  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; goal: { icon: string; text: string; progress: number } | null }) {
+  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; challengeOpen: boolean; challenge: { timeMs: number; fish: number; fishGoal: number; kinds: number; kindsGoal: number } | null; goal: { icon: string; text: string; progress: number } | null }) {
     this.t += dt;
     const s = this.s;
     // Count-up numbers.
@@ -286,7 +304,18 @@ export class Hud {
     // Offers are gated by game state, never by an ad timer: bait while not already active.
     // No ad for eggs here: the only egg ad is "hatch now" on an egg that is warming up.
     this.side.mystery.setVisible(false);
-    this.side.auto.setVisible(extra.autoUnlocked).setColor(extra.autoOn ? COLORS.green : COLORS.grey);
+    const ch = extra.challenge;
+    this.side.auto.setVisible(extra.autoUnlocked && !ch).setColor(extra.autoOn ? COLORS.green : COLORS.grey);
+    this.side.challenge.setVisible(extra.challengeOpen && !ch);
+    this.chBar.setVisible(!!ch);
+    if (ch) {
+      const sec = Math.max(0, Math.ceil(ch.timeMs / 1000));
+      this.chTime.setText(`${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`).setColor(sec <= 10 ? '#ff8a8a' : '#ffe066');
+      this.chFish.setText(t('challenge.fishShort', { n: ch.fish, max: ch.fishGoal })).setColor(ch.fish >= ch.fishGoal ? '#7dffb0' : '#ffffff');
+      this.chKinds.setText(t('challenge.kindsShort', { n: ch.kinds, max: ch.kindsGoal })).setColor(ch.kinds >= ch.kindsGoal ? '#7dffb0' : '#ffffff');
+      fitText(this.chFish, 150);
+      fitText(this.chKinds, 140);
+    }
     this.boss.setVisible(extra.bossReady && !f.busy);
     this.bottom[0].setGlow(extra.canUpgrade && !f.busy).setBadge(extra.canUpgrade ? -1 : 0);
     this.bottom[1].setBadge(extra.petBadge ? -1 : 0);
@@ -299,7 +328,7 @@ export class Hud {
     if (extra.autoOn) chip = chip ? chip : t('hud.autoChip');
     if (f.target.boss && f.busy) chip = '';
     this.setChip(chip);
-    this.wanted.setVisible(!!extra.wanted && !f.target.boss);
+    this.wanted.setVisible(!!extra.wanted && !f.target.boss && !extra.challenge);
     if (extra.wanted && (extra.wanted !== this.wantedShown || extra.wantedToday !== this.wantedToday)) {
       this.wantedShown = extra.wanted;
       this.wantedToday = extra.wantedToday;
@@ -314,7 +343,7 @@ export class Hud {
       this.wantedPop = true;
       this.scene.tweens.add({ targets: this.wanted, scale: { from: 1.25 * this.stripScale, to: this.stripScale }, duration: 380, ease: 'Back.Out', onComplete: () => (this.wantedPop = false) });
     }
-    this.setGoal(extra.goal && !extra.bossReady && !f.target.boss ? extra.goal : null);
+    this.setGoal(extra.goal && !extra.bossReady && !f.target.boss && !extra.challenge ? extra.goal : null);
     this.placeStrip();
     // Idle hint.
     this.hintT = extra.showHint && f.phase === 'ready' ? this.hintT + dt : 0;

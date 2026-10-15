@@ -246,6 +246,39 @@ export const STREAK: { coins: number; egg: number; hat?: string; pet?: string }[
 /** Medals, boss stars and the wardrobe open with the second pond, so the first 15 minutes stay as they are. */
 export const LATE_GAME_POND = 'misty';
 
+// ---------- Challenge mode (opens with the second pond) ----------
+
+export interface ChallengeDef {
+  /** 'cozy-1' .. 'frozen-8'. */
+  id: string;
+  pond: PondDef['id'];
+  /** 1..8 within the pond. */
+  n: number;
+  /** Goal: this many fish, of at least this many species, within timeSec. */
+  fish: number;
+  species: number;
+  timeSec: number;
+  /** Coins for the first clear (replays pay a small share, see CHALLENGE). */
+  reward: number;
+}
+
+/** Rewards: first clear in full, a new record +20%, a replay 10% (5 paid replays a day in total). */
+export const CHALLENGE = { recordBonus: 0.2, replayShare: 0.1, paidReplaysPerDay: 5, liveFish: 9 };
+
+/** 24 challenges: 8 per pond, more fish and species each level, a little more time. */
+export const CHALLENGES: ChallengeDef[] = PONDS.flatMap((pond, pi) =>
+  Array.from({ length: 8 }, (_, k) => ({
+    id: `${pond.id}-${k + 1}`,
+    pond: pond.id,
+    n: k + 1,
+    fish: 4 + k + pi,
+    species: Math.min(6, 2 + Math.floor(k / 2) + (pi > 0 && k >= 6 ? 1 : 0)),
+    timeSec: 60 + k * 10 + pi * 10,
+    reward: Math.round((400 * pond.priceMult * (1 + 0.2 * k)) / 10) * 10,
+  })),
+);
+export const challengeById = new Map(CHALLENGES.map((c) => [c.id, c]));
+
 /** Fish to catch in the pond to lure a boss back after a lost fight (by pond: Cozy, Misty, Frozen). */
 export const BOSS_LURE = [5, 8, 10];
 

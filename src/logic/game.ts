@@ -2,7 +2,7 @@
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
 import { claimDaily, dailyStatus, dayKey } from '../../core/time';
-import { AD, BOSS_LURE, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { AD, BOSS_LURE, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
@@ -465,6 +465,71 @@ export class PondGame {
     return { coins, tier, where, hat, stars: s.bossStars[pond.boss.id] };
   }
 
+  // ---------- challenge mode ----------
+
+  /** Challenge mode is open (with the second pond). */
+  get challengeOpen() {
+    return this.lateGame;
+  }
+
+  /** A challenge can be played: its pond is open and the one before it (same pond) is cleared. */
+  challengeUnlocked(c: ChallengeDef) {
+    if (!this.challengeOpen || !this.s.unlocked.includes(c.pond)) return false;
+    return c.n === 1 || this.s.challenge.cleared.includes(`${c.pond}-${c.n - 1}`);
+  }
+
+  /** A challenge catch: Fishdex, medals and quests count, but no coins or eggs (the reward is at the end). */
+  applyChallengeCatch(fish: FishDef, size: number, perfect: boolean) {
+    const s = this.s;
+    s.stats.catches += 1;
+    s.stats.fish += 1;
+    if (perfect) {
+      s.stats.perfect += 1;
+      questProgress(s, 'perfect');
+    }
+    const cm = Math.round(fish.cm * size * 10) / 10;
+    const e = s.dex[fish.id];
+    const isNew = !e;
+    if (!e) s.dex[fish.id] = { n: 1, best: cm };
+    else {
+      e.n += 1;
+      if (cm > e.best) e.best = cm;
+    }
+    questProgress(s, 'catch');
+    if (fish.rarity >= 2) questProgress(s, 'rare');
+    fishSpeedsEggs(s);
+    return { isNew, cm };
+  }
+
+  /**
+   * A challenge cleared in timeMs. First clear pays in full; a new record adds 20%; replays pay 10%,
+   * and only 5 replays a day pay at all, so replaying cannot flood the economy.
+   */
+  finishChallenge(c: ChallengeDef, timeMs: number) {
+    const s = this.s;
+    const ch = s.challenge;
+    const day = dayKey(new Date(this.now()));
+    if (ch.replays.day !== day) ch.replays = { day, n: 0 };
+    const first = !ch.cleared.includes(c.id);
+    const prev = ch.best[c.id];
+    const record = prev === undefined || timeMs < prev;
+    if (record) ch.best[c.id] = timeMs;
+    let coins = 0;
+    let kind: 'first' | 'replay' | 'capped' = 'first';
+    if (first) {
+      ch.cleared.push(c.id);
+      coins = c.reward;
+    } else if (ch.replays.n < CHALLENGE.paidReplaysPerDay) {
+      ch.replays.n += 1;
+      coins = Math.round(c.reward * CHALLENGE.replayShare);
+      kind = 'replay';
+    } else kind = 'capped';
+    if (record && !first) coins += Math.round(c.reward * CHALLENGE.recordBonus);
+    this.earn(coins);
+    const next = CHALLENGES.find((d) => d.pond === c.pond && d.n === c.n + 1) ?? null;
+    return { coins, first, record, kind, best: ch.best[c.id], prev, next, replaysLeft: CHALLENGE.paidReplaysPerDay - ch.replays.n };
+  }
+
   // ---------- wardrobe ----------
 
   owns(id: string) {
@@ -496,6 +561,16 @@ export class PondGame {
     }
     this.s.style[c.kind] = id;
     return 'worn';
+  }
+
+  /** Sells a basket egg for the same coins an egg sells for when there is no room. */
+  sellBasketEgg(index: number) {
+    const b = this.s.basket[index];
+    if (!b) return 0;
+    const coins = eggCoins(b.tier, pondById.get(b.pond as 'cozy') ?? this.pond);
+    this.s.basket.splice(index, 1);
+    this.earn(coins);
+    return coins;
   }
 
   /** Puts the chosen basket egg into a free incubator slot. */

@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Rng } from '../../core/rng';
-import { PERKS, PONDS, RARITY_WEIGHTS } from '../content/data';
+import { CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS } from '../content/data';
 import { Fishing, FishingBot } from './fishing';
 import { PondGame } from './game';
 import { defaultSave } from './model';
@@ -259,4 +259,61 @@ test('late game: medals, pond gold bonus, rematch tickets and stars, wardrobe, s
   }
   assert.ok(s.pets.rainbow_turtle);
   assert.equal(s.style.hat, 'hat:clover', 'gift hat is worn right away');
+});
+
+test('challenges: 24, open with the second pond in order, first clear pays, replays pay little and are capped', () => {
+  const s = defaultSave();
+  const now = new Date(2026, 9, 15, 12).getTime();
+  const g = new PondGame(s, new Rng(1), () => now);
+  assert.equal(CHALLENGES.length, 24);
+  const c1 = CHALLENGES[0];
+  assert.equal(g.challengeUnlocked(c1), false, 'closed before Misty Creek');
+  s.unlocked = ['cozy', 'misty'];
+  assert.equal(g.challengeUnlocked(c1), true);
+  assert.equal(g.challengeUnlocked(CHALLENGES[1]), false, 'in order');
+  const a = g.finishChallenge(c1, 50000);
+  assert.equal(a.coins, c1.reward);
+  assert.equal(a.first, true);
+  assert.equal(g.challengeUnlocked(CHALLENGES[1]), true);
+  const b = g.finishChallenge(c1, 60000);
+  assert.equal(b.kind, 'replay');
+  assert.equal(b.coins, Math.round(c1.reward * 0.1));
+  const r = g.finishChallenge(c1, 40000);
+  assert.equal(r.record, true);
+  assert.equal(r.coins, Math.round(c1.reward * 0.1) + Math.round(c1.reward * 0.2));
+  for (let i = 0; i < 5; i++) g.finishChallenge(c1, 70000);
+  const capped = g.finishChallenge(c1, 70000);
+  assert.equal(capped.kind, 'capped');
+  assert.equal(capped.coins, 0);
+  assert.equal(s.challenge.best[c1.id], 40000);
+  // Frozen challenges need Frozen Lake.
+  assert.equal(g.challengeUnlocked(CHALLENGES[16]), false);
+  // A challenge catch: Fishdex counts, no coins.
+  const before = s.coins;
+  g.applyChallengeCatch(PONDS[1].fish[0], 1.1, true);
+  assert.equal(s.coins, before);
+  assert.ok(s.dex[PONDS[1].fish[0].id]);
+});
+
+test('reeling: about 20% of fish shake free (not during onboarding), a lost boss needs luring', () => {
+  const s = defaultSave();
+  const g = new PondGame(s, new Rng(9));
+  const rng = new Rng(4);
+  const out: Record<string, number> = {};
+  const f: Fishing = new Fishing(rng, () => g.stats(), { end: (o) => ((out[o] = (out[o] ?? 0) + 1), f.reset()) });
+  const bot = new FishingBot(f, rng, 1);
+  for (let t = 0; t < 1200; t += 1 / 30) {
+    bot.update(1 / 30);
+    f.update(1 / 30);
+  }
+  const fights = (out.caught ?? 0) + (out.escape ?? 0);
+  const rate = (out.escape ?? 0) / fights;
+  assert.ok(rate > 0.1 && rate < 0.3, `escape ${rate}`);
+  s.tutorial = ['done'];
+  for (const fi of PONDS[0].fish.slice(0, 6)) s.dex[fi.id] = { n: 1, best: fi.cm };
+  assert.equal(g.bossReady, true);
+  g.loseBoss();
+  assert.equal(g.bossReady, false, 'lure first');
+  for (let i = 0; i < 5; i++) g.applyCatch({ kind: 'fish', fish: PONDS[0].fish[0], size: 1 }, false);
+  assert.equal(g.bossReady, true, 'lured back after 5 catches');
 });

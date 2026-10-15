@@ -3,17 +3,18 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { BOSS_LURE, BOSS_STARS, PONDS, baitKey, cosmeticById, petById, pondById } from '../content/data';
+import { BOSS_LURE, BOSS_STARS, CHALLENGE, PONDS, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
-import { anyUpgradeAffordable, pondGold, questsClaimable, readyEggIndex, type CatchRoll } from '../logic/rules';
+import { anyUpgradeAffordable, pondGold, questsClaimable, readyEggIndex, rollSize as rollFishSize, type CatchRoll } from '../logic/rules';
+import { LocalLeaderboard, formatTime, type Leaderboard } from '../logic/leaderboard';
 import { devPreset } from '../dev';
 import { bossName, duration, eggName, fishName, pondName, t } from '../i18n/t';
 import { save } from '../save';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
-import { basketPanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
+import { basketPanel, challengePanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
 import { Rig } from '../world/Rig';
@@ -108,6 +109,8 @@ export class PlayScene extends BaseScene {
       boss: () => this.startBoss(),
       egg: (i) => this.tapEgg(i),
       basket: () => this.open(() => basketPanel(this, this.ctx)),
+      challenges: () => this.open(() => challengePanel(this, this.ctx)),
+      exitChallenge: () => this.abandonChallenge(),
       sound: () => this.openPause(),
     });
     this.hud.setSoundIcon(app.audio.muted);
@@ -153,6 +156,7 @@ export class PlayScene extends BaseScene {
         end: (o) => this.onEnd(o),
       },
       () => {
+        if (this.run) return this.pickChallengeFish();
         const r = this.pg.rollForCast(this.fishing.zone, this.lucky);
         this.roll = r.roll;
         this.rig.setTarget(rollKey(r.roll), rollSize(r.roll));
@@ -190,6 +194,7 @@ export class PlayScene extends BaseScene {
       travel: (id) => this.travel(id),
       startBoss: () => this.startBoss(),
       startRematch: () => this.startBoss(true),
+      startChallenge: (id) => void this.startChallenge(id),
       wardrobe: () => this.open(() => wardrobePanel(this, this.ctx)),
       hatch: (i) => this.doHatch(i),
       coinTo: () => this.hud.coinTarget(),
@@ -283,6 +288,7 @@ export class PlayScene extends BaseScene {
   private onEnd(o: Outcome) {
     const f = this.fishing;
     if (f.target.boss) return this.onBossEnd(o);
+    if (o === 'caught' && this.roll && this.run) return this.onChallengeCatch();
     if (o === 'caught' && this.roll) {
       const res = this.pg.applyCatch(this.roll, f.perfect);
       this.s.rng = this.rng.state;
@@ -537,8 +543,9 @@ export class PlayScene extends BaseScene {
     this.applyStyle();
     this.pond.setTrophy(this.pg.lateGame && pondGold(this.s, this.pond.pond));
     // Second pond open: the long-term goals appear (once).
-    if (this.pg.lateGame && !this.s.tutorial.includes('late')) {
-      this.s.tutorial.push('late');
+    // ('late2': the note now also names Challenges, so earlier players see it once more.)
+    if (this.pg.lateGame && !this.s.tutorial.includes('late2')) {
+      this.s.tutorial.push('late', 'late2');
       this.time.delayedCall(1200, () => note(this, t('msg.lateUnlock'), 4200));
     }
     this.pond.setPets(this.s.team);
@@ -630,6 +637,8 @@ export class PlayScene extends BaseScene {
   // ---------- travel ----------
 
   private async travel(id: string) {
+    // Leaving for another pond ends a challenge in progress.
+    if (this.run) this.abandonChallenge();
     const p = pondById.get(id as 'cozy');
     if (!p || !this.pg.travel(p)) return;
     // Next level: gameplayStop, commercial break, then gameplayStart in the new pond.
@@ -657,6 +666,118 @@ export class PlayScene extends BaseScene {
     });
   }
 
+  // ---------- challenge mode ----------
+
+  /** The challenge being played: clock, fish caught, species caught. */
+  private run: { def: ChallengeDef; timeMs: number; elapsedMs: number; fish: number; kinds: Set<string>; over: boolean } | null = null;
+  private board: Leaderboard = new LocalLeaderboard(() => this.s);
+
+  private async startChallenge(id: string) {
+    const def = challengeById.get(id);
+    if (!def || this.run || this.fishing.busy || !this.pg.challengeUnlocked(def)) return;
+    if (this.s.pond !== def.pond) await this.travel(def.pond);
+    this.fishing.reset();
+    this.rig.clear();
+    this.fishing.auto = false;
+    this.run = { def, timeMs: def.timeSec * 1000, elapsedMs: 0, fish: 0, kinds: new Set(), over: false };
+    this.pond.setLiveFish(pondById.get(def.pond)!.fish, CHALLENGE.liveFish, def.species);
+    app.audio.play('boss');
+    const vp = this.vp;
+    const banner = txt(this, vp.width / 2, vp.height * 0.26, `${t('challenge.level', { n: def.n })}\n${t('challenge.start', { fish: def.fish, species: def.species, t: formatTime(def.timeSec * 1000).replace(/\.0$/, '') })}`, 44, { color: '#ffe066', wrap: Math.min(640, vp.width - 60) }).setDepth(1500).setScale(0.4);
+    this.tweens.add({ targets: banner, scale: 1, duration: 360, ease: 'Back.Out' });
+    this.tweens.add({ targets: banner, alpha: 0, delay: 1900, duration: 400, onComplete: () => banner.destroy() });
+    this.time.delayedCall(2300, () => note(this, t('challenge.hint'), 2600));
+  }
+
+  /** Challenge: the live fish closest to where the hook sinks is the one that bites. */
+  private pickChallengeFish() {
+    const nf = this.pond.nearestFish(this.rig.landX, this.rig.hookDepth);
+    const fish = (nf && fishById.get(nf.id)) || this.pond.pond.fish[0];
+    nf?.take();
+    const roll: CatchRoll = { kind: 'fish', fish, size: rollFishSize(this.rng, this.pg.luck(this.fishing.zone, this.lucky)) };
+    this.roll = roll;
+    this.rig.setTarget(rollKey(roll), rollSize(roll));
+    return { rarity: fish.rarity, fights: true };
+  }
+
+  private onChallengeCatch() {
+    const run = this.run!;
+    const roll = this.roll!;
+    if (roll.kind !== 'fish') return;
+    const res = this.pg.applyChallengeCatch(roll.fish, roll.size, this.fishing.perfect);
+    this.s.rng = this.rng.state;
+    const from = this.rig.landed();
+    run.fish += 1;
+    run.kinds.add(roll.fish.id);
+    const img = art(this, from.x, from.y, `fish:${roll.fish.id}`, 0.45).setDepth(1300);
+    this.tweens.add({ targets: img, y: from.y - 190, angle: 360, duration: 450, ease: 'Quad.Out' });
+    this.tweens.add({ targets: img, alpha: 0, scale: img.scale * 0.6, delay: 650, duration: 300, onComplete: () => img.destroy() });
+    say(this, from.x, this.pond.L.water - 230, `${fishName(roll.fish.id)}  ${res.cm.toFixed(1)} cm`, res.isNew ? '#ffe066' : '#ffffff', 30);
+    app.audio.play(res.isNew ? 'new' : 'catch', { volume: 0.7 });
+    this.roll = null;
+    this.time.delayedCall(250, () => this.fishing.reset());
+    if (run.fish >= run.def.fish && run.kinds.size >= run.def.species) this.finishChallenge(true);
+  }
+
+  /** Leave the challenge mid-way (no reward). */
+  private abandonChallenge() {
+    if (!this.run || this.run.over) return;
+    this.fishing.reset();
+    this.rig.clear();
+    this.endChallenge();
+  }
+
+  private endChallenge() {
+    this.run = null;
+    this.pond.setLiveFish(null);
+    this.fishing.auto = this.s.autoFish && this.pg.autoUnlocked;
+    this.refresh();
+  }
+
+  private finishChallenge(success: boolean) {
+    const run = this.run;
+    if (!run || run.over) return;
+    run.over = true;
+    this.fishing.reset();
+    this.rig.clear();
+    const def = run.def;
+    const ms = Math.round(run.elapsedMs);
+    const r = success ? this.pg.finishChallenge(def, ms) : null;
+    if (r) void this.board.submit(def.id, ms);
+    this.modal++;
+    this.stopPlay();
+    app.audio.play(success ? 'win' : 'miss');
+    const p = new CPanel(this, { title: success ? t('challenge.cleared') : t('challenge.timeUp'), w: 600, h: 900, color: success ? COLORS.green : COLORS.red, closable: false });
+    p.once(Phaser.GameObjects.Events.DESTROY, () => this.modal--);
+    p.content.add(txt(this, 0, p.top + 60, `${pondName(def.pond)}  ·  ${t('challenge.level', { n: def.n })}`, 30, { color: '#7a6a8a', stroke: false }));
+    if (r) {
+      p.content.add(txt(this, 0, p.top + 140, formatTime(ms), 72, { color: '#3b2a4d', stroke: false }));
+      p.content.add(txt(this, 0, p.top + 215, r.record ? t('challenge.record') : t('challenge.best', { t: formatTime(r.best) }), 30, { color: r.record ? '#e39b00' : '#7a6a8a', stroke: false }));
+      const coin = art(this, -70, p.top + 290, 'item:coin', 0.5);
+      const amt = txt(this, 10, p.top + 290, `+${fmt(r.coins)}`, 40, { color: '#e39b00', stroke: false });
+      const why = txt(this, 0, p.top + 340, t(r.kind === 'first' ? 'challenge.firstReward' : r.kind === 'replay' ? 'challenge.replayReward' : 'challenge.noReward'), 24, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 });
+      p.content.add([coin, amt, why]);
+      if (r.coins > 0) flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
+    } else {
+      p.content.add(txt(this, 0, p.top + 170, t('challenge.progress', { n: run.fish, max: def.fish, k: run.kinds.size, kmax: def.species }), 32, { color: '#3b2a4d', stroke: false, wrap: 520 }));
+    }
+    const leave = async (then?: string) => {
+      p.close();
+      this.endChallenge();
+      await this.breakPoint();
+      app.gameplay.start();
+      if (then) void this.startChallenge(then);
+    };
+    const next = r?.next && this.pg.challengeUnlocked(r.next) ? r.next : null;
+    let y = p.bottom - 300;
+    if (next) {
+      p.content.add(new CButton(this, 0, y, { w: 400, h: 92, label: t('challenge.next'), fontSize: 34, color: COLORS.green, onClick: () => void leave(next.id) }));
+      y += 110;
+    }
+    p.content.add(new CButton(this, 0, y, { w: 400, h: 92, label: t('challenge.retry'), fontSize: 34, color: COLORS.orange, onClick: () => void leave(def.id) }));
+    p.content.add(new CButton(this, 0, p.bottom - 60, { w: 260, h: 72, label: t('challenge.exit'), fontSize: 28, color: COLORS.grey, onClick: () => void leave() }));
+  }
+
   // ---------- boss ----------
 
   /** Star of the rematch in progress (0: the first fight with the pond's boss). */
@@ -665,7 +786,7 @@ export class PlayScene extends BaseScene {
   private slipped = false;
 
   private startBoss(rematch = false) {
-    if (this.fishing.busy) return;
+    if (this.fishing.busy || this.run) return;
     const star = rematch ? this.pg.rematchStar() : null;
     if (rematch ? star === null || this.pg.ticketsLeft <= 0 || !!this.pg.lure : !this.pg.bossReady) return;
     this.rematchStar = star ?? 0;
@@ -802,7 +923,7 @@ export class PlayScene extends BaseScene {
     const progress = this.fishing.progress;
     this.rig.lose();
     app.audio.play('snap');
-    const p = new CPanel(this, { title: t('boss.gotAway', { boss: bossName(boss.id) }), w: 600, h: 720, color: COLORS.red, closable: false });
+    const p = new CPanel(this, { title: t('boss.gotAway', { boss: bossName(boss.id) }), w: 600, h: 860, color: COLORS.red, closable: false });
     this.modal++;
     this.stopPlay();
     p.content.add(art(this, 0, p.top + 110, `fish:${boss.id}`, 0.8));
@@ -1005,7 +1126,14 @@ export class PlayScene extends BaseScene {
     }
     this.pond.update(dt);
     this.rig.update(dt, f);
-    if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(bossName(this.pond.pond.boss.id), 1 - f.progress, f.bossPhase);
+    if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(this.bossLabel(), 1 - f.progress, f.bossPhase);
+    // Challenge clock: runs only while playing (menus and pause stop it).
+    const run = this.run;
+    if (run && !run.over && this.modal === 0) {
+      run.timeMs -= dt * 1000;
+      run.elapsedMs += dt * 1000;
+      if (run.timeMs <= 0) this.finishChallenge(false);
+    }
     const tutDone = s.tutorial.includes('done');
     this.hud.update(dt, f, {
       autoOn: f.auto,
@@ -1021,7 +1149,9 @@ export class PlayScene extends BaseScene {
       dexBadge: Object.keys(s.dex).length > this.seenDex || (this.pg.rematchStar() !== null && this.pg.ticketsLeft > 0),
       // Map badge: a pond to open, or today's fish waiting in another pond.
       mapBadge: PONDS.some((p) => !s.unlocked.includes(p.id) && this.pg.canUnlock(p) && s.coins >= p.unlockCost) || (!!this.pg.today && !this.pg.todayFish),
-      bossReady: this.pg.bossReady,
+      bossReady: this.pg.bossReady && !this.run,
+      challengeOpen: this.pg.challengeOpen,
+      challenge: this.run ? { timeMs: this.run.timeMs, fish: this.run.fish, fishGoal: this.run.def.fish, kinds: this.run.kinds.size, kindsGoal: this.run.def.species } : null,
       showHint: tutDone && !f.auto,
       adsOk: app.ads.rewardedAvailable && !app.clean,
       ...(() => {

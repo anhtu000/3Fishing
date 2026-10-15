@@ -1,10 +1,11 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { BOSS_STARS, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
+import { BOSS_STARS, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, pondById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
-import { dexCount, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
+import { dexCount, eggCoins, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
+import { formatTime } from '../logic/leaderboard';
 import { CButton, COLORS, CPanel, CREAM_DARK, INK, art, card, drawBar, fitScale, fitText, fmt, txt } from './kit';
 import { bossName, duration, eggName, fishName, perkText, petName, pondName, rarityName, t } from '../i18n/t';
 import { flyIcons, note } from './popups';
@@ -17,6 +18,8 @@ export interface PanelCtx {
   startBoss(): void;
   /** Boss rematch at the next star (late game). */
   startRematch(): void;
+  /** Challenge mode: start this challenge. */
+  startChallenge(id: string): void;
   wardrobe(): void;
   hatch(i: number): void;
   coinTo(): { x: number; y: number };
@@ -634,7 +637,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
 export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
   const g = ctx.game;
   const s = g.s;
-  const panel = new CPanel(scene, { title: t('basket.title'), w: 640, h: 900, color: COLORS.orange, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('basket.title'), w: 640, h: 1040, color: COLORS.orange, onClose: () => ctx.refresh() });
   const pw = panel.pw;
   const free = () => s.eggs.some((e, i) => i < s.incubatorSlots && !e);
   const sub = txt(scene, 0, panel.top + 50, '', 26, { color: DIM, stroke: false, weight: '500', wrap: pw - 80 });
@@ -651,7 +654,30 @@ export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
       const col = k % 4;
       const row = Math.floor(k / 4);
       const x = (col - 1.5) * (cw + 12);
-      const y = panel.top + 160 + row * 196;
+      const y = panel.top + 160 + row * 252;
+      // Sell instead (same coins as an egg sold when there is no room).
+      const value = eggCoins(b.tier, pondById.get(b.pond as 'cozy') ?? g.pond);
+      const sell = new CButton(scene, x, y + 122, {
+        w: cw,
+        h: 52,
+        icon: 'item:coin',
+        iconSize: 24,
+        label: t('basket.sell', { n: fmt(value) }),
+        fontSize: 20,
+        color: COLORS.blue,
+        onClick: () => {
+          const got = g.sellBasketEgg(i);
+          if (!got) return;
+          app.audio.play('coin');
+          flyIcons(scene, 'item:coin', panel.toScene(x, y + 122), ctx.coinTo(), 4);
+          ctx.refresh();
+          if (s.basket.length === 0) panel.close();
+          else draw();
+        },
+      });
+      if (sell.label) fitText(sell.label, cw - 44);
+      panel.content.add(sell);
+      cells.push(sell);
       const c = new CButton(scene, x, y, {
         w: cw,
         h: 180,
@@ -793,6 +819,78 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
     coinsLine.setText(t('upg.have', { n: fmt(s.coins) }));
   };
   refreshAll();
+  return panel;
+}
+
+/** Challenge mode: 8 challenges per pond, played in order; best time and reward on each. */
+export function challengePanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s.pond) {
+  const g = ctx.game;
+  const s = g.s;
+  const panel = new CPanel(scene, { title: t('challenge.title'), w: 660, h: 1180, color: COLORS.purple, onClose: () => ctx.refresh() });
+  const pw = panel.pw;
+  const page = scene.add.container(0, 0);
+  panel.content.add(page);
+  const tabs = PONDS.map((p, i) =>
+    new CButton(scene, (i - (PONDS.length - 1) / 2) * ((pw - 50) / PONDS.length), panel.top + 30, {
+      w: (pw - 50) / PONDS.length - 12,
+      h: 74,
+      label: pondName(p.id),
+      fontSize: 26,
+      color: COLORS.grey,
+      onClick: () => show(p.id),
+    }),
+  );
+  panel.content.add(tabs);
+  panel.content.add(txt(scene, 0, panel.bottom - 40, t('challenge.hint'), 22, { color: DIM, stroke: false, weight: '500', wrap: pw - 60 }));
+  const show = (id: string) => {
+    page.removeAll(true);
+    tabs.forEach((b, i) => b.setColor(PONDS[i].id === id ? COLORS.purple : COLORS.grey));
+    const list = CHALLENGES.filter((c) => c.pond === id);
+    const cw = (pw - 60) / 2 - 10;
+    const chh = 196;
+    list.forEach((c, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = (col - 0.5) * (cw + 14);
+      const y = panel.top + 190 + row * (chh + 14);
+      const open = g.challengeUnlocked(c);
+      const cleared = s.challenge.cleared.includes(c.id);
+      const best = s.challenge.best[c.id];
+      const tile = new CButton(scene, x, y, {
+        w: cw,
+        h: chh,
+        color: open ? 0xfffdf6 : CREAM_DARK,
+        onClick: () => {
+          if (!s.unlocked.includes(c.pond)) return note(scene, t('challenge.pondLocked', { pond: pondName(c.pond) }));
+          if (!open) return note(scene, t('challenge.locked', { n: c.n - 1 }));
+          panel.close();
+          ctx.startChallenge(c.id);
+        },
+      });
+      const head = txt(scene, -cw / 2 + 22, -66, t('challenge.level', { n: c.n }), 30, { color: DARK, stroke: false }).setOrigin(0, 0.5);
+      const goal = fitText(txt(scene, -cw / 2 + 22, -24, t('challenge.goal', { fish: c.fish, species: c.species }), 22, { color: DARK, stroke: false, weight: '500' }).setOrigin(0, 0.5), cw - 40);
+      const clock = art(scene, -cw / 2 + 36, 8, 'icon:i_clock');
+      clock.setScale(fitScale('icon:i_clock', 28));
+      const time = txt(scene, -cw / 2 + 58, 8, formatTime(c.timeSec * 1000).replace(/\.0$/, ''), 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
+      const bestT = txt(scene, -cw / 2 + 22, 40, best !== undefined ? t('challenge.best', { t: formatTime(best) }) : '', 22, { color: '#3a9e55', stroke: false }).setOrigin(0, 0.5);
+      const coin = art(scene, -cw / 2 + 36, 74, 'item:coin');
+      coin.setScale(fitScale('item:coin', 28));
+      const reward = txt(scene, -cw / 2 + 58, 74, fmt(cleared ? Math.round(c.reward * 0.1) : c.reward), 22, { color: '#e39b00', stroke: false }).setOrigin(0, 0.5);
+      tile.add([head, goal, clock, time, bestT, coin, reward]);
+      if (cleared) {
+        const ck = art(scene, cw / 2 - 34, -64, 'icon:i_star');
+        ck.setScale(fitScale('icon:i_star', 40));
+        tile.add(ck);
+      }
+      if (!open) {
+        const lock = art(scene, cw / 2 - 34, -64, 'icon:i_lock');
+        lock.setScale(fitScale('icon:i_lock', 40));
+        tile.add(lock);
+      }
+      page.add(tile);
+    });
+  };
+  show(s.unlocked.includes(pondId) ? pondId : 'cozy');
   return panel;
 }
 

@@ -61,7 +61,7 @@
     "todayFish": "¡Pez del día: {fish} en {pond}! x5 monedas y un huevo especial",
     "nestEgg": "¡Huevo especial en el nido! Eclosiona en {t}",
     "todayDone": "¡Pez del día atrapado! Mañana habrá otro",
-    "lateUnlock": "Nuevos objetivos: medallas en el Pezdex, revanchas de jefe con estrellas y el armario en Mejorar.",
+    "lateUnlock": "Nuevo: Desafíos (botón del trofeo), medallas en el Pezdex, revanchas de jefe con estrellas y el armario en Mejorar.",
     "slip": "¡Se ha soltado del anzuelo!",
     "bossHeal": "¡Demasiado pronto! El jefe se cura"
   },
@@ -330,7 +330,8 @@
     "title": "Cesta de huevos",
     "empty": "Aún no hay huevos en la cesta. Esperan aquí cuando la incubadora está llena.",
     "tip": "Toca un huevo para ponerlo en la incubadora.",
-    "full": "La incubadora está llena. ¡Abre un huevo o añade un hueco!"
+    "full": "La incubadora está llena. ¡Abre un huevo o añade un hueco!",
+    "sell": "Vender {n}"
   },
   "wardrobe": {
     "title": "Armario",
@@ -368,5 +369,27 @@
     "ok": "OK",
     "goal": "Atraer a {boss}: {n}/{max} peces",
     "done": "¡{boss} ha vuelto! ¡Toca JEFE!"
+  },
+  "challenge": {
+    "title": "Desafíos",
+    "level": "Nivel {n}",
+    "goal": "{fish} peces · {species} especies",
+    "best": "Récord {t}",
+    "locked": "Supera antes el nivel {n}",
+    "pondLocked": "Desbloquea antes {pond}",
+    "start": "¡Pesca {fish} peces de {species} especies en {t}!",
+    "cleared": "¡Desafío superado!",
+    "timeUp": "¡Se acabó el tiempo!",
+    "record": "¡Nuevo récord!",
+    "firstReward": "Primera vez: recompensa completa",
+    "replayReward": "Repetición: 10 % de la recompensa",
+    "noReward": "Hoy no quedan recompensas por repetir",
+    "next": "Siguiente",
+    "retry": "Reintentar",
+    "exit": "Salir",
+    "progress": "Peces {n}/{max} · Especies {k}/{kmax}",
+    "hint": "Pica el pez más cercano al cebo. ¡Apunta bien!",
+    "fishShort": "Peces {n}/{max}",
+    "kindsShort": "Especies {n}/{max}"
   }
 }

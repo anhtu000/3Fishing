@@ -2,7 +2,7 @@
 // pets that sit around it. Everything is laid out for the current screen and gently animated.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { pondById, petById, type PondDef } from '../content/data';
+import { pondById, petById, type FishDef, type PondDef } from '../content/data';
 import { PALETTES } from '../render/scenery';
 import { TEX } from '../render/textures';
 import { art, fitScale, setArt } from '../ui/kit';
@@ -131,11 +131,8 @@ export class Pond {
     }
     // Ambient fish: species you have not caught yet swim as dark shadows, to tease the Fishdex.
     const pool = this.pond.fish.filter((f) => f.rarity <= 2);
-    for (let i = 0; i < 8; i++) {
-      const f = pool[i % pool.length];
-      const img = s.add.image(0, 0, `fish:${f.id}`).setDepth(12);
-      this.swimmers.push({ img, speed: 40 + Math.random() * 40, dir: Math.random() < 0.5 ? -1 : 1, y: 0, phase: Math.random() * 6, size: 0.3 + Math.random() * 0.14, id: f.id });
-    }
+    this.livePool = null;
+    for (let i = 0; i < 8; i++) this.addSwimmer(pool[i % pool.length], false);
     this.refreshKnown();
     if (this.L) this.layout(app.viewport.info.width, app.viewport.info.height);
   }
@@ -157,8 +154,97 @@ export class Pond {
     this.trophy.setPosition((portrait ? -70 : -40) + 112 * (portrait ? 0.95 : 1), this.L.deckY + 4);
   }
 
+  // ---------- challenge mode: the fish you see are the fish you catch ----------
+
+  /** Live fish (challenge): null = normal ambient fish. */
+  private livePool: FishDef[] | null = null;
+
+  /** Challenge mode on/off: rebuild the swimmers as real, coloured fish of this pond, slower so you can aim. */
+  setLiveFish(pool: FishDef[] | null, count = 9, distinct = 3) {
+    for (const f of this.swimmers) f.img.destroy();
+    this.swimmers = [];
+    this.livePool = pool;
+    if (!pool) {
+      const amb = this.pond.fish.filter((f) => f.rarity <= 2);
+      for (let i = 0; i < 8; i++) this.addSwimmer(amb[i % amb.length], false);
+      this.refreshKnown();
+      if (this.L) this.layout(app.viewport.info.width, app.viewport.info.height);
+      return;
+    }
+    // Enough different species in the water for the goal, then random by rarity.
+    const kinds = [...new Set(pool.map((f) => f.id))];
+    const first = kinds.slice(0, Math.min(kinds.length, distinct + 1)).map((id) => pool.find((f) => f.id === id)!);
+    for (const f of first) this.addSwimmer(f, true);
+    while (this.swimmers.length < count) this.addSwimmer(this.pickLive(), true);
+    if (this.L) this.placeSwimmers();
+  }
+
+  private pickLive(): FishDef {
+    const pool = this.livePool!;
+    const w = [40, 28, 18, 10, 4];
+    let r = Math.random() * pool.reduce((a, f) => a + w[f.rarity], 0);
+    for (const f of pool) {
+      r -= w[f.rarity];
+      if (r <= 0) return f;
+    }
+    return pool[0];
+  }
+
+  private addSwimmer(f: FishDef, live: boolean) {
+    const img = this.scene.add.image(-200, 0, `fish:${f.id}`).setDepth(12);
+    const sw: Swimmer = { img, speed: live ? 22 + Math.random() * 26 : 40 + Math.random() * 40, dir: Math.random() < 0.5 ? -1 : 1, y: 0, phase: Math.random() * 6, size: live ? 0.34 + f.rarity * 0.03 : 0.3 + Math.random() * 0.14, id: f.id };
+    this.swimmers.push(sw);
+    if (live) img.clearTint().setAlpha(1);
+    if (this.L) this.placeSwimmer(sw);
+    return sw;
+  }
+
+  private placeSwimmer(f: Swimmer) {
+    const L = this.L;
+    f.y = L.water + 120 + Math.random() * (L.floor - L.water - 220);
+    f.img.x = Math.random() * L.w;
+    setArt(f.img, `fish:${f.id}`, f.size);
+    f.img.setFlipX(f.dir < 0);
+  }
+
+  private placeSwimmers() {
+    for (const f of this.swimmers) this.placeSwimmer(f);
+  }
+
+  /** The live fish closest to where the hook sinks (challenge). */
+  nearestFish(x: number, y: number) {
+    let best: Swimmer | null = null;
+    let d = Infinity;
+    for (const f of this.swimmers) {
+      const dd = (f.img.x - x) ** 2 + (f.img.y - y) ** 2;
+      if (f.img.visible && dd < d) {
+        d = dd;
+        best = f;
+      }
+    }
+    return best ? { id: best.id, x: best.img.x, y: best.img.y, take: () => this.takeFish(best!) } : null;
+  }
+
+  /** The fish went for the hook: it leaves the school, a new one swims in a moment later. */
+  private takeFish(sw: Swimmer) {
+    sw.img.setVisible(false);
+    this.scene.time.delayedCall(1800, () => {
+      if (!this.livePool) return;
+      const i = this.swimmers.indexOf(sw);
+      if (i < 0) return;
+      sw.img.destroy();
+      this.swimmers.splice(i, 1);
+      const n = this.addSwimmer(this.pickLive(), true);
+      // Swim in from the side.
+      n.dir = Math.random() < 0.5 ? 1 : -1;
+      n.img.x = n.dir > 0 ? -100 : this.L.w + 100;
+      n.img.setFlipX(n.dir < 0);
+    });
+  }
+
   /** Re-tint ambient fish after the Fishdex changes. */
   refreshKnown() {
+    if (this.livePool) return;
     for (const f of this.swimmers) {
       const k = this.known(f.id);
       if (k) f.img.clearTint().setAlpha(0.92);
@@ -229,9 +315,6 @@ export class Pond {
     this.dock.setPosition(dockX, deckY - 70 * dockScale).setScale(dockScale / TEX.get(`${this.pond.id}:dock`)!.scale);
     this.surface.setPosition(0, water);
     this.surface.width = (w + 300) * TEX.get(`${this.pond.id}:surface`)!.scale;
-    // Pads spread from the dock end to the right edge. Phones have room for four: the fifth pet sits on the dock.
-    const lilyX = portrait ? [0.62, 0.78, 0.93, 0.48, -1] : [0.5, 0.74, 0.86, 0.38, 0.62];
-    this.lilies.forEach((l, i) => l.setVisible(lilyX[i] > 0).setPosition(w * lilyX[i], water + 10 + (i % 2) * 6));
     this.fogs.forEach((f, i) => f.setPosition(w * (0.3 + i * 0.5), water - 20 + i * 40).setScale((w / 800) * 1.1 * (1 / 1.3), 1 / 1.3));
     this.flies.forEach((f) => f.setPosition(Math.random() * w, water * (0.3 + Math.random() * 0.6)));
     for (const f of this.swimmers) {
@@ -271,22 +354,32 @@ export class Pond {
     this.placeTrophy();
   }
 
+  /**
+   * One pad (lily, stone or floe) per pet, at least three, spread from the dock end to the right
+   * edge with room between them. With four or five pets the pads and pets get a little smaller on
+   * phones so they never touch each other or the cat.
+   */
   private placePets() {
     const L = this.L;
-    // Lily pads first (they are in view on every screen), then the dock behind the cat.
-    const pad = (i: number, fx: number, dy: number) => ({ x: this.lilies[i]?.visible ? this.lilies[i].x : L.w * fx, y: L.water + dy });
-    const spots = [
-      pad(0, 0.62, 12),
-      pad(2, 0.9, 16),
-      pad(1, 0.78, 14),
-      pad(3, 0.48, 16),
-      // Fifth pet: its own pad on wide screens; on phones the far end of the dock, clear of the cat.
-      this.lilies[4]?.visible ? pad(4, 0.62, 12) : { x: Math.max(36, L.dockEnd - 236), y: L.deckY + 4 },
-    ];
+    const portrait = L.h > L.w;
+    const n = Math.max(3, Math.min(5, this.pets.length));
+    const xs = portrait
+      ? { 3: [0.62, 0.78, 0.93], 4: [0.52, 0.66, 0.8, 0.94], 5: [0.46, 0.58, 0.7, 0.82, 0.94] }[n]!
+      : { 3: [0.6, 0.73, 0.88], 4: [0.5, 0.62, 0.74, 0.86], 5: [0.38, 0.5, 0.62, 0.74, 0.86] }[n]!;
+    const k = portrait ? { 3: 1, 4: 0.9, 5: 0.82 }[n]! : 1;
+    this.lilies.forEach((l, i) => {
+      const on = i < n;
+      l.setVisible(on);
+      if (!on) return;
+      l.setPosition(L.w * xs[i], L.water + 10 + (i % 2) * 6);
+      setArt(l, l.texture.key, (0.75 + (i === 1 ? 0.1 : 0)) * k);
+    });
     this.pets.forEach((p, i) => {
-      const s = spots[i] ?? spots[spots.length - 1];
-      p.img.setPosition(s.x, s.y);
-      p.baseY = s.y;
+      const l = this.lilies[i];
+      const y = L.water + 12 + (i % 2) * 6;
+      p.img.setPosition(l.x, y);
+      setArt(p.img, `pet:${p.id}`, 0.45 * k);
+      p.baseY = y;
       p.img.setFlipX(i % 2 === 1);
     });
   }
@@ -329,8 +422,8 @@ export class Pond {
     }
     this.pets.forEach((p, i) => {
       p.t += dt;
-      const onLily = i < 3;
-      const lily = [0, 2, 1][i] ?? 0;
+      const lily = i;
+      const onLily = !!this.lilies[lily]?.visible;
       const bob = onLily ? Math.sin(t * 1.6 + lily * 1.3) * 3 : 0;
       p.img.scaleY = p.img.scaleX * (1 + Math.sin(p.t * 2.2) * 0.025);
       if (!this.scene.tweens.isTweening(p.img)) p.img.y = p.baseY + bob;

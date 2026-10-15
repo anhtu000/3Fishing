@@ -61,7 +61,7 @@
     "todayFish": "Today's fish: {fish} in {pond}! x5 coins and a special egg",
     "nestEgg": "Special egg in the nest! Hatches in {t}",
     "todayDone": "Today's fish caught! A new one tomorrow",
-    "lateUnlock": "New goals: medals in the Fishdex, boss rematches with stars, and the wardrobe in Upgrades!",
+    "lateUnlock": "New: Challenges (trophy button), medals in the Fishdex, boss rematches with stars, and the wardrobe in Upgrades!",
     "slip": "It shook off the hook!",
     "bossHeal": "Too soon! The boss heals"
   },
@@ -330,7 +330,8 @@
     "title": "Egg basket",
     "empty": "No eggs in the basket yet. Eggs wait here when the incubator is full.",
     "tip": "Tap an egg to put it in the incubator.",
-    "full": "The incubator is full. Hatch an egg or add a slot!"
+    "full": "The incubator is full. Hatch an egg or add a slot!",
+    "sell": "Sell {n}"
   },
   "wardrobe": {
     "title": "Wardrobe",
@@ -368,5 +369,27 @@
     "ok": "OK",
     "goal": "Lure {boss}: {n}/{max} fish",
     "done": "{boss} is back! Tap BOSS!"
+  },
+  "challenge": {
+    "title": "Challenges",
+    "level": "Level {n}",
+    "goal": "{fish} fish · {species} kinds",
+    "best": "Best {t}",
+    "locked": "Clear level {n} first",
+    "pondLocked": "Open {pond} first",
+    "start": "Catch {fish} fish of {species} kinds in {t}!",
+    "cleared": "Challenge cleared!",
+    "timeUp": "Time's up!",
+    "record": "New record!",
+    "firstReward": "First clear: full reward",
+    "replayReward": "Replay: 10% reward",
+    "noReward": "No replay rewards left today",
+    "next": "Next",
+    "retry": "Retry",
+    "exit": "Exit",
+    "progress": "Fish {n}/{max} · Kinds {k}/{kmax}",
+    "hint": "The fish closest to your bait bites. Aim your cast!",
+    "fishShort": "Fish {n}/{max}",
+    "kindsShort": "Kinds {n}/{max}"
   }
 }

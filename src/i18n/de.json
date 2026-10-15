@@ -61,7 +61,7 @@
     "todayFish": "Fisch des Tages: {fish} ({pond})! x5 Münzen und ein besonderes Ei",
     "nestEgg": "Besonderes Ei im Nest! Schlüpft in {t}",
     "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen",
-    "lateUnlock": "Neue Ziele: Medaillen im Fischdex, Boss-Revanchen mit Sternen und der Kleiderschrank bei Verbessern!",
+    "lateUnlock": "Neu: Herausforderungen (Pokal-Knopf), Medaillen im Fischdex, Boss-Revanchen mit Sternen und der Kleiderschrank bei Verbessern!",
     "slip": "Er hat sich losgerissen!",
     "bossHeal": "Zu früh! Der Boss heilt sich"
   },
@@ -330,7 +330,8 @@
     "title": "Eierkorb",
     "empty": "Noch keine Eier im Korb. Eier warten hier, wenn der Brutkasten voll ist.",
     "tip": "Tippe auf ein Ei, um es in den Brutkasten zu legen.",
-    "full": "Der Brutkasten ist voll. Lass ein Ei schlüpfen oder kaufe einen Platz!"
+    "full": "Der Brutkasten ist voll. Lass ein Ei schlüpfen oder kaufe einen Platz!",
+    "sell": "Verkaufen {n}"
   },
   "wardrobe": {
     "title": "Kleiderschrank",
@@ -368,5 +369,27 @@
     "ok": "OK",
     "goal": "{boss} locken: {n}/{max} Fische",
     "done": "{boss} ist zurück! Tippe auf BOSS!"
+  },
+  "challenge": {
+    "title": "Herausforderungen",
+    "level": "Level {n}",
+    "goal": "{fish} Fische · {species} Arten",
+    "best": "Bestzeit {t}",
+    "locked": "Schaffe zuerst Level {n}",
+    "pondLocked": "Schalte zuerst {pond} frei",
+    "start": "Fange {fish} Fische von {species} Arten in {t}!",
+    "cleared": "Geschafft!",
+    "timeUp": "Zeit ist um!",
+    "record": "Neuer Rekord!",
+    "firstReward": "Erster Sieg: volle Belohnung",
+    "replayReward": "Wiederholung: 10 % Belohnung",
+    "noReward": "Heute keine Belohnung mehr für Wiederholungen",
+    "next": "Weiter",
+    "retry": "Nochmal",
+    "exit": "Beenden",
+    "progress": "Fische {n}/{max} · Arten {k}/{kmax}",
+    "hint": "Der Fisch, der dem Köder am nächsten ist, beißt. Ziele gut!",
+    "fishShort": "Fische {n}/{max}",
+    "kindsShort": "Arten {n}/{max}"
   }
 }

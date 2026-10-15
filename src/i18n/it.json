@@ -61,7 +61,7 @@
     "todayFish": "Pesce del giorno: {fish} ({pond})! x5 monete e un uovo speciale",
     "nestEgg": "Uovo speciale nel nido! Si schiude tra {t}",
     "todayDone": "Pesce del giorno pescato! Domani ce n'è un altro",
-    "lateUnlock": "Nuovi obiettivi: medaglie nel Pescedex, rivincite boss con stelle e guardaroba in Migliora!",
+    "lateUnlock": "Novità: Sfide (pulsante trofeo), medaglie nel Pescedex, rivincite boss con stelle e guardaroba in Migliora!",
     "slip": "Si è slamato!",
     "bossHeal": "Troppo presto! Il boss si cura"
   },
@@ -330,7 +330,8 @@
     "title": "Cesto delle uova",
     "empty": "Nessun uovo nel cesto. Le uova aspettano qui quando l'incubatrice è piena.",
     "tip": "Tocca un uovo per metterlo nell'incubatrice.",
-    "full": "L'incubatrice è piena. Schiudi un uovo o aggiungi un posto!"
+    "full": "L'incubatrice è piena. Schiudi un uovo o aggiungi un posto!",
+    "sell": "Vendi {n}"
   },
   "wardrobe": {
     "title": "Guardaroba",
@@ -368,5 +369,27 @@
     "ok": "OK",
     "goal": "Attira {boss}: {n}/{max} pesci",
     "done": "{boss} è tornato! Tocca BOSS!"
+  },
+  "challenge": {
+    "title": "Sfide",
+    "level": "Livello {n}",
+    "goal": "{fish} pesci · {species} specie",
+    "best": "Record {t}",
+    "locked": "Prima supera il livello {n}",
+    "pondLocked": "Prima sblocca {pond}",
+    "start": "Pesca {fish} pesci di {species} specie in {t}!",
+    "cleared": "Sfida superata!",
+    "timeUp": "Tempo scaduto!",
+    "record": "Nuovo record!",
+    "firstReward": "Prima vittoria: ricompensa piena",
+    "replayReward": "Rigiocata: 10% della ricompensa",
+    "noReward": "Oggi niente più ricompense per rigiocare",
+    "next": "Avanti",
+    "retry": "Riprova",
+    "exit": "Esci",
+    "progress": "Pesci {n}/{max} · Specie {k}/{kmax}",
+    "hint": "Abbocca il pesce più vicino all'esca. Mira bene!",
+    "fishShort": "Pesci {n}/{max}",
+    "kindsShort": "Specie {n}/{max}"
   }
 }

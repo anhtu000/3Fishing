@@ -168,6 +168,9 @@ export class Fishing {
     this.approach = 0;
     this.progress = 0;
     this.tension = 0.3;
+    // A finished boss fight must not leave the HUD in boss mode.
+    if (this.target.boss) this.target = { rarity: 0, fights: true };
+    this.warning = false;
   }
 
   /** Boss fight: skips the cast and bite, straight to a long reel. */

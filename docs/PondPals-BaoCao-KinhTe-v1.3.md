@@ -320,3 +320,22 @@ Mọi thứ dưới đây chỉ mở khi người chơi đã mở hồ 2 (Misty 
 
 Khác: thú có hàng "Đặc biệt" trong bảng Thú; bảng Nâng cấp ghi đúng thời gian cắn câu (0,75 s + 0,02 s mỗi cấp phao).
 
+## 13. v1.9
+
+| Thay đổi | Chi tiết |
+| --- | --- |
+| Ô đội thú 4 và 5 | 25.000 và 150.000 xu (trước 500 / 2.500) |
+| Chỗ đứng của thú | Mỗi thú một lá súng / đá / tảng băng riêng trên mặt nước, cách xa con mèo. Có 4–5 thú thì các lá xếp dày hơn và nhỏ lại một chút trên điện thoại để không chạm nhau |
+| Tủ đồ: mồi câu | Giun (mặc định), tôm 4k, ruồi giả 15k, dế 35k, giun vàng 120k. Chỉ đổi hình trên lưỡi câu |
+| Cá tuột khi kéo | 20% trận kéo cá (không áp dụng cho boss, rác, trứng, rương) cá tuột ở giữa chừng: "Cá đã tuột lưỡi!". 15 lượt câu đầu không bị, để phút đầu vẫn dễ. Tính trên mọi lượt câu thì khoảng 13% lượt bị tuột |
+| Boss hồi máu | Bấm giữ khi boss đang báo "LET GO!" thì boss hồi 2,5% máu (mỗi lần cảnh báo tối đa 1 lần). Máu đầy lại thì thua. Sim: thắng ngay lần đầu Cozy 69/82/81%, Misty 88/88/85%, Frozen 88/89/85% (mới / TB / giỏi); trận 26–37 giây |
+| Thua boss thì phải dụ lại | Bỏ nút "Thử lại" miễn phí. Thua (dây đứt hoặc boss hồi đầy) thì boss bỏ đi; phải câu thêm 5 / 8 / 10 cá ở hồ đó (Cozy / Misty / Frozen) để dụ boss quay lại. Thanh mục tiêu hiện "Dụ X: n/N cá". Nút "Kéo tiếp" (quảng cáo thưởng, một lần) vẫn còn. Áp dụng cho cả đấu lại boss có sao |
+| Thêm loài cá | Mỗi hồ thêm 4 loài (1 Thường, 1 Không thường, 1 Hiếm, 1 Sử thi), tổng 36 loài. Mốc gọi boss giữ nguyên (6 / 7 / 8 loài). Sổ cá đổi sang 3 cột. Vàng cả hồ cần đủ 12 loài |
+| Chế độ Thử thách | Mở cùng hồ Misty Creek (nút cúp bên trái, có thông báo). 24 màn, mỗi hồ 8 màn: câu đủ X cá của ít nhất Y loài trong T giây (X tăng 4→13, Y 2→6, T 60→150 s). Cá thật bơi trong hồ có màu, cá gần mồi nhất sẽ cắn, nên phải nhắm khi quăng. Nâng cấp, thú, đồ dùng như chế độ chính. Cá câu được tính vào Sổ cá và nhiệm vụ, nhưng không cho xu, trứng |
+| Thưởng thử thách | Lần đầu thắng: đủ thưởng (Cozy 400–960, Misty 1.200–2.880, Frozen 3.600–8.640 xu). Phá kỷ lục: +20%. Chơi lại: 10%, và mỗi ngày chỉ 5 lần chơi lại có thưởng. Một màn mất khoảng 1–2 phút nên chơi lại kiếm ít hơn nhiều so với câu ở chế độ chính |
+| Kỷ lục, bảng xếp hạng | Lưu thời gian tốt nhất của từng màn. Có sẵn giao diện `Leaderboard` (`src/logic/leaderboard.ts`, hiện là bản chỉ có kỷ lục của chính mình) để sau này nối máy chủ bảng xếp hạng từng màn |
+| Giỏ trứng | Thêm nút bán dưới mỗi trứng (giá như trứng bị bán khi hết chỗ) |
+| Sửa lỗi | Sau trận boss, poster TRUY NÃ và thanh mục tiêu không hiện lại cho tới lượt quăng sau |
+
+Nhịp chơi (sim 150 lượt, người chơi trung bình): boss 1 ở phút 3,1, hồ 2 ở phút 14,9, hồ 3 ở phút 40,8, boss cuối ở phút 43,9 (v1.8: 3,5 / 13,6 / 36,0 / 43,8). Số thưởng lớn trong 10 phút đầu giữ nguyên (65).
+

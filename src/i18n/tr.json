@@ -61,7 +61,7 @@
     "todayFish": "Günün balığı: {fish} ({pond})! x5 altın ve özel yumurta",
     "nestEgg": "Yuvada özel yumurta! {t} sonra çıkar",
     "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir",
-    "lateUnlock": "Yeni hedefler: Balıkdex'te madalyalar, yıldızlı boss rövanşları ve Geliştir'de gardırop!",
+    "lateUnlock": "Yeni: Meydan okumalar (kupa düğmesi), Balıkdex'te madalyalar, yıldızlı boss rövanşları ve Geliştir'de gardırop!",
     "slip": "Oltadan kurtuldu!",
     "bossHeal": "Çok erken! Boss iyileşiyor"
   },
@@ -330,7 +330,8 @@
     "title": "Yumurta sepeti",
     "empty": "Sepette henüz yumurta yok. Kuluçka dolunca yumurtalar burada bekler.",
     "tip": "Kuluçkaya koymak için bir yumurtaya dokun.",
-    "full": "Kuluçka dolu. Bir yumurtayı çatlat ya da yer ekle!"
+    "full": "Kuluçka dolu. Bir yumurtayı çatlat ya da yer ekle!",
+    "sell": "Sat {n}"
   },
   "wardrobe": {
     "title": "Gardırop",
@@ -368,5 +369,27 @@
     "ok": "Tamam",
     "goal": "{boss} için yem: {n}/{max} balık",
     "done": "{boss} geri döndü! BOSS'a dokun!"
+  },
+  "challenge": {
+    "title": "Meydan okumalar",
+    "level": "Seviye {n}",
+    "goal": "{fish} balık · {species} tür",
+    "best": "En iyi {t}",
+    "locked": "Önce {n}. seviyeyi geç",
+    "pondLocked": "Önce {pond} açılmalı",
+    "start": "{t} içinde {species} türden {fish} balık yakala!",
+    "cleared": "Başardın!",
+    "timeUp": "Süre doldu!",
+    "record": "Yeni rekor!",
+    "firstReward": "İlk kez: tam ödül",
+    "replayReward": "Tekrar: ödülün %10'u",
+    "noReward": "Bugün tekrar ödülü kalmadı",
+    "next": "Sonraki",
+    "retry": "Tekrar dene",
+    "exit": "Çık",
+    "progress": "Balık {n}/{max} · Tür {k}/{kmax}",
+    "hint": "Yeme en yakın balık vurur. İyi nişan al!",
+    "fishShort": "Balık {n}/{max}",
+    "kindsShort": "Tür {n}/{max}"
   }
 }

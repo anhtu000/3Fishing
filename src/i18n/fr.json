@@ -61,7 +61,7 @@
     "todayFish": "Poisson du jour : {fish} ({pond}) ! x5 pièces et un œuf spécial",
     "nestEgg": "Œuf spécial dans le nid ! Éclot dans {t}",
     "todayDone": "Poisson du jour attrapé ! Un nouveau demain",
-    "lateUnlock": "Nouveaux objectifs : médailles dans le Poissodex, revanches de boss avec étoiles et garde-robe dans Améliorer !",
+    "lateUnlock": "Nouveau : Défis (bouton trophée), médailles dans le Poissodex, revanches de boss avec étoiles et garde-robe dans Améliorer !",
     "slip": "Il s'est décroché !",
     "bossHeal": "Trop tôt ! Le boss se soigne"
   },
@@ -330,7 +330,8 @@
     "title": "Panier d'œufs",
     "empty": "Aucun œuf dans le panier. Les œufs attendent ici quand l'incubateur est plein.",
     "tip": "Touche un œuf pour le mettre dans l'incubateur.",
-    "full": "L'incubateur est plein. Fais éclore un œuf ou ajoute une place !"
+    "full": "L'incubateur est plein. Fais éclore un œuf ou ajoute une place !",
+    "sell": "Vendre {n}"
   },
   "wardrobe": {
     "title": "Garde-robe",
@@ -368,5 +369,27 @@
     "ok": "OK",
     "goal": "Attirer {boss} : {n}/{max} poissons",
     "done": "{boss} est de retour ! Touche BOSS !"
+  },
+  "challenge": {
+    "title": "Défis",
+    "level": "Niveau {n}",
+    "goal": "{fish} poissons · {species} espèces",
+    "best": "Record {t}",
+    "locked": "Termine d'abord le niveau {n}",
+    "pondLocked": "Débloque d'abord {pond}",
+    "start": "Attrape {fish} poissons de {species} espèces en {t} !",
+    "cleared": "Défi réussi !",
+    "timeUp": "Temps écoulé !",
+    "record": "Nouveau record !",
+    "firstReward": "Première victoire : récompense complète",
+    "replayReward": "Rejouer : 10 % de la récompense",
+    "noReward": "Plus de récompenses de rejeu aujourd'hui",
+    "next": "Suivant",
+    "retry": "Réessayer",
+    "exit": "Quitter",
+    "progress": "Poissons {n}/{max} · Espèces {k}/{kmax}",
+    "hint": "Le poisson le plus proche de l'appât mord. Vise bien !",
+    "fishShort": "Poissons {n}/{max}",
+    "kindsShort": "Espèces {n}/{max}"
   }
 }

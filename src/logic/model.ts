@@ -78,6 +78,8 @@ export interface SaveData {
   todayFish: { day: string; pond: string; fish: string; caught: boolean };
   /** After a lost boss fight: catch this many fish in that pond to lure the boss back. */
   bossLure: { boss: string; need: number; have: number } | null;
+  /** Challenge mode: best time per challenge, cleared ids, paid replays today. */
+  challenge: { best: Record<string, number>; cleared: string[]; replays: { day: string; n: number } };
   /** Rematch: best star cleared per boss id. */
   bossStars: Record<string, number>;
   /** Rematch tickets used today (a win uses one). */
@@ -114,6 +116,7 @@ export function defaultSave(): SaveData {
     bountyIn: 8,
     todayFish: { day: '', pond: '', fish: '', caught: false },
     bossLure: null,
+    challenge: { best: {}, cleared: [], replays: { day: '', n: 0 } },
     bossStars: {},
     tickets: { day: '', used: 0 },
     style: { hat: 'hat:rain', rod: 'rod:classic', bobber: 'bobber:classic', bait: 'bait:worm', owned: ['hat:rain', 'rod:classic', 'bobber:classic', 'bait:worm'] },
