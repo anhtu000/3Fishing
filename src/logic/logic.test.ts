@@ -188,3 +188,22 @@ test('eggs wait in the basket when the incubator is full, the player picks which
   assert.equal(sold.eggStored, false);
   assert.ok(sold.coins > 0);
 });
+
+test('auto-fish rests between casts and misses about 30% of bites', () => {
+  const s = defaultSave();
+  s.upgrades.rod = 5;
+  const rng = new Rng(11);
+  const out: Record<string, number> = {};
+  const f: Fishing = new Fishing(rng, () => g.stats(), { end: (o) => ((out[o] = (out[o] ?? 0) + 1), f.reset()) });
+  const g = new PondGame(s, new Rng(2));
+  f.auto = true;
+  const bot = new FishingBot(f, rng, 1);
+  for (let t = 0; t < 1200; t += 1 / 30) {
+    bot.update(1 / 30);
+    f.update(1 / 30);
+  }
+  const total = (out.caught ?? 0) + (out.missed ?? 0);
+  const missRate = (out.missed ?? 0) / total;
+  assert.ok(missRate > 0.2 && missRate < 0.4, `miss ${missRate}`);
+  assert.ok((out.caught ?? 0) / 20 < 7, 'well under a manual player');
+});

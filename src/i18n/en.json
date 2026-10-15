@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Golden bait! Luck x2 for 5 minutes",
     "incubatorFull": "The incubator is full. Hatch an egg first!",
-    "autoOn": "Auto fishing on (half speed). Tap the water to fish yourself.",
+    "autoOn": "Auto fishing on: slower, and it misses some bites. Tap the water to fish yourself.",
     "autoOff": "Auto fishing off",
     "autoUnlocked": "Auto fishing unlocked! Tap the round button on the left.",
     "phase": "Phase {n}!",

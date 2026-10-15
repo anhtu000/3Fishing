@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "¡Cebo dorado! Suerte x2 durante 5 minutos",
     "incubatorFull": "La incubadora está llena. ¡Primero haz eclosionar un huevo!",
-    "autoOn": "Pesca automática activada (mitad de velocidad). Toca el agua para pescar tú.",
+    "autoOn": "Pesca automática activada: más lenta y falla algunas picadas. Toca el agua para pescar tú.",
     "autoOff": "Pesca automática desactivada",
     "autoUnlocked": "¡Pesca automática desbloqueada! Toca el botón redondo de la izquierda.",
     "phase": "¡Fase {n}!",

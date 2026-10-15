@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Esca d'oro! Fortuna x2 per 5 minuti",
     "incubatorFull": "L'incubatrice è piena. Prima schiudi un uovo!",
-    "autoOn": "Pesca automatica attiva (metà velocità). Tocca l'acqua per pescare da solo.",
+    "autoOn": "Pesca automatica attiva: più lenta e perde qualche abboccata. Tocca l'acqua per pescare da solo.",
     "autoOff": "Pesca automatica disattivata",
     "autoUnlocked": "Pesca automatica sbloccata! Tocca il pulsante rotondo a sinistra.",
     "phase": "Fase {n}!",

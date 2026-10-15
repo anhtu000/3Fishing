@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Altın yem! 5 dakika boyunca şans x2",
     "incubatorFull": "Kuluçka makinesi dolu. Önce bir yumurtayı çatlat!",
-    "autoOn": "Otomatik avlanma açık (yarı hız). Kendin avlanmak için suya dokun.",
+    "autoOn": "Otomatik avlanma açık: daha yavaş ve bazı vuruşları kaçırır. Kendin avlanmak için suya dokun.",
     "autoOff": "Otomatik avlanma kapalı",
     "autoUnlocked": "Otomatik avlanma açıldı! Soldaki yuvarlak düğmeye dokun.",
     "phase": "Aşama {n}!",

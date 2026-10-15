@@ -332,6 +332,9 @@ export class Fishing {
   }
 }
 
+/** Auto-fish pace: seconds of rest between casts and the share of bites it misses. */
+export const AUTO = { restMin: 2.5, restSpread: 2, miss: 0.3 };
+
 /**
  * Simple player: casts at a chosen power, strikes on the bite, keeps tension in the green.
  * Used by auto-fish and by the balance sim. `skill` 0..1 adds human-like slips.
@@ -339,6 +342,9 @@ export class Fishing {
 export class FishingBot {
   private wantPower = 0.6;
   private reactIn = 0;
+  /** Auto-fish: rest between casts, and this cast will miss the bite on purpose. */
+  private restLeft = 0;
+  private missThis = false;
 
   constructor(
     private f: Fishing,
@@ -350,6 +356,14 @@ export class FishingBot {
     const f = this.f;
     switch (f.phase) {
       case 'ready':
+        // Auto-fish is a helper, not a replacement: it rests between casts and misses 30% of bites.
+        if (f.auto) {
+          if (this.restLeft <= 0) this.restLeft = AUTO.restMin + this.rng.next() * AUTO.restSpread;
+          this.restLeft -= dt;
+          if (this.restLeft > 0) break;
+          this.restLeft = 0;
+          this.missThis = this.rng.chance(AUTO.miss);
+        } else this.missThis = false;
         this.wantPower = f.auto ? 0.2 : 0.35 + this.rng.next() * 0.6;
         f.press();
         break;
@@ -362,6 +376,7 @@ export class FishingBot {
         if (f.nibbleCount > 0 && f.approach > 0.9 && this.rng.next() < (1 - this.skill) * 0.02) f.press();
         break;
       case 'bite':
+        if (this.missThis) break;
         if (this.reactIn <= 0) this.reactIn = 0.2 + (1 - this.skill) * this.rng.next() * 0.8;
         this.reactIn -= dt;
         if (this.reactIn <= 0) {

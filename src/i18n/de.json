@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Goldköder! Glück x2 für 5 Minuten",
     "incubatorFull": "Der Brutkasten ist voll. Lass zuerst ein Ei schlüpfen!",
-    "autoOn": "Auto-Angeln an (halbes Tempo). Tippe aufs Wasser, um selbst zu angeln.",
+    "autoOn": "Auto-Angeln an: langsamer, und es verpasst manche Bisse. Tippe aufs Wasser, um selbst zu angeln.",
     "autoOff": "Auto-Angeln aus",
     "autoUnlocked": "Auto-Angeln freigeschaltet! Tippe links auf den runden Knopf.",
     "phase": "Phase {n}!",
