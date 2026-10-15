@@ -23,7 +23,13 @@ export interface FishingEvents {
   bite?: () => void;
   hook?: (perfect: boolean) => void;
   surge?: (strength: number) => void;
+  /** The fish winds up for a pull: the moment to let go. */
+  surgeWarn?: () => void;
   phase?: (bossPhase: number) => void;
+  /** Onboarding: a tap on a fake nibble only shows a hint, the fish stays. */
+  softEarly?: () => void;
+  /** The bite window closed: the fish bites once more (second chance). */
+  again?: () => void;
   end?: (outcome: Outcome) => void;
 }
 
@@ -32,6 +38,13 @@ export const CHARGE_PERIOD = 1.5;
 export const FLY_SEC = 0.55;
 export const GREEN_CENTER = 0.5;
 export const RED_AT = 0.86;
+/**
+ * Boss tuning. Level 0..2 = the pond's boss (Cozy, Misty, Frozen). Gear helps, but less than on
+ * normal fish (square root), so later bosses stay a real fight. Target (tools/bosstest.ts):
+ * 25-40 s, first-try win about 80-90% (bosstest: cozy 81/87/79%, misty 90/90/84%, frozen 91/93/83%
+ * for novice/average/skilled). The line wears in the red; letting go on the warning saves it.
+ */
+export const BOSS = { reel: 0.18, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28 };
 
 export class Fishing {
   phase: Phase = 'ready';
@@ -46,6 +59,9 @@ export class Fishing {
   assist = false;
   /** Auto mode reels at half speed. */
   auto = false;
+  /** Onboarding grace (first catches): wider bite window, no penalty for early taps. */
+  forgiving = false;
+  private secondChance = false;
 
   // waiting
   private waitLeft = 0;
@@ -68,6 +84,11 @@ export class Fishing {
   private surgeLeft = 0;
   private surgePower = 0;
   bossPhase = 0;
+  bossLevel = 0;
+  /** Line upgrade level (set by the game; bosses use it for the line's wear limit). */
+  lineLevel = 0;
+  /** The fish is about to pull (shown as a thrash): let go now. */
+  warning = false;
 
   constructor(
     private rng: Rng,
@@ -90,8 +111,11 @@ export class Fishing {
         this.power = 0;
         break;
       case 'waiting':
-        // Struck on a fake nibble (or on nothing): the fish swims off.
-        if (this.approach > 0.5) this.finish('early');
+        // Struck on a fake nibble (or on nothing): the fish swims off, except during onboarding.
+        if (this.approach > 0.5) {
+          if (this.forgiving) this.events.softEarly?.();
+          else this.finish('early');
+        }
         break;
       case 'bite': {
         this.perfect = this.windowLeft > this.windowTotal * 0.5;
@@ -124,7 +148,8 @@ export class Fishing {
   }
 
   /** Boss fight: skips the cast and bite, straight to a long reel. */
-  startBoss() {
+  startBoss(level = 0) {
+    this.bossLevel = level;
     this.target = { rarity: 4, fights: true, boss: true };
     this.perfect = false;
     this.startReel();
@@ -155,7 +180,17 @@ export class Fishing {
         break;
       case 'bite':
         this.windowLeft -= dt;
-        if (this.windowLeft <= 0) this.finish('missed');
+        if (this.windowLeft <= 0) {
+          // One second chance per cast: a slow tap is the most common reason new players lose a fish.
+          if (!this.secondChance && !this.auto) {
+            this.secondChance = true;
+            this.set('waiting');
+            this.approachTotal = this.waitLeft = 0.75;
+            this.approach = 1;
+            this.nibblesLeft = 0;
+            this.events.again?.();
+          } else this.finish('missed');
+        }
         break;
       case 'reeling':
         this.updateReel(dt);
@@ -182,6 +217,7 @@ export class Fishing {
     }
     this.nibbleCount = 0;
     this.approach = 0;
+    this.secondChance = false;
   }
 
   private updateWaiting(dt: number) {
@@ -197,7 +233,7 @@ export class Fishing {
       return;
     }
     const s = this.stats();
-    this.windowTotal = this.windowLeft = this.assist ? 1.4 : s.biteWindow;
+    this.windowTotal = this.windowLeft = this.assist ? 1.4 : s.biteWindow + (this.forgiving ? 0.35 : 0);
     this.set('bite');
     this.events.bite?.();
   }
@@ -210,6 +246,7 @@ export class Fishing {
     this.redTime = 0;
     this.surgeIn = 0.5 + this.rng.next() * 0.6;
     this.surgeLeft = 0;
+    this.warning = false;
     this.bossPhase = 0;
     this.set('reeling');
   }
@@ -219,15 +256,22 @@ export class Fishing {
     const f = fightOf(target.rarity);
     const s = this.stats();
     const boss = !!target.boss;
-    const pull = boss ? 0.5 + this.bossPhase * 0.1 : target.fights ? f.pull : 0.06;
+    const pull = boss ? BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel : target.fights ? f.pull : 0.06;
     const gentle = this.assist ? 0.5 : 1;
 
-    // Fish surges: short bursts that push tension up. Bosses surge harder in later phases.
+    // Fish surges: the fish thrashes (warning), then pulls hard. Holding the line during the pull
+    // spikes the tension; letting go in time takes most of the pull. Bosses surge harder later on.
     if (target.fights && !this.assist) {
       this.surgeIn -= dt;
+      const warnAt = boss ? 0.5 : 0.4;
+      if (!this.warning && this.surgeIn <= warnAt && this.surgeIn > 0) {
+        this.warning = true;
+        this.events.surgeWarn?.();
+      }
       if (this.surgeIn <= 0) {
+        this.warning = false;
         this.surgeLeft = 0.32;
-        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? 1.5 : 1.25);
+        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? BOSS.surge + this.bossLevel * BOSS.surgePerLevel : 1.25);
         const gap = boss ? [1.3, 1.0, 0.75][this.bossPhase] : 1.5 - pull;
         this.surgeIn = gap + this.rng.next() * 0.9;
         this.events.surge?.(this.surgePower);
@@ -236,7 +280,7 @@ export class Fishing {
     let surge = 0;
     if (this.surgeLeft > 0) {
       this.surgeLeft -= dt;
-      surge = this.surgePower / 0.32;
+      surge = (this.surgePower / 0.32) * (this.holding ? 1 : 0.3);
     }
 
     if (this.holding) this.tension += (0.32 + pull * 0.55) * gentle * dt;
@@ -247,19 +291,22 @@ export class Fishing {
     const lo = GREEN_CENTER - this.green / 2;
     const hi = GREEN_CENTER + this.green / 2;
     const red = this.tension >= RED_AT;
-    const reel = (boss ? 0.075 : target.fights ? f.reel : 0.9) * s.reelMult * (this.auto ? 0.5 : 1) * (this.assist ? 1.6 : 1);
+    const reel = boss ? BOSS.reel * Math.sqrt(s.reelMult) : (target.fights ? f.reel : 0.9) * s.reelMult * (this.auto ? 0.5 : 1) * (this.assist ? 1.6 : 1);
     if (this.holding) {
       const zone = this.tension >= lo && this.tension <= hi ? 1 : red ? 0.3 : 0.6;
       this.progress += reel * zone * dt;
     } else {
-      this.progress -= (boss ? 0.015 : pull * 0.12) * dt;
+      this.progress -= (boss ? BOSS.decay : pull * 0.12) * dt;
     }
 
     if (red) {
       this.redTime += dt;
-      if (this.redTime >= s.lineHold * (this.assist ? 2 : 1)) return this.finish('snap');
+      // Bosses wear the line down: time in the red adds up over the fight and fades slowly,
+      // so each ignored pull counts. Line upgrades help a little.
+      const hold = boss ? BOSS.hold + BOSS.holdPerLine * this.lineLevel : s.lineHold * (this.assist ? 2 : 1);
+      if (this.redTime >= hold) return this.finish('snap');
     } else {
-      this.redTime = Math.max(0, this.redTime - dt * 2);
+      this.redTime = Math.max(0, this.redTime - dt * (boss ? BOSS.wear : 2));
     }
     if (boss) {
       const ph = this.progress > 0.66 ? 2 : this.progress > 0.33 ? 1 : 0;
@@ -325,8 +372,9 @@ export class FishingBot {
       case 'reeling': {
         const [lo, hi] = f.greenRange;
         const aimHi = hi - 0.04 - (1 - this.skill) * 0.08;
-        if (f.holding && f.tension > aimHi) f.release();
-        else if (!f.holding && f.tension < lo + 0.06) f.press();
+        if (f.holding && f.warning) f.release();
+        else if (f.holding && f.tension > aimHi) f.release();
+        else if (!f.holding && !f.warning && f.tension < lo + 0.06) f.press();
         else if (!f.holding && f.tension < hi - 0.02 && this.rng.next() < 0.1) f.press();
         break;
       }

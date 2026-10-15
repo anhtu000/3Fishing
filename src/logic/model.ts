@@ -56,6 +56,10 @@ export interface SaveData {
   luckyDay: string;
   ads: { mysteryAt: number; goldenAt: number; goldenUntil: number };
   autoFish: boolean;
+  /** WANTED fish: catch it for triple coins. Null between bounties. */
+  bounty: string | null;
+  /** Catches until the next WANTED fish appears. */
+  bountyIn: number;
   /** Seed state for gameplay rolls, so a reload cannot re-roll a result. */
   rng: number;
 }
@@ -81,6 +85,8 @@ export function defaultSave(): SaveData {
     luckyDay: '',
     ads: { mysteryAt: 0, goldenAt: 0, goldenUntil: 0 },
     autoFish: false,
+    bounty: null,
+    bountyIn: 8,
     rng: 0,
   };
 }

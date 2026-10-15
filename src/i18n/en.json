@@ -1,5 +1,7 @@
 {
-  "lang": { "name": "English" },
+  "lang": {
+    "name": "English"
+  },
   "core": {
     "loading": "Loading",
     "welcomeBack": "Welcome back!",
@@ -51,7 +53,11 @@
     "teamFull": "Team is full. Remove a pet first.",
     "needCoins": "You need {n} coins. Keep fishing!",
     "unlockHow": "Catch {n} kinds of fish in {pond}, then beat {boss}.",
-    "comeBackTomorrow": "Come back tomorrow for the next gift!"
+    "comeBackTomorrow": "Come back tomorrow for the next gift!",
+    "newWanted": "New WANTED fish posted!",
+    "again": "Missed! It bites again...",
+    "softEarly": "Not yet! Wait for the big splash",
+    "streak": "Perfect x{n}! +{p}% coins"
   },
   "tut": {
     "cast": "Hold... then let go!",
@@ -192,7 +198,8 @@
     "junk1": "Recycling counts as fishing, right?",
     "junk2": "Not a fish. Still shiny.",
     "junk3": "The pond says thank you.",
-    "junk4": "A cat can dream."
+    "junk4": "A cat can dream.",
+    "wanted": "WANTED!"
   },
   "hatch": {
     "shinyNew": "SHINY NEW PET!",
@@ -275,5 +282,20 @@
     "polar_cub": "Polar Cub",
     "aurora_hare": "Aurora Hare"
   },
-  "unit": { "d": "d", "h": "h", "m": "m", "s": "s" }
+  "unit": {
+    "d": "d",
+    "h": "h",
+    "m": "m",
+    "s": "s"
+  },
+  "goal": {
+    "dex": "Fishdex {n}/{max} » Boss",
+    "pond": "{pond}  {n}/{max}",
+    "travel": "{pond} is open! » Map",
+    "all": "Fishdex {n}/{max}"
+  },
+  "wanted": {
+    "label": "WANTED",
+    "reward": "x3 coins"
+  }
 }

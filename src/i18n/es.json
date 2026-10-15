@@ -1,5 +1,7 @@
 {
-  "lang": { "name": "Español" },
+  "lang": {
+    "name": "Español"
+  },
   "core": {
     "loading": "Cargando",
     "welcomeBack": "¡Bienvenido de nuevo!",
@@ -51,7 +53,11 @@
     "teamFull": "El equipo está lleno. Quita primero una mascota.",
     "needCoins": "Necesitas {n} monedas. ¡Sigue pescando!",
     "unlockHow": "Pesca {n} especies en {pond} y luego vence a {boss}.",
-    "comeBackTomorrow": "¡Vuelve mañana para el próximo regalo!"
+    "comeBackTomorrow": "¡Vuelve mañana para el próximo regalo!",
+    "newWanted": "¡Nuevo pez SE BUSCA!",
+    "again": "¡Fallaste! Vuelve a picar...",
+    "softEarly": "¡Aún no! Espera el gran chapuzón",
+    "streak": "¡Perfecto x{n}! +{p} % monedas"
   },
   "tut": {
     "cast": "Mantén... ¡y suelta!",
@@ -192,7 +198,8 @@
     "junk1": "Reciclar también es pescar, ¿no?",
     "junk2": "No es un pez. Pero brilla.",
     "junk3": "El estanque te da las gracias.",
-    "junk4": "Un gato puede soñar."
+    "junk4": "Un gato puede soñar.",
+    "wanted": "¡SE BUSCA!"
   },
   "hatch": {
     "shinyNew": "¡NUEVA MASCOTA BRILLANTE!",
@@ -202,11 +209,36 @@
     "max": "¡Nivel máximo! +{n} monedas",
     "yay": "¡Bien!"
   },
-  "rarity": { "0": "Común", "1": "Poco común", "2": "Raro", "3": "Épico", "4": "Legendario" },
-  "egg": { "0": "Huevo común", "1": "Huevo poco común", "2": "Huevo raro", "3": "Huevo épico", "4": "Huevo legendario" },
-  "pond": { "cozy": "Estanque acogedor", "misty": "Arroyo brumoso", "frozen": "Lago helado" },
-  "bossName": { "old_whiskers": "Viejo Bigotes", "fog_pike": "El Lucio de la niebla", "frostbeard": "Viejo Barbaescarcha" },
-  "junk": { "boot": "Bota de goma", "can": "Lata de refresco", "bottle": "Botella con mensaje", "wheel": "Rueda de bici vieja" },
+  "rarity": {
+    "0": "Común",
+    "1": "Poco común",
+    "2": "Raro",
+    "3": "Épico",
+    "4": "Legendario"
+  },
+  "egg": {
+    "0": "Huevo común",
+    "1": "Huevo poco común",
+    "2": "Huevo raro",
+    "3": "Huevo épico",
+    "4": "Huevo legendario"
+  },
+  "pond": {
+    "cozy": "Estanque acogedor",
+    "misty": "Arroyo brumoso",
+    "frozen": "Lago helado"
+  },
+  "bossName": {
+    "old_whiskers": "Viejo Bigotes",
+    "fog_pike": "El Lucio de la niebla",
+    "frostbeard": "Viejo Barbaescarcha"
+  },
+  "junk": {
+    "boot": "Bota de goma",
+    "can": "Lata de refresco",
+    "bottle": "Botella con mensaje",
+    "wheel": "Rueda de bici vieja"
+  },
   "fish": {
     "pebble_minnow": "Piscardo guijarro",
     "lily_carp": "Carpa nenúfar",
@@ -250,5 +282,20 @@
     "polar_cub": "Osezno polar",
     "aurora_hare": "Liebre aurora"
   },
-  "unit": { "d": "d", "h": "h", "m": "min", "s": "s" }
+  "unit": {
+    "d": "d",
+    "h": "h",
+    "m": "min",
+    "s": "s"
+  },
+  "goal": {
+    "dex": "Pezdex {n}/{max} » Jefe",
+    "pond": "{pond}  {n}/{max}",
+    "travel": "¡{pond} está abierto! » Mapa",
+    "all": "Pezdex {n}/{max}"
+  },
+  "wanted": {
+    "label": "SE BUSCA",
+    "reward": "monedas x3"
+  }
 }

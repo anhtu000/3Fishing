@@ -53,7 +53,11 @@
     "teamFull": "Takım dolu. Önce bir dostu çıkar.",
     "needCoins": "{n} altın gerekiyor. Avlanmaya devam!",
     "unlockHow": "{pond} içinde {n} tür balık yakala, sonra {boss} adlı patronu yen.",
-    "comeBackTomorrow": "Sonraki hediye için yarın tekrar gel!"
+    "comeBackTomorrow": "Sonraki hediye için yarın tekrar gel!",
+    "newWanted": "Yeni ARANAN balık!",
+    "again": "Kaçırdın! Yine vuruyor...",
+    "softEarly": "Daha değil! Büyük sıçramayı bekle",
+    "streak": "Mükemmel x{n}! +%{p} altın"
   },
   "tut": {
     "cast": "Basılı tut... sonra bırak!",
@@ -194,7 +198,8 @@
     "junk1": "Geri dönüşüm de balıkçılık sayılır, değil mi?",
     "junk2": "Balık değil. Ama parlıyor.",
     "junk3": "Gölet sana teşekkür ediyor.",
-    "junk4": "Bir kedi hayal kurabilir."
+    "junk4": "Bir kedi hayal kurabilir.",
+    "wanted": "ARANIYOR!"
   },
   "hatch": {
     "shinyNew": "YENİ PARLAK DOST!",
@@ -282,5 +287,15 @@
     "h": "sa",
     "m": "dk",
     "s": "sn"
+  },
+  "goal": {
+    "dex": "Balıkdex {n}/{max} » Patron",
+    "pond": "{pond}  {n}/{max}",
+    "travel": "{pond} açıldı! » Harita",
+    "all": "Balıkdex {n}/{max}"
+  },
+  "wanted": {
+    "label": "ARANIYOR",
+    "reward": "altın x3"
   }
 }

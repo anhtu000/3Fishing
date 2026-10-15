@@ -1,5 +1,7 @@
 {
-  "lang": { "name": "Français" },
+  "lang": {
+    "name": "Français"
+  },
   "core": {
     "loading": "Chargement",
     "welcomeBack": "Bon retour !",
@@ -51,7 +53,11 @@
     "teamFull": "L'équipe est complète. Retire d'abord un animal.",
     "needCoins": "Il te faut {n} pièces. Continue de pêcher !",
     "unlockHow": "Attrape {n} espèces à {pond}, puis bats {boss}.",
-    "comeBackTomorrow": "Reviens demain pour le prochain cadeau !"
+    "comeBackTomorrow": "Reviens demain pour le prochain cadeau !",
+    "newWanted": "Nouveau poisson RECHERCHÉ !",
+    "again": "Raté ! Il remord...",
+    "softEarly": "Pas encore ! Attends la grosse éclaboussure",
+    "streak": "Parfait x{n} ! +{p} % de pièces"
   },
   "tut": {
     "cast": "Maintiens... puis lâche !",
@@ -192,7 +198,8 @@
     "junk1": "Recycler, c'est un peu pêcher, non ?",
     "junk2": "Pas un poisson. Mais ça brille.",
     "junk3": "L'étang te dit merci.",
-    "junk4": "Un chat peut rêver."
+    "junk4": "Un chat peut rêver.",
+    "wanted": "RECHERCHÉ !"
   },
   "hatch": {
     "shinyNew": "NOUVEL ANIMAL BRILLANT !",
@@ -202,11 +209,36 @@
     "max": "Niveau max ! +{n} pièces",
     "yay": "Youpi !"
   },
-  "rarity": { "0": "Commun", "1": "Peu commun", "2": "Rare", "3": "Épique", "4": "Légendaire" },
-  "egg": { "0": "Œuf commun", "1": "Œuf peu commun", "2": "Œuf rare", "3": "Œuf épique", "4": "Œuf légendaire" },
-  "pond": { "cozy": "Étang douillet", "misty": "Ruisseau brumeux", "frozen": "Lac gelé" },
-  "bossName": { "old_whiskers": "Vieilles Moustaches", "fog_pike": "Le Brochet du brouillard", "frostbeard": "Vieille Barbe-de-givre" },
-  "junk": { "boot": "Botte en caoutchouc", "can": "Canette", "bottle": "Bouteille à la mer", "wheel": "Vieille roue de vélo" },
+  "rarity": {
+    "0": "Commun",
+    "1": "Peu commun",
+    "2": "Rare",
+    "3": "Épique",
+    "4": "Légendaire"
+  },
+  "egg": {
+    "0": "Œuf commun",
+    "1": "Œuf peu commun",
+    "2": "Œuf rare",
+    "3": "Œuf épique",
+    "4": "Œuf légendaire"
+  },
+  "pond": {
+    "cozy": "Étang douillet",
+    "misty": "Ruisseau brumeux",
+    "frozen": "Lac gelé"
+  },
+  "bossName": {
+    "old_whiskers": "Vieilles Moustaches",
+    "fog_pike": "Le Brochet du brouillard",
+    "frostbeard": "Vieille Barbe-de-givre"
+  },
+  "junk": {
+    "boot": "Botte en caoutchouc",
+    "can": "Canette",
+    "bottle": "Bouteille à la mer",
+    "wheel": "Vieille roue de vélo"
+  },
   "fish": {
     "pebble_minnow": "Vairon galet",
     "lily_carp": "Carpe nénuphar",
@@ -250,5 +282,20 @@
     "polar_cub": "Ourson polaire",
     "aurora_hare": "Lièvre aurore"
   },
-  "unit": { "d": "j", "h": "h", "m": "min", "s": "s" }
+  "unit": {
+    "d": "j",
+    "h": "h",
+    "m": "min",
+    "s": "s"
+  },
+  "goal": {
+    "dex": "Poissodex {n}/{max} » Boss",
+    "pond": "{pond}  {n}/{max}",
+    "travel": "{pond} est ouvert ! » Carte",
+    "all": "Poissodex {n}/{max}"
+  },
+  "wanted": {
+    "label": "RECHERCHÉ",
+    "reward": "pièces x3"
+  }
 }

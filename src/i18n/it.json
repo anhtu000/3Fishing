@@ -1,5 +1,7 @@
 {
-  "lang": { "name": "Italiano" },
+  "lang": {
+    "name": "Italiano"
+  },
   "core": {
     "loading": "Caricamento",
     "welcomeBack": "Bentornato!",
@@ -51,7 +53,11 @@
     "teamFull": "La squadra è al completo. Prima togli un amico.",
     "needCoins": "Ti servono {n} monete. Continua a pescare!",
     "unlockHow": "Pesca {n} specie in {pond}, poi sconfiggi {boss}.",
-    "comeBackTomorrow": "Torna domani per il prossimo regalo!"
+    "comeBackTomorrow": "Torna domani per il prossimo regalo!",
+    "newWanted": "Nuovo pesce RICERCATO!",
+    "again": "Mancato! Abbocca di nuovo...",
+    "softEarly": "Non ancora! Aspetta il grande schizzo",
+    "streak": "Perfetto x{n}! +{p}% monete"
   },
   "tut": {
     "cast": "Tieni premuto... poi molla!",
@@ -192,7 +198,8 @@
     "junk1": "Riciclare vale come pescare, no?",
     "junk2": "Non è un pesce. Però luccica.",
     "junk3": "Il laghetto ti ringrazia.",
-    "junk4": "Un gatto può sognare."
+    "junk4": "Un gatto può sognare.",
+    "wanted": "RICERCATO!"
   },
   "hatch": {
     "shinyNew": "NUOVO AMICO SCINTILLANTE!",
@@ -202,11 +209,36 @@
     "max": "Livello massimo! +{n} monete",
     "yay": "Evviva!"
   },
-  "rarity": { "0": "Comune", "1": "Non comune", "2": "Raro", "3": "Epico", "4": "Leggendario" },
-  "egg": { "0": "Uovo comune", "1": "Uovo non comune", "2": "Uovo raro", "3": "Uovo epico", "4": "Uovo leggendario" },
-  "pond": { "cozy": "Laghetto accogliente", "misty": "Torrente nebbioso", "frozen": "Lago ghiacciato" },
-  "bossName": { "old_whiskers": "Vecchi Baffi", "fog_pike": "Il Luccio della nebbia", "frostbeard": "Vecchia Barbagelo" },
-  "junk": { "boot": "Stivale di gomma", "can": "Lattina", "bottle": "Messaggio in bottiglia", "wheel": "Vecchia ruota di bici" },
+  "rarity": {
+    "0": "Comune",
+    "1": "Non comune",
+    "2": "Raro",
+    "3": "Epico",
+    "4": "Leggendario"
+  },
+  "egg": {
+    "0": "Uovo comune",
+    "1": "Uovo non comune",
+    "2": "Uovo raro",
+    "3": "Uovo epico",
+    "4": "Uovo leggendario"
+  },
+  "pond": {
+    "cozy": "Laghetto accogliente",
+    "misty": "Torrente nebbioso",
+    "frozen": "Lago ghiacciato"
+  },
+  "bossName": {
+    "old_whiskers": "Vecchi Baffi",
+    "fog_pike": "Il Luccio della nebbia",
+    "frostbeard": "Vecchia Barbagelo"
+  },
+  "junk": {
+    "boot": "Stivale di gomma",
+    "can": "Lattina",
+    "bottle": "Messaggio in bottiglia",
+    "wheel": "Vecchia ruota di bici"
+  },
   "fish": {
     "pebble_minnow": "Sanguinerola sassolino",
     "lily_carp": "Carpa ninfea",
@@ -250,5 +282,20 @@
     "polar_cub": "Orsetto polare",
     "aurora_hare": "Lepre aurora"
   },
-  "unit": { "d": "g", "h": "h", "m": "min", "s": "s" }
+  "unit": {
+    "d": "g",
+    "h": "h",
+    "m": "min",
+    "s": "s"
+  },
+  "goal": {
+    "dex": "Pescedex {n}/{max} » Boss",
+    "pond": "{pond}  {n}/{max}",
+    "travel": "{pond} è aperto! » Mappa",
+    "all": "Pescedex {n}/{max}"
+  },
+  "wanted": {
+    "label": "RICERCATO",
+    "reward": "monete x3"
+  }
 }

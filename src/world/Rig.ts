@@ -147,6 +147,13 @@ export class Rig {
     this.splash(this.bobber.x, this.pond.L.water, 3);
   }
 
+  /** The hooked fish thrashes: a big pull is coming (let go!). */
+  warn() {
+    this.dipT = 0;
+    this.dipAmp = 18;
+    this.splash(this.bobber.x, this.pond.L.water, 10);
+  }
+
   bite() {
     this.dipT = 0;
     this.dipAmp = 26;
@@ -272,7 +279,7 @@ export class Rig {
       const p = Phaser.Math.Clamp(f.progress, 0, 1);
       const endX = L.dockEnd + 60;
       bx = Phaser.Math.Linear(this.landX, endX, p);
-      this.thrash = Math.sin(this.t * (6 + f.tension * 10)) * (0.4 + f.tension);
+      this.thrash = Math.sin(this.t * (f.warning ? 30 : 6 + f.tension * 10)) * (f.warning ? 1.3 : 0.4 + f.tension);
       hx = bx + this.thrash * 26;
       hy = Phaser.Math.Linear(this.hookDepth, water + 60, p);
       by = water + 8 + Math.sin(this.t * 18) * (2 + f.tension * 6);

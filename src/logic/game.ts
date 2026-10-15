@@ -10,6 +10,7 @@ import {
   addPet,
   bossReady,
   chestReward,
+  dexCount,
   eggCoins,
   expectedFishValue,
   fishPrice,
@@ -43,7 +44,21 @@ export interface CatchResult {
   /** Egg went into the incubator (false: sold, incubator full). */
   eggStored: boolean;
   questsDone: string[];
+  /** This was the WANTED fish (triple coins plus a bonus). */
+  bounty: boolean;
+  /** Perfect hooks in a row, counting this one (0 when this hook was not perfect). */
+  streak: number;
+  /** Extra percent on the fish price from the perfect streak. */
+  streakBonus: number;
+  /** A new WANTED fish was posted after this catch. */
+  newBounty: string | null;
 }
+
+/** Bonus per perfect hook in a row, capped. */
+export const STREAK_STEP = 10;
+export const STREAK_MAX = 5;
+/** Catches between WANTED fish. */
+export const BOUNTY_GAP = 6;
 
 export interface AnglerCatch {
   petId: string;
@@ -53,6 +68,8 @@ export interface AnglerCatch {
 export class PondGame {
   /** Per-pet progress toward the next fish an angler pet brings. Not saved: offline income covers it. */
   private anglerAcc = new Map<string, number>();
+  /** Perfect hooks in a row (this session). */
+  streak = 0;
 
   constructor(
     public s: SaveData,
@@ -105,6 +122,11 @@ export class PondGame {
       const missing = pond.fish.filter((f) => !s.dex[f.id] && f.rarity <= Math.max(1, roll.kind === 'fish' ? roll.fish.rarity : 0));
       if (missing.length && s.stats.fish >= 10 && this.rng.chance(0.12)) roll = { kind: 'fish', fish: this.rng.pick(missing), size: rollSize(this.rng, luck) };
     }
+    // The WANTED fish shows up a little more often, so the short goal stays reachable.
+    if (s.bounty && roll.kind === 'fish' && roll.fish.id !== s.bounty) {
+      const want = pond.fish.find((f) => f.id === s.bounty);
+      if (want && want.rarity <= roll.fish.rarity + 1 && this.rng.chance(0.18)) roll = { kind: 'fish', fish: want, size: rollSize(this.rng, luck) };
+    }
     const rarity = roll.kind === 'fish' ? roll.fish.rarity : roll.kind === 'egg' ? roll.tier : 0;
     return { roll, target: { rarity, fights: roll.kind === 'fish' } };
   }
@@ -113,8 +135,10 @@ export class PondGame {
   applyCatch(roll: CatchRoll, perfect: boolean): CatchResult {
     const s = this.s;
     const pond = this.pond;
-    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, questsDone: [] };
+    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null };
     s.stats.catches += 1;
+    this.streak = perfect ? this.streak + 1 : 0;
+    res.streak = this.streak;
     const quests: string[] = [];
     const q = (kind: Parameters<typeof questProgress>[1], n = 1) => quests.push(...questProgress(s, kind, n).map((d) => d.id));
     if (perfect) {
@@ -138,7 +162,14 @@ export class PondGame {
             res.record = true;
           }
         }
-        res.coins = fishPrice(roll.fish, roll.size, pond, this.perk('merchant'));
+        res.streakBonus = Math.min(STREAK_MAX, this.streak) * STREAK_STEP;
+        res.coins = Math.round(fishPrice(roll.fish, roll.size, pond, this.perk('merchant')) * (1 + res.streakBonus / 100));
+        if (s.bounty === roll.fish.id) {
+          res.bounty = true;
+          res.coins = res.coins * 3 + 40 * pond.priceMult;
+          s.bounty = null;
+          s.bountyIn = BOUNTY_GAP;
+        }
         fishSpeedsEggs(s);
         q('catch');
         if (roll.fish.rarity >= 2) q('rare');
@@ -164,7 +195,27 @@ export class PondGame {
     this.earn(res.coins, quests);
     s.gems += res.gems;
     res.questsDone = quests;
+    if (!s.bounty && !res.bounty) {
+      s.bountyIn -= 1;
+      if (s.bountyIn <= 0) res.newBounty = this.postBounty();
+    }
     return res;
+  }
+
+  /** A fumbled cast (too early, too slow, line snapped) ends the perfect streak. */
+  breakStreak() {
+    this.streak = 0;
+  }
+
+  /** Picks a WANTED fish of this pond: mostly Common or Uncommon, sometimes Rare. */
+  postBounty(): string {
+    const pond = this.pond;
+    const r = this.rng.next();
+    const tier = r < 0.5 ? 0 : r < 0.85 ? 1 : 2;
+    const options = pond.fish.filter((f) => f.rarity === tier);
+    const fish = this.rng.pick(options.length ? options : pond.fish);
+    this.s.bounty = fish.id;
+    return fish.id;
   }
 
   /** Adds coins and counts them for the coin quest. */
@@ -314,7 +365,26 @@ export class PondGame {
   travel(p: PondDef) {
     if (!this.s.unlocked.includes(p.id)) return false;
     this.s.pond = p.id;
+    // A WANTED fish belongs to one pond: post a new one for the new pond.
+    if (this.s.bounty) this.postBounty();
     return true;
+  }
+
+  /**
+   * The next long-term goal, shown under the coin counter so the player always knows what to do:
+   * fill the Fishdex to call the boss, save up for the next pond, travel there, then complete the Fishdex.
+   */
+  nextGoal(): { kind: 'dex' | 'pond' | 'travel' | 'all'; n: number; max: number; pond?: string } | null {
+    const s = this.s;
+    const pond = this.pond;
+    const n = dexCount(s, pond);
+    if (!s.bosses.includes(pond.boss.id)) return n >= pond.bossAt ? null : { kind: 'dex', n, max: pond.bossAt };
+    const next = PONDS[PONDS.indexOf(pond) + 1];
+    if (next && !s.unlocked.includes(next.id)) return { kind: 'pond', n: s.coins, max: next.unlockCost, pond: next.id };
+    const ahead = PONDS.find((p) => s.unlocked.includes(p.id) && !s.bosses.includes(p.boss.id) && p.id !== pond.id);
+    if (ahead) return { kind: 'travel', n: 1, max: 1, pond: ahead.id };
+    const all = PONDS.reduce((a, p) => a + p.fish.length, 0);
+    return { kind: 'all', n: Object.keys(s.dex).length, max: all };
   }
 
   /** Auto-fish unlocks with the second pond. */

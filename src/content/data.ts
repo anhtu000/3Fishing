@@ -85,7 +85,7 @@ export const PONDS: PondDef[] = [
     id: 'misty',
     name: 'Misty Creek',
     priceMult: 3,
-    unlockCost: 2000,
+    unlockCost: 1500,
     fish: [
       { id: 'fog_shiner', name: 'Fog Shiner', rarity: 0, cm: 11 },
       { id: 'stone_loach', name: 'Stone Loach', rarity: 0, cm: 16 },
@@ -111,7 +111,7 @@ export const PONDS: PondDef[] = [
     id: 'frozen',
     name: 'Frozen Lake',
     priceMult: 9,
-    unlockCost: 14000,
+    unlockCost: 18000,
     fish: [
       { id: 'frost_minnow', name: 'Frost Minnow', rarity: 0, cm: 8 },
       { id: 'ice_perch', name: 'Ice Perch', rarity: 0, cm: 22 },

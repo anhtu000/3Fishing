@@ -1,5 +1,7 @@
 {
-  "lang": { "name": "Deutsch" },
+  "lang": {
+    "name": "Deutsch"
+  },
   "core": {
     "loading": "Lädt",
     "welcomeBack": "Willkommen zurück!",
@@ -51,7 +53,11 @@
     "teamFull": "Das Team ist voll. Nimm zuerst ein Tier heraus.",
     "needCoins": "Du brauchst {n} Münzen. Angle weiter!",
     "unlockHow": "Fang {n} Fischarten in {pond} und besiege dann {boss}.",
-    "comeBackTomorrow": "Komm morgen wieder für das nächste Geschenk!"
+    "comeBackTomorrow": "Komm morgen wieder für das nächste Geschenk!",
+    "newWanted": "Neuer GESUCHT-Fisch!",
+    "again": "Verpasst! Er beißt noch mal...",
+    "softEarly": "Noch nicht! Warte auf den großen Platscher",
+    "streak": "Perfekt x{n}! +{p} % Münzen"
   },
   "tut": {
     "cast": "Halten... dann loslassen!",
@@ -192,7 +198,8 @@
     "junk1": "Recycling zählt doch auch als Angeln, oder?",
     "junk2": "Kein Fisch. Glänzt aber trotzdem.",
     "junk3": "Der Teich sagt danke.",
-    "junk4": "Eine Katze darf ja träumen."
+    "junk4": "Eine Katze darf ja träumen.",
+    "wanted": "GESUCHT!"
   },
   "hatch": {
     "shinyNew": "NEUES GLANZTIER!",
@@ -202,11 +209,36 @@
     "max": "Höchststufe! +{n} Münzen",
     "yay": "Juhu!"
   },
-  "rarity": { "0": "Gewöhnlich", "1": "Ungewöhnlich", "2": "Selten", "3": "Episch", "4": "Legendär" },
-  "egg": { "0": "Gewöhnliches Ei", "1": "Ungewöhnliches Ei", "2": "Seltenes Ei", "3": "Episches Ei", "4": "Legendäres Ei" },
-  "pond": { "cozy": "Gemütlicher Teich", "misty": "Nebelbach", "frozen": "Eissee" },
-  "bossName": { "old_whiskers": "Alter Schnurrbart", "fog_pike": "Der Nebelhecht", "frostbeard": "Alter Frostbart" },
-  "junk": { "boot": "Gummistiefel", "can": "Getränkedose", "bottle": "Flaschenpost", "wheel": "Altes Fahrradrad" },
+  "rarity": {
+    "0": "Gewöhnlich",
+    "1": "Ungewöhnlich",
+    "2": "Selten",
+    "3": "Episch",
+    "4": "Legendär"
+  },
+  "egg": {
+    "0": "Gewöhnliches Ei",
+    "1": "Ungewöhnliches Ei",
+    "2": "Seltenes Ei",
+    "3": "Episches Ei",
+    "4": "Legendäres Ei"
+  },
+  "pond": {
+    "cozy": "Gemütlicher Teich",
+    "misty": "Nebelbach",
+    "frozen": "Eissee"
+  },
+  "bossName": {
+    "old_whiskers": "Alter Schnurrbart",
+    "fog_pike": "Der Nebelhecht",
+    "frostbeard": "Alter Frostbart"
+  },
+  "junk": {
+    "boot": "Gummistiefel",
+    "can": "Getränkedose",
+    "bottle": "Flaschenpost",
+    "wheel": "Altes Fahrradrad"
+  },
   "fish": {
     "pebble_minnow": "Kiesel-Elritze",
     "lily_carp": "Seerosenkarpfen",
@@ -250,5 +282,20 @@
     "polar_cub": "Eisbärjunges",
     "aurora_hare": "Polarlichthase"
   },
-  "unit": { "d": "T", "h": "Std", "m": "Min", "s": "s" }
+  "unit": {
+    "d": "T",
+    "h": "Std",
+    "m": "Min",
+    "s": "s"
+  },
+  "goal": {
+    "dex": "Fischdex {n}/{max} » Boss",
+    "pond": "{pond}  {n}/{max}",
+    "travel": "{pond} ist offen! » Karte",
+    "all": "Fischdex {n}/{max}"
+  },
+  "wanted": {
+    "label": "GESUCHT",
+    "reward": "Münzen x3"
+  }
 }

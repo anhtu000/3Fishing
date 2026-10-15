@@ -191,7 +191,8 @@ export interface FishingStats {
 
 export function fishingStats(s: SaveData, sharpSec: number, strongPct: number): FishingStats {
   return {
-    biteWindow: Math.min(0.95, 0.6 + s.upgrades.float * 0.02 + sharpSec),
+    // 0.75 s base: phone players need about 0.4 s to see the splash and tap, plus touch latency.
+    biteWindow: Math.min(1.1, 0.75 + s.upgrades.float * 0.02 + sharpSec),
     reelMult: (1 + 0.08 * s.upgrades.rod) * (1 + strongPct / 100),
     lineHold: 1 + 0.1 * s.upgrades.line,
   };

@@ -7,7 +7,7 @@ import type { Fishing } from '../logic/fishing';
 import { RED_AT } from '../logic/fishing';
 import type { SaveData } from '../logic/model';
 import { t } from '../i18n/t';
-import { CButton, COLORS, INK, fitText, art, drawChunky, fitScale, fmt, roundButton, setArt, txt } from './kit';
+import { CButton, COLORS, INK, fitText, art, drawBar, drawChunky, fitScale, fmt, roundButton, setArt, txt } from './kit';
 
 export interface HudActions {
   upgrades(): void;
@@ -42,6 +42,17 @@ export class Hud {
   boss: CButton;
   eggs: { btn: CButton; egg: Phaser.GameObjects.Image; time: Phaser.GameObjects.Text; tier: number }[] = [];
   private chip: Phaser.GameObjects.Container;
+  /** WANTED poster and next-goal tracker, the row under the status chip. */
+  private wanted: Phaser.GameObjects.Container;
+  private wantedFish: Phaser.GameObjects.Image;
+  private wantedShown = '';
+  private goal: Phaser.GameObjects.Container;
+  private goalText: Phaser.GameObjects.Text;
+  private goalBar: Phaser.GameObjects.Graphics;
+  private goalIcon: Phaser.GameObjects.Image;
+  private goalShown = '';
+  private portrait = true;
+  private wDesign = 720;
   private chipText: Phaser.GameObjects.Text;
   private meter: Phaser.GameObjects.Container;
   private meterG: Phaser.GameObjects.Graphics;
@@ -107,6 +118,22 @@ export class Hud {
     this.bossName = txt(scene, 0, -40, '', 32);
     this.bossBar = scene.add.container(0, 0, [this.bossG, this.bossName]).setDepth(120).setVisible(false);
 
+    // WANTED poster: a small cream card with the fish and "x3".
+    const wt = shapeTexture(scene, 'wanted', 250, 76, (g) => drawChunky(g, 250, 76, 0xfff1c9, 22, 6, false, 4.5), 6);
+    const wantedBg = scene.add.image(0, 0, wt.key).setScale(1 / wt.res);
+    this.wantedFish = art(scene, -76, -4, 'fish:pebble_minnow');
+    const wantedLabel = fitText(txt(scene, 34, -18, t('wanted.label'), 22, { color: '#c0392b', stroke: false }), 140);
+    const wantedReward = fitText(txt(scene, 34, 10, t('wanted.reward'), 22, { color: '#3b2a4d', stroke: false }), 140);
+    this.wanted = scene.add.container(0, 0, [wantedBg, this.wantedFish, wantedLabel, wantedReward]).setVisible(false);
+    // Goal tracker: icon, short text, thin progress bar.
+    const goalBg = scene.add.graphics();
+    goalBg.fillStyle(INK, 0.55).fillRoundedRect(-150, -32, 300, 64, 22);
+    this.goalIcon = art(scene, -122, -2, 'icon:i_book');
+    this.goalIcon.setScale(fitScale('icon:i_book', 40));
+    this.goalText = txt(scene, 14, -10, '', 22);
+    this.goalBar = scene.add.graphics().setPosition(14, 16);
+    this.goal = scene.add.container(0, 0, [goalBg, this.goalIcon, this.goalText, this.goalBar]).setVisible(false);
+    this.root.add([this.wanted, this.goal]);
     this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.boss, ...this.eggs.map((e) => e.btn), this.chip]);
     this.shownCoins = s.coins;
     this.coins.label.setText(fmt(s.coins));
@@ -153,7 +180,10 @@ export class Hud {
     const sy = portrait ? 250 : 150;
     const step = portrait ? 104 : 96;
     [this.side.quests, this.side.golden, this.side.mystery, this.side.auto].forEach((b, i) => b.setPosition(sx, sy + i * step));
-    this.boss.setPosition(w / 2, portrait ? 218 : 180);
+    this.portrait = portrait;
+    this.wDesign = w;
+    this.boss.setPosition(w / 2, portrait ? 292 : 252);
+    this.placeStrip();
     this.chip.setPosition(w / 2, portrait ? 132 : 112);
     this.eggs.forEach((e, i) => e.btn.setPosition(w - 60, (portrait ? 170 : 150) + i * 116));
     this.meter.setPosition(w / 2, portrait ? h - 250 : h - 175);
@@ -166,7 +196,7 @@ export class Hud {
     this.bossBar.setPosition(w / 2, portrait ? 170 : 130);
   }
 
-  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean }) {
+  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; goal: { icon: string; text: string; progress: number } | null }) {
     this.t += dt;
     const s = this.s;
     // Count-up numbers.
@@ -224,6 +254,18 @@ export class Hud {
     if (extra.autoOn) chip = chip ? chip : t('hud.autoChip');
     if (f.target.boss && f.busy) chip = '';
     this.setChip(chip);
+    this.wanted.setVisible(!!extra.wanted && !f.target.boss);
+    if (extra.wanted && extra.wanted !== this.wantedShown) {
+      this.wantedShown = extra.wanted;
+      const key = `fish:${extra.wanted}`;
+      this.wantedFish.setTexture(key).setScale(fitScale(key, 96));
+      if (extra.wantedKnown) this.wantedFish.clearTint().setAlpha(1);
+      else this.wantedFish.setTint(0x3b2a4d).setTintMode(Phaser.TintModes.FILL).setAlpha(0.55);
+      this.wantedPop = true;
+      this.scene.tweens.add({ targets: this.wanted, scale: { from: 1.25 * this.stripScale, to: this.stripScale }, duration: 380, ease: 'Back.Out', onComplete: () => (this.wantedPop = false) });
+    }
+    this.setGoal(extra.goal && !extra.bossReady && !f.target.boss ? extra.goal : null);
+    this.placeStrip();
     // Idle hint.
     this.hintT = extra.showHint && f.phase === 'ready' ? this.hintT + dt : 0;
     this.hint.setVisible(this.hintT > 2.5);
@@ -234,6 +276,40 @@ export class Hud {
     this.drawMeter(f);
   }
 
+  private goalIconKey = '';
+  private setGoal(g: { icon: string; text: string; progress: number } | null) {
+    const key = g ? `${g.icon}|${g.text}|${Math.round(g.progress * 100)}` : '';
+    if (key === this.goalShown) return;
+    this.goalShown = key;
+    this.goal.setVisible(!!g);
+    if (!g) return;
+    if (g.icon !== this.goalIconKey) {
+      this.goalIconKey = g.icon;
+      this.goalIcon.setTexture(g.icon).setScale(fitScale(g.icon, 40));
+    }
+    fitText(this.goalText.setText(g.text), 230);
+    drawBar(this.goalBar, 230, 10, g.progress, 0xffd23f, 0x5a4a6a);
+  }
+
+  /** WANTED and goal side by side when both show, centred otherwise. */
+  private placeStrip() {
+    const y = this.portrait ? 206 : 178;
+    const both = this.wanted.visible && this.goal.visible;
+    const cx = this.wDesign / 2;
+    // Portrait is narrow between the side buttons: shrink the pair so both fit.
+    const k = both && this.portrait ? 0.84 : 1;
+    this.stripScale = k;
+    const gap = 12;
+    const total = (250 + 300) * k + gap;
+    const x0 = cx - total / 2;
+    if (!this.wantedPop) this.wanted.setScale(k);
+    this.goal.setScale(k);
+    this.wanted.setPosition(both ? x0 + 125 * k : cx, y);
+    this.goal.setPosition(both ? x0 + 250 * k + gap + 150 * k : cx, y);
+  }
+
+  private stripScale = 1;
+  private wantedPop = false;
   private chipShown = '';
   private setChip(s: string) {
     if (s === this.chipShown) return;
@@ -284,9 +360,12 @@ export class Hud {
     g.fillStyle(INK, 1).fillRoundedRect(x - 9, -h / 2 - 12, 18, h + 24, 8);
     g.fillStyle(0xffffff, 1).fillRoundedRect(x - 5, -h / 2 - 8, 10, h + 16, 5);
     const red = f.tension >= RED_AT;
-    this.meterText.setText(red ? t('hud.letGo') : f.holding ? t('hud.reeling') : t('hud.holdReel'));
-    this.meterText.setColor(red ? '#ff5a5a' : '#ffffff');
-    this.meterText.setScale(red ? 1 + Math.sin(this.t * 20) * 0.06 : 1);
+    // A pull is coming: flash the frame and tell the player to let go.
+    if (f.warning && Math.sin(this.t * 30) > -0.2) g.lineStyle(6, 0xff8a3d, 1).strokeRoundedRect(-w / 2 - 8, -h / 2 - 8, w + 16, h + 16, (h + 16) / 2);
+    const alert = red || f.warning;
+    this.meterText.setText(alert ? t('hud.letGo') : f.holding ? t('hud.reeling') : t('hud.holdReel'));
+    this.meterText.setColor(red ? '#ff5a5a' : f.warning ? '#ffb15a' : '#ffffff');
+    this.meterText.setScale(alert ? 1 + Math.sin(this.t * 20) * 0.08 : 1);
     this.meterSub.setText(f.target.boss ? t('hud.bossSub') : '');
     // Progress track above.
     if (!f.target.boss) {

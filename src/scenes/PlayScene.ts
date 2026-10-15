@@ -12,7 +12,7 @@ import { devPreset } from '../dev';
 import { bossName, duration, pondName, t } from '../i18n/t';
 import { save } from '../save';
 import { Hud, drawHand } from '../ui/Hud';
-import { CButton, COLORS, CPanel, INK, art, card, fitScale, txt } from '../ui/kit';
+import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
 import { dailyPanel, dexPanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
@@ -122,8 +122,21 @@ export class PlayScene extends BaseScene {
           app.audio.play('nibble', { pitchJitter: 120 });
         },
         bite: () => this.onBite(),
+        softEarly: () => say(this, this.vp.width / 2, this.pond.L.water - 120, t('msg.softEarly'), '#ffffff', 32),
+        again: () => {
+          this.rig.nibble();
+          app.audio.play('nibble', { pitchJitter: 120 });
+          say(this, this.vp.width / 2, this.pond.L.water - 120, t('msg.again'), '#ffe066', 34);
+        },
         hook: (perfect) => this.onHook(perfect),
-        surge: () => app.audio.play('splash', { volume: 0.35, pitchJitter: 200 }),
+        surgeWarn: () => {
+          this.rig.warn();
+          app.audio.play('nibble', { volume: 0.8, pitchJitter: 60 });
+        },
+        surge: () => {
+          app.audio.play('splash', { volume: 0.35, pitchJitter: 200 });
+          if (this.fishing.target.boss) this.cameras.main.shake(160, 0.004);
+        },
         phase: (ph) => {
           this.cameras.main.shake(300, 0.008);
           app.audio.play('boss');
@@ -220,6 +233,8 @@ export class PlayScene extends BaseScene {
 
   private onCast(zone: number, power: number) {
     this.s.stats.casts += 1;
+    // Onboarding grace for the first catches: wider bite window, early taps forgiven.
+    this.fishing.forgiving = this.s.stats.catches < 15;
     this.lucky = this.pg.luckyCastReady && this.s.stats.catches >= 5;
     if (this.lucky) {
       this.s.luckyDay = dayKey();
@@ -282,6 +297,13 @@ export class PlayScene extends BaseScene {
         this.fishing.reset();
         this.afterCatch(res.roll);
       };
+      if (res.streak >= 2 && res.roll.kind === 'fish') this.time.delayedCall(500, () => say(this, this.vp.width / 2, this.pond.L.water - 170, t('msg.streak', { n: res.streak, p: res.streakBonus }), '#7dffb0', 34));
+      if (res.newBounty) {
+        this.time.delayedCall(1300, () => {
+          note(this, t('msg.newWanted'));
+          app.audio.play('pop');
+        });
+      }
       if (isBigCatch(res)) {
         this.modal++;
         this.hud.setVisible(false);
@@ -297,6 +319,7 @@ export class PlayScene extends BaseScene {
       this.roll = null;
       return;
     }
+    this.pg.breakStreak();
     const msg: Record<string, string> = { early: t('msg.early'), missed: t('msg.missed'), snap: t('msg.snap'), escape: t('msg.escape') };
     say(this, this.vp.width / 2, this.pond.L.water - 120, msg[o] ?? '', '#ffffff', 36);
     app.audio.play(o === 'snap' ? 'snap' : 'miss');
@@ -579,7 +602,8 @@ export class PlayScene extends BaseScene {
       this.modal--;
       this.rig.cast(0.55, 2);
       this.rig.setTarget(`fish:${boss.id}`, 0.95);
-      this.fishing.startBoss();
+      this.fishing.lineLevel = this.s.upgrades.line;
+      this.fishing.startBoss(Math.max(0, PONDS.indexOf(this.pond.pond)));
       this.hud.drawBoss(bossName(boss.id), 1, 0);
       this.pond.setBossTeaser(false);
       if (this.s.autoFish) this.fishing.auto = false;
@@ -665,6 +689,7 @@ export class PlayScene extends BaseScene {
               this.bossContinued = true;
               this.rig.cast(0.55, 2);
               this.rig.setTarget(`fish:${boss.id}`, 0.95);
+              this.fishing.lineLevel = this.s.upgrades.line;
               this.fishing.continueBoss(progress);
               this.hud.drawBoss(bossName(boss.id), 1 - progress, this.fishing.bossPhase);
               app.gameplay.start();
@@ -723,6 +748,22 @@ export class PlayScene extends BaseScene {
   }
 
   /** Tutorial lines: short, with the hand doing the showing (Poki: visual, not text-heavy). */
+  /** The goal tracker under the coin counter (see PondGame.nextGoal). */
+  private goalView(): { icon: string; text: string; progress: number } | null {
+    const g = this.pg.nextGoal();
+    if (!g || !this.s.tutorial.includes('done')) return null;
+    switch (g.kind) {
+      case 'dex':
+        return { icon: 'icon:i_book', text: t('goal.dex', { n: g.n, max: g.max }), progress: g.n / g.max };
+      case 'pond':
+        return { icon: 'icon:i_map', text: t('goal.pond', { pond: pondName(g.pond!), n: fmt(g.n), max: fmt(g.max) }), progress: g.n / g.max };
+      case 'travel':
+        return { icon: 'icon:i_map', text: t('goal.travel', { pond: pondName(g.pond!) }), progress: 1 };
+      case 'all':
+        return { icon: 'icon:i_star', text: t('goal.all', { n: g.n, max: g.max }), progress: g.n / g.max };
+    }
+  }
+
   private stepText(step: Step) {
     return t(`tut.${step}`);
   }
@@ -851,6 +892,9 @@ export class PlayScene extends BaseScene {
       bossReady: this.pg.bossReady,
       showHint: tutDone && !f.auto,
       adsOk: app.ads.rewardedAvailable && !app.clean,
+      wanted: s.bounty,
+      wantedKnown: !!(s.bounty && s.dex[s.bounty]),
+      goal: this.goalView(),
     });
     // Coach hand.
     if (this.step) {
