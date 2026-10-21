@@ -1,5 +1,6 @@
 // Fish art: one parametric fish drawn as SVG, 16 species + 2 bosses with their own shape and markings.
 // Facing right. ViewBox 260 x 160, body centred on y = 80.
+import type { BossForm } from '../content/data';
 import { OUTLINE, OUTLINE_W, circle, darken, ellipse, eye, f, flat, lighten, line, linear, nextId, path, radial, svg } from './svg';
 
 export type TailKind = 'fork' | 'round' | 'fan' | 'flow' | 'lunate' | 'spade';
@@ -423,3 +424,26 @@ export const FISH_ART: Record<string, FishArt> = {
   old_whiskers: { len: 200, top: 44, bottom: 40, peak: 0.6, nose: 12, tail: 'round', dorsal: 'small', back: '#5a4a3a', side: '#806a52', belly: '#e3d3b6', fin: '#6d5a46', pattern: 'spots', patternColor: '#3f3227', extras: ['whiskers', 'brows', 'scar'], eyeScale: 0.8 },
   fog_pike: { len: 215, top: 30, bottom: 28, peak: 0.42, nose: 2, tail: 'fork', tailSize: 1.15, dorsal: 'tall', back: '#7c8fb3', side: '#b7c6e0', belly: '#eef3fb', fin: '#9fb0d3', pattern: 'band', patternColor: '#dbe6f7', extras: ['snout', 'teeth', 'brows'] },
 };
+
+/**
+ * A boss in a rematch form (see bossForm in content/data.ts): a new palette and a few extras on
+ * the boss's own body shape, so the fish stays recognisable but each form reads at a glance.
+ */
+export function bossFormArt(a: FishArt, form: BossForm): FishArt {
+  const add = (...e: Extra[]) => [...new Set([...(a.extras ?? []), ...e])];
+  switch (form) {
+    case 'frenzy':
+      // Hot reds, bared teeth, angry brows.
+      return { ...a, back: '#8f2a22', side: '#d9573f', belly: '#ffd9c2', fin: '#b8402f', patternColor: '#4a120c', extras: add('teeth', 'brows') };
+    case 'ghost':
+      // Spectral mint, see-through, with a soft glow.
+      return { ...a, back: '#2f8f8a', side: '#93e0d3', belly: '#effffb', fin: '#6fd1c2', patternColor: '#ffffff', alpha: 0.74, extras: add('glow', 'sparkle').filter((e) => e !== 'scar') };
+    case 'giant':
+      // Mossy stone colours, a bigger body.
+      return { ...a, top: a.top * 1.12, bottom: a.bottom * 1.12, back: '#3f4a3a', side: '#68775e', belly: '#d8dcc4', fin: '#526047', patternColor: '#2a3226', extras: add('scar') };
+    case 'golden':
+      return { ...a, back: '#d99a00', side: '#ffcf3d', belly: '#fff3b0', fin: '#ffb81c', pattern: 'scales', patternColor: '#c27a00', extras: add('crown', 'sparkle') };
+    default:
+      return a;
+  }
+}

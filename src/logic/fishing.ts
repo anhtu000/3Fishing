@@ -3,6 +3,7 @@
 // The scene feeds it press/release and delta time, and draws whatever state it is in.
 // The balance sim and the auto-fish mode drive the same machine.
 import type { Rng } from '../../core/rng';
+import type { BossForm } from '../content/data';
 import { fightOf, type CastZone, type FishingStats } from './rules';
 
 export type Phase = 'ready' | 'charging' | 'flying' | 'waiting' | 'bite' | 'reeling' | 'done';
@@ -51,7 +52,27 @@ export const RED_AT = 0.86;
 /** Normal fish: share of fights where the fish shakes off the hook while reeling (not during onboarding). */
 export const SLIP = { chance: 0.2, from: 0.35, spread: 0.45 };
 
-export const BOSS = { misHeal: 0.25, misGrace: 0.25, warn: 0.5, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
+export const BOSS = { misHeal: 0.25, misHealFirst: 0.1, misGrace: 0.25, warn: 0.5, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
+
+/**
+ * Rematch forms (see bossForm in content/data.ts), as changes to the fight. Tuned with
+ * tools/formtune.ts so each form wins about as often as the classic fight at the same star
+ * (average over stars 1-10, three player types, three bosses: classic 55%, frenzy 60%,
+ * ghost 58%, giant 60% with fights about twice as long, golden 44%).
+ * gap/surge/pull scale the pulls, reel/decay the progress, wear/hold the line, green the zone width,
+ * drift moves the green zone up and down (amplitude, tension units).
+ */
+export const FORM_FIGHT: Record<BossForm, { gap: number; surge: number; pull: number; reel: number; decay: number; wear: number; hold: number; green: number; drift: number; heal: number }> = {
+  classic: { gap: 1, surge: 1, pull: 1, reel: 1, decay: 1, wear: 1, hold: 0, green: 1, drift: 0, heal: 1 },
+  // Many small pulls, closer together: a rhythm fight. More warnings, so each fumble heals less.
+  frenzy: { gap: 0.7, surge: 0.72, pull: 1, reel: 1.1, decay: 1, wear: 1, hold: 0, green: 1, drift: 0, heal: 0.4 },
+  // The sweet spot sways up and down: watch the bar, not just the fish.
+  ghost: { gap: 1, surge: 1, pull: 1.02, reel: 1, decay: 1, wear: 1, hold: 0, green: 0.9, drift: 0.15, heal: 1 },
+  // A long tug of war: slower progress, the line lasts longer.
+  giant: { gap: 1, surge: 1, pull: 1.02, reel: 0.8, decay: 1, wear: 1.2, hold: 0.15, green: 1, drift: 0, heal: 1 },
+  // A bit harder all round, paid with 50% more coins (BOSS_FORM_COINS).
+  golden: { gap: 1, surge: 1.05, pull: 1.03, reel: 1, decay: 1, wear: 1, hold: 0, green: 0.95, drift: 0, heal: 1 },
+};
 
 export class Fishing {
   phase: Phase = 'ready';
@@ -97,6 +118,10 @@ export class Fishing {
   private healedThisWarn = false;
   /** Rematch star (0 = the first fight). Each star pulls and surges a bit harder. */
   bossStar = 0;
+  /** Rematch form: the twist on this fight. */
+  bossForm: BossForm = 'classic';
+  /** Middle of the green zone (moves for the Ghost form). */
+  greenCenter = GREEN_CENTER;
   /** Line upgrade level (set by the game; bosses use it for the line's wear limit). */
   lineLevel = 0;
   /** The fish is about to pull (shown as a thrash): let go now. */
@@ -131,12 +156,14 @@ export class Fishing {
         break;
       case 'reeling': {
         // Boss: pressing when you should let go (during the warning) gives it back some health.
-        // At most once per warning (25% of its health back). The first moment of the warning is
+        // At most once per warning (10% of its health back on the first boss, 25% on the others). The first moment of the warning is
         // free: a tap already on its way when the boss starts thrashing is reaction time, not a fumble.
         if (this.target.boss && !this.healedThisWarn && this.warning && this.surgeIn <= BOSS.warn - BOSS.misGrace) {
           this.healedThisWarn = true;
-          this.progress -= BOSS.misHeal;
-          this.events.bossHeal?.(BOSS.misHeal);
+          // The very first boss (Cozy Pond, not a rematch) is gentler: it is met in the first minutes.
+          const heal = (this.bossLevel === 0 && this.bossStar === 0 ? BOSS.misHealFirst : BOSS.misHeal) * FORM_FIGHT[this.bossForm].heal;
+          this.progress -= heal;
+          this.events.bossHeal?.(heal);
           if (this.progress <= 0) this.finish('escape');
         }
         break;
@@ -161,6 +188,14 @@ export class Fishing {
     }
   }
 
+  /** Pause pressed while charging a cast: drop the charge instead of casting. */
+  cancelCharge() {
+    if (this.phase !== 'charging') return;
+    this.holding = false;
+    this.power = 0;
+    this.set('ready');
+  }
+
   /** Back to ready after the scene has shown the result. */
   reset() {
     this.set('ready');
@@ -175,9 +210,10 @@ export class Fishing {
   }
 
   /** Boss fight: skips the cast and bite, straight to a long reel. */
-  startBoss(level = 0, star = 0) {
+  startBoss(level = 0, star = 0, form: BossForm = 'classic') {
     this.bossLevel = level;
     this.bossStar = star;
+    this.bossForm = form;
     this.target = { rarity: 4, fights: true, boss: true };
     this.perfect = false;
     this.startReel();
@@ -268,7 +304,8 @@ export class Fishing {
 
   private startReel() {
     const f = fightOf(this.target.rarity);
-    this.green = this.target.boss ? 0.3 : this.target.fights ? f.green : 0.6;
+    this.green = this.target.boss ? 0.3 * FORM_FIGHT[this.bossForm].green : this.target.fights ? f.green : 0.6;
+    this.greenCenter = GREEN_CENTER;
     this.tension = this.perfect ? 0.38 : 0.45;
     this.progress = this.perfect ? 0.38 : 0.25;
     this.redTime = 0;
@@ -286,8 +323,11 @@ export class Fishing {
     const f = fightOf(target.rarity);
     const s = this.stats();
     const boss = !!target.boss;
-    const pull = boss ? BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel + this.bossStar * BOSS.pullPerStar : target.fights ? f.pull : 0.06;
+    const form = FORM_FIGHT[boss ? this.bossForm : 'classic'];
+    const pull = boss ? (BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel + this.bossStar * BOSS.pullPerStar) * form.pull : target.fights ? f.pull : 0.06;
     const gentle = this.assist ? 0.5 : 1;
+    // Ghost form: the green zone sways slowly (about one swing every 4.5 s).
+    if (form.drift > 0) this.greenCenter = GREEN_CENTER + form.drift * Math.sin(this.t * 1.4);
 
     // Fish surges: the fish thrashes (warning), then pulls hard. Holding the line during the pull
     // spikes the tension; letting go in time takes most of the pull. Bosses surge harder later on.
@@ -302,9 +342,10 @@ export class Fishing {
         this.warning = false;
         this.healedThisWarn = false;
         this.surgeLeft = 0.32;
-        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? BOSS.surge + this.bossLevel * BOSS.surgePerLevel + this.bossStar * BOSS.surgePerStar : 1.25);
+        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? (BOSS.surge + this.bossLevel * BOSS.surgePerLevel + this.bossStar * BOSS.surgePerStar) * form.surge : 1.25);
         const gap = boss ? [1.3, 1.0, 0.75][this.bossPhase] : 1.5 - pull;
-        this.surgeIn = gap + this.rng.next() * 0.9;
+        // Never shorter than the warning plus a beat, so every pull can still be read.
+        this.surgeIn = boss ? Math.max(BOSS.warn + 0.15, (gap + this.rng.next() * 0.9) * form.gap) : gap + this.rng.next() * 0.9;
         this.events.surge?.(this.surgePower);
       }
     }
@@ -319,25 +360,25 @@ export class Fishing {
     this.tension += surge * dt;
     this.tension = Math.max(0, Math.min(1, this.tension));
 
-    const lo = GREEN_CENTER - this.green / 2;
-    const hi = GREEN_CENTER + this.green / 2;
+    const lo = this.greenCenter - this.green / 2;
+    const hi = this.greenCenter + this.green / 2;
     const red = this.tension >= RED_AT;
-    const reel = boss ? BOSS.reel * Math.sqrt(s.reelMult) : (target.fights ? f.reel : 0.9) * s.reelMult * (this.auto ? 0.5 : 1) * (this.assist ? 1.6 : 1);
+    const reel = boss ? BOSS.reel * Math.sqrt(s.reelMult) * form.reel : (target.fights ? f.reel : 0.9) * s.reelMult * (this.auto ? 0.5 : 1) * (this.assist ? 1.6 : 1);
     if (this.holding) {
       const zone = this.tension >= lo && this.tension <= hi ? 1 : red ? 0.3 : 0.6;
       this.progress += reel * zone * dt;
     } else {
-      this.progress -= (boss ? BOSS.decay : pull * 0.12) * dt;
+      this.progress -= (boss ? BOSS.decay * form.decay : pull * 0.12) * dt;
     }
 
     if (red) {
       this.redTime += dt;
       // Bosses wear the line down: time in the red adds up over the fight and fades slowly,
       // so each ignored pull counts. Line upgrades help a little.
-      const hold = boss ? BOSS.hold + BOSS.holdPerLine * this.lineLevel : s.lineHold * (this.assist ? 2 : 1);
+      const hold = boss ? BOSS.hold + BOSS.holdPerLine * this.lineLevel + form.hold : s.lineHold * (this.assist ? 2 : 1);
       if (this.redTime >= hold) return this.finish('snap');
     } else {
-      this.redTime = Math.max(0, this.redTime - dt * (boss ? Math.max(0.12, BOSS.wear - this.bossStar * BOSS.wearPerStar) : 2));
+      this.redTime = Math.max(0, this.redTime - dt * (boss ? Math.max(0.12, BOSS.wear - this.bossStar * BOSS.wearPerStar) * form.wear : 2));
     }
     if (boss) {
       const ph = this.progress > 0.66 ? 2 : this.progress > 0.33 ? 1 : 0;
@@ -364,7 +405,7 @@ export class Fishing {
 
   /** Green zone bounds, for drawing. */
   get greenRange(): [number, number] {
-    return [GREEN_CENTER - this.green / 2, GREEN_CENTER + this.green / 2];
+    return [this.greenCenter - this.green / 2, this.greenCenter + this.green / 2];
   }
 }
 

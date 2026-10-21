@@ -13,6 +13,8 @@ interface PokiSDKApi {
   rewardedBreak(options: { size?: 'small' | 'medium' | 'large'; onStart?: () => void }): Promise<boolean>;
   /** Player's language as a base code ('en', 'pt'), synchronous. */
   getLanguage?(): string;
+  /** Funnel event, e.g. measure('level', '1', 'complete'). */
+  measure?(category: string, what?: string, action?: string): void;
 }
 
 declare global {
@@ -68,6 +70,10 @@ export class PokiPlatform implements Platform {
   }
   happyTime() {
     // No happy-time call in Poki SDK v2.
+  }
+
+  measure(category: string, what: string, action?: string) {
+    this.safe('measure', () => this.sdk.measure?.(category, what, action));
   }
 
   showAd(kind: AdKind, onStarted: () => void): Promise<AdOutcome> {
@@ -129,10 +135,19 @@ export class PokiPlatform implements Platform {
   }
 }
 
-/** Poki requirement: arrow keys, space and the mouse wheel must not scroll the portal page. */
-function preventPageJumps() {
+/** Keys that scroll a page. Inside the Poki iframe they would scroll the portal page around the game. */
+const SCROLL_KEYS = ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', ' ', 'Spacebar', 'PageUp', 'PageDown', 'Home', 'End'];
+let pageJumpsBlocked = false;
+
+/**
+ * Poki requirement: keys and the mouse wheel inside the game must not scroll the portal page.
+ * Called for every Poki build, also when the SDK script did not load (ad blocker).
+ */
+export function preventPageJumps() {
+  if (pageJumpsBlocked) return;
+  pageJumpsBlocked = true;
   window.addEventListener('keydown', (ev) => {
-    if (['ArrowDown', 'ArrowUp', ' '].includes(ev.key)) ev.preventDefault();
+    if (SCROLL_KEYS.includes(ev.key)) ev.preventDefault();
   });
   window.addEventListener('wheel', (ev) => ev.preventDefault(), { passive: false });
 }

@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { BOSS_LURE, BOSS_STARS, CHALLENGE, PONDS, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
+import { BOSS_LURE, BOSS_STARS, CHALLENGE, PONDS, bossForm, type BossForm, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
@@ -12,12 +12,20 @@ import { LocalLeaderboard, formatTime, type Leaderboard } from '../logic/leaderb
 import { devPreset } from '../dev';
 import { bossName, duration, eggName, fishName, pondName, t } from '../i18n/t';
 import { save } from '../save';
+import { loadSounds } from '../sounds';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
 import { basketPanel, challengePanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
 import { Rig } from '../world/Rig';
+import { loadBossForm } from '../render/textures';
+
+/** Colour of each rematch form: name on the banner and the boss health bar. */
+const FORM_CSS: Record<BossForm, string> = { classic: '#ffe066', frenzy: '#ff7a5c', ghost: '#7fffe4', giant: '#b6d98a', golden: '#ffd23f' };
+/** Under-water shape of the hooked boss: the form shows through as a colour cast. */
+const FORM_SHADE: Record<BossForm, number> = { classic: 0x10243d, frenzy: 0x5c1410, ghost: 0x1f6e68, giant: 0x1c2a14, golden: 0x7a5600 };
+const FORM_BAR: Record<BossForm, number> = { classic: 0xff4d6d, frenzy: 0xff6a3d, ghost: 0x4fd6c4, giant: 0x7fae4f, golden: 0xffc21c };
 
 type Step = 'cast' | 'bite' | 'reel' | 'egg' | 'hatch' | 'upgrade' | 'boss';
 
@@ -34,6 +42,8 @@ export class PlayScene extends BaseScene {
   private lucky = false;
   /** Open panels and popups. Fishing input is ignored while above 0. */
   private modal = 0;
+  /** True while the pause panel is open: the fishing state and the clocks stand still. */
+  private frozen = false;
   private panel: CPanel | null = null;
   private bossTries = 0;
   private bossContinued = false;
@@ -126,7 +136,7 @@ export class PlayScene extends BaseScene {
           app.audio.play('nibble', { pitchJitter: 120 });
         },
         bite: () => this.onBite(),
-        softEarly: () => say(this, this.vp.width / 2, this.pond.L.water - 120, t('msg.softEarly'), '#ffffff', 32),
+        softEarly: () => note(this, t('msg.softEarly'), 1600),
         again: () => {
           this.rig.nibble();
           app.audio.play('nibble', { pitchJitter: 120 });
@@ -171,7 +181,7 @@ export class PlayScene extends BaseScene {
     // Wardrobe look and the gold-pond cup.
     this.applyStyle();
     this.pond.setTrophy(this.pg.lateGame && pondGold(s, this.pond.pond));
-    this.startMusic();
+    loadSounds(this, () => this.startMusic());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.music?.stop());
 
     // Welcome back: angler pets fished while you were away; then the daily gift.
@@ -227,7 +237,6 @@ export class PlayScene extends BaseScene {
     // handler closes it first and this one sees the panel still open and does nothing.
     kb?.on('keydown-ESC', () => {
       if (this.modal > 0 || (this.panel && !this.panel.isClosed)) return;
-      if (this.fishing.phase === 'reeling' || this.fishing.phase === 'bite') return;
       this.openPause();
     });
     kb?.on('keydown-SPACE', (e: KeyboardEvent) => {
@@ -442,19 +451,27 @@ export class PlayScene extends BaseScene {
     if (this.modal === 0) app.gameplay.start();
   }
 
-  private open(make: () => CPanel) {
+  /**
+   * Opens a panel. Menus wait until the line is back in; the pause panel (`freeze`) opens at any
+   * moment and freezes the cast, the bite or the fight exactly where it is (Poki: ESC pauses anytime).
+   */
+  private open(make: () => CPanel, freeze = false) {
     if (this.panel && !this.panel.isClosed) return;
-    if (this.fishing.phase === 'charging') this.fishing.release();
-    if (this.fishing.busy && this.fishing.phase !== 'done') {
-      note(this, t('msg.finishFirst'));
-      return;
+    if (!freeze) {
+      if (this.fishing.phase === 'charging') this.fishing.release();
+      if (this.fishing.busy && this.fishing.phase !== 'done') {
+        note(this, t('msg.finishFirst'));
+        return;
+      }
     }
+    if (freeze) this.frozen = true;
     this.modal++;
     this.stopPlay();
     const p = make();
     this.panel = p;
     p.once(Phaser.GameObjects.Events.DESTROY, () => {
       this.modal--;
+      if (freeze) this.frozen = false;
       if (this.panel === p) this.panel = null;
       this.refresh();
       void this.resumePlay();
@@ -462,6 +479,8 @@ export class PlayScene extends BaseScene {
   }
 
   private openPause() {
+    // A held charge is dropped, not cast: the player pressed pause, not release.
+    if (this.fishing.phase === 'charging') this.fishing.cancelCharge();
     this.open(() => {
       const p = new CPanel(this, { title: t('pause.title'), w: 600, h: 680, color: COLORS.teal });
       p.content.add(
@@ -500,7 +519,7 @@ export class PlayScene extends BaseScene {
         p.content.add(b);
       });
       return p;
-    });
+    }, true);
   }
 
   /** Set before a language switch rebuilds the scene, so the welcome-back screen is not shown again. */
@@ -608,6 +627,7 @@ export class PlayScene extends BaseScene {
       const p = dailyPanel(this, this.ctx, () => {
         const r = this.pg.claimDailyGift();
         if (!r) return;
+        app.measure('daily', `day${this.s.daily.streak}`, 'claim');
         if (r.coins) flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
         if (r.where === 'nest') this.time.delayedCall(500, () => note(this, t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) })));
         app.audio.play('reward');
@@ -744,6 +764,7 @@ export class PlayScene extends BaseScene {
     const ms = Math.round(run.elapsedMs);
     const r = success ? this.pg.finishChallenge(def, ms) : null;
     if (r) void this.board.submit(def.id, ms);
+    app.measure('challenge', def.id, success ? 'clear' : 'fail');
     this.modal++;
     this.stopPlay();
     app.audio.play(success ? 'win' : 'miss');
@@ -782,6 +803,10 @@ export class PlayScene extends BaseScene {
 
   /** Star of the rematch in progress (0: the first fight with the pond's boss). */
   private rematchStar = 0;
+  /** Form of the boss in the fight in progress (rematches have forms; see bossForm). */
+  private rematchForm: BossForm = 'classic';
+  /** Texture of the boss in the fight in progress (its form, once drawn). */
+  private bossTex = '';
   /** The last fish shook off the hook (for the message). */
   private slipped = false;
 
@@ -792,6 +817,14 @@ export class PlayScene extends BaseScene {
     this.rematchStar = star ?? 0;
     if (!rematch) this.completeStep('boss');
     const boss = this.pond.pond.boss;
+    const pondIndex = Math.max(0, PONDS.indexOf(this.pond.pond));
+    const form = rematch ? bossForm(pondIndex, this.rematchStar) : 'classic';
+    this.rematchForm = form;
+    this.bossTex = `fish:${boss.id}`;
+    // Funnel (Poki measure): first fights by boss, rematches by boss and star.
+    app.measure(rematch ? 'rematch' : 'boss', rematch ? `${boss.id}-star${this.rematchStar}` : boss.id, 'start');
+    // The form's texture is drawn while the banner shows.
+    void loadBossForm(this, boss.id, form).then((key) => (this.bossTex = key));
     this.bossTries += 1;
     this.bossContinued = false;
     this.modal++;
@@ -801,14 +834,30 @@ export class PlayScene extends BaseScene {
     const title = this.rematchStar ? `${bossName(boss.id)}\n★ ${this.rematchStar}` : t('boss.appears', { boss: bossName(boss.id) });
     const banner = txt(this, vp.width / 2, vp.height * 0.22, title, 70, { color: '#ffe066' }).setDepth(1500).setScale(0.4);
     this.tweens.add({ targets: banner, scale: 1, duration: 400, ease: 'Back.Out' });
-    this.time.delayedCall(1500, () => {
+    // Rematch form: its name in the form's colour and one line on the twist, read during the banner.
+    const extra: Phaser.GameObjects.GameObject[] = [];
+    if (form !== 'classic') {
+      const y = vp.height * 0.22 + banner.height / 2 + 40;
+      const name = txt(this, vp.width / 2, y, t(`form.${form}`), 46, { color: FORM_CSS[form] }).setDepth(1500).setAlpha(0);
+      const tip = txt(this, vp.width / 2, y + 58, t(`form.${form}Tip`), 30, { wrap: Math.min(620, vp.width - 60) }).setDepth(1500).setAlpha(0);
+      // A dark plate behind the whole block, so the coloured name reads on any pond (snow, sky).
+      const top = vp.height * 0.22 - banner.height / 2 - 18;
+      const bottom = tip.y + tip.height / 2 + 18;
+      const w = Math.min(vp.width - 24, Math.max(banner.width, name.width, tip.width) + 70);
+      const plate = this.add.graphics().setDepth(1499).setAlpha(0);
+      plate.fillStyle(INK, 0.62).fillRoundedRect(vp.width / 2 - w / 2, top, w, bottom - top, 28);
+      extra.push(plate, name, tip);
+      this.tweens.add({ targets: extra, alpha: 1, delay: 150, duration: 250 });
+    }
+    this.time.delayedCall(form === 'classic' ? 1500 : 2600, () => {
       banner.destroy();
+      extra.forEach((o) => o.destroy());
       this.modal--;
       this.rig.cast(0.55, 2);
-      this.rig.setTarget(`fish:${boss.id}`, 0.95);
+      this.rig.setTarget(this.bossTex, form === 'giant' ? 1.15 : 0.95, FORM_SHADE[form]);
       this.fishing.lineLevel = this.s.upgrades.line;
-      this.fishing.startBoss(Math.max(0, PONDS.indexOf(this.pond.pond)), this.rematchStar);
-      this.hud.drawBoss(this.bossLabel(), 1, 0);
+      this.fishing.startBoss(pondIndex, this.rematchStar, form);
+      this.hud.drawBoss(this.bossLabel(), 1, 0, FORM_BAR[form]);
       this.pond.setBossTeaser(false);
       if (this.s.autoFish) this.fishing.auto = false;
     });
@@ -829,11 +878,12 @@ export class PlayScene extends BaseScene {
     const vp = this.vp;
     const layer = this.add.container(0, 0).setDepth(1400);
     const dim = this.add.rectangle(0, 0, vp.width, vp.height, 0x1a1030, 0.6).setOrigin(0).setInteractive();
-    const img = art(this, from.x, from.y, `fish:${boss.id}`, 0.6);
+    const key = this.textures.exists(this.bossTex) ? this.bossTex : `fish:${boss.id}`;
+    const img = art(this, from.x, from.y, key, 0.6);
     const ray = rays(this, vp.width / 2, vp.height * 0.34, 0xffe066, Math.min(800, vp.height * 0.9));
     const plate = card(this, vp.width / 2, vp.height * 0.66, Math.min(520, vp.width - 60), vp.height * 0.3, 0xfff6e6, 30).setAlpha(0.96);
     layer.add([dim, ray, plate, img]);
-    this.tweens.add({ targets: img, x: vp.width / 2, y: vp.height * 0.34, scale: fitScale(`fish:${boss.id}`, 420), angle: 360, duration: 700, ease: 'Cubic.Out' });
+    this.tweens.add({ targets: img, x: vp.width / 2, y: vp.height * 0.34, scale: fitScale(key, 420), angle: 360, duration: 700, ease: 'Cubic.Out' });
     this.time.delayedCall(600, () => sparkles(this, vp.width / 2, vp.height * 0.34, 16, 220));
     app.audio.play('win');
     const head = txt(this, vp.width / 2, vp.height * 0.16, t('rematch.cleared', { n: star }), 60, { color: '#ffe066' });
@@ -871,8 +921,9 @@ export class PlayScene extends BaseScene {
   }
 
   private onBossEnd(o: Outcome) {
-    if (o === 'caught' && this.rematchStar) return this.onRematchWin();
     const boss = this.pond.pond.boss;
+    app.measure(this.rematchStar ? 'rematch' : 'boss', this.rematchStar ? `${boss.id}-star${this.rematchStar}` : boss.id, o === 'caught' ? 'win' : 'lose');
+    if (o === 'caught' && this.rematchStar) return this.onRematchWin();
     this.hud.hideBoss();
     this.fishing.auto = this.s.autoFish && this.pg.autoUnlocked;
     if (o === 'caught') {
@@ -926,7 +977,7 @@ export class PlayScene extends BaseScene {
     const p = new CPanel(this, { title: t('boss.gotAway', { boss: bossName(boss.id) }), w: 600, h: 860, color: COLORS.red, closable: false });
     this.modal++;
     this.stopPlay();
-    p.content.add(art(this, 0, p.top + 110, `fish:${boss.id}`, 0.8));
+    p.content.add(art(this, 0, p.top + 110, this.textures.exists(this.bossTex) ? this.bossTex : `fish:${boss.id}`, 0.8));
     p.content.add(txt(this, 0, p.top + 230, t('boss.progress', { n: Math.round(progress * 100) }), 30, { color: '#7a6a8a', stroke: false, wrap: 520 }));
     p.content.add(txt(this, 0, p.top + 276, t('boss.tip'), 26, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 }));
     const done = () => {
@@ -1043,6 +1094,7 @@ export class PlayScene extends BaseScene {
     if (!this.s.tutorial.includes(step)) {
       if (step === 'upgrade' && this.step !== 'upgrade') return;
       this.s.tutorial.push(step);
+      app.measure('tutorial', step, 'complete');
     }
     if (step === 'reel') this.fishing.assist = false;
     if (this.step === step) {
@@ -1051,7 +1103,10 @@ export class PlayScene extends BaseScene {
       this.coachHand.setVisible(false);
     }
     const core: Step[] = ['cast', 'bite', 'reel', 'egg', 'hatch', 'upgrade'];
-    if (!this.s.tutorial.includes('done') && core.every((c) => this.s.tutorial.includes(c))) this.s.tutorial.push('done');
+    if (!this.s.tutorial.includes('done') && core.every((c) => this.s.tutorial.includes(c))) {
+      this.s.tutorial.push('done');
+      app.measure('tutorial', 'all', 'complete');
+    }
   }
 
   private placeCoach() {
@@ -1068,10 +1123,13 @@ export class PlayScene extends BaseScene {
   private coachTarget(): { x: number; y: number } | null {
     switch (this.step) {
       case 'cast':
-        return { x: this.vp.width * 0.66, y: this.pond.L.water + 220 };
       case 'bite':
-      case 'reel':
-        return { x: this.vp.width * 0.66, y: this.pond.L.water + 220 };
+      case 'reel': {
+        // Open water: under the surface, but well above the button row (short landscape phones
+        // would otherwise put the finger on the Map button).
+        const y = Math.min(this.pond.L.water + 220, this.hud.bottom[0].y - 190);
+        return { x: this.vp.width * 0.66, y: Math.max(this.pond.L.water + 90, y) };
+      }
       case 'hatch':
         return this.hud.eggTarget();
       case 'upgrade':
@@ -1102,6 +1160,11 @@ export class PlayScene extends BaseScene {
     const dt = Math.min(0.1, delta / 1000);
     const s = this.s;
     const f = this.fishing;
+    // Pause panel: everything stands still (cast, bite window, fight, auto fishing, egg timers).
+    if (this.frozen) {
+      this.pond.update(dt);
+      return;
+    }
     if (this.modal === 0 || f.phase === 'reeling') {
       if (f.auto && this.modal === 0) this.bot.update(dt);
       f.update(dt);
@@ -1126,7 +1189,7 @@ export class PlayScene extends BaseScene {
     }
     this.pond.update(dt);
     this.rig.update(dt, f);
-    if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(this.bossLabel(), 1 - f.progress, f.bossPhase);
+    if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(this.bossLabel(), 1 - f.progress, f.bossPhase, FORM_BAR[this.rematchForm]);
     // Challenge clock: runs only while playing (menus and pause stop it).
     const run = this.run;
     if (run && !run.over && this.modal === 0) {

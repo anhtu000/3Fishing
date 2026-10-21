@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Goldköder! Glück x2 für 5 Minuten",
     "incubatorFull": "Der Brutkasten ist voll. Lass zuerst ein Ei schlüpfen!",
-    "autoOn": "Auto-Angeln an: langsamer, und es verpasst manche Bisse. Tippe aufs Wasser, um selbst zu angeln.",
+    "autoOn": "Auto-Angeln an: langsamer, verpasst manche Bisse.",
     "autoOff": "Auto-Angeln aus",
     "autoUnlocked": "Auto-Angeln freigeschaltet! Tippe links auf den runden Knopf.",
     "phase": "Phase {n}!",
@@ -61,7 +61,7 @@
     "todayFish": "Fisch des Tages: {fish} ({pond})! x5 Münzen und ein besonderes Ei",
     "nestEgg": "Besonderes Ei im Nest! Schlüpft in {t}",
     "todayDone": "Fisch des Tages gefangen! Morgen gibt es einen neuen",
-    "lateUnlock": "Neu: Herausforderungen (Pokal-Knopf), Medaillen im Fischdex, Boss-Revanchen mit Sternen und der Kleiderschrank bei Verbessern!",
+    "lateUnlock": "Neu: Herausforderungen, Medaillen, Boss-Sterne und Kleiderschrank!",
     "slip": "Er hat sich losgerissen!",
     "bossHeal": "Zu früh! Der Boss heilt sich"
   },
@@ -393,5 +393,15 @@
     "hint": "Der Fisch, der dem Köder am nächsten ist, beißt. Ziele gut!",
     "fishShort": "Fische {n}/{max}",
     "kindsShort": "Arten {n}/{max}"
+  },
+  "form": {
+    "frenzy": "Rasende Form",
+    "ghost": "Geisterform",
+    "giant": "Riesenform",
+    "golden": "Goldene Form",
+    "frenzyTip": "Die Züge kommen schnell hintereinander!",
+    "ghostTip": "Die grüne Zone wandert. Folge ihr!",
+    "giantTip": "Ein langer Kampf, aber deine Schnur hält länger.",
+    "goldenTip": "Stärkste Form. +50 % Münzen!"
   }
 }

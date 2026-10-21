@@ -2,6 +2,7 @@
 //   bun tools/bosstest.ts
 import { Rng } from '../core/rng';
 import { BOSS, Fishing } from '../src/logic/fishing';
+import { BOSS_FORMS, bossForm, type BossForm } from '../src/content/data';
 import { fishingStats } from '../src/logic/rules';
 import { defaultSave } from '../src/logic/model';
 
@@ -18,12 +19,16 @@ const gear = [
 const over = process.argv[2] ? JSON.parse(process.argv[2]) : {};
 // STARS=1 tests rematch stars with late-game gear instead.
 const STARS = process.env.STARS ? [1, 3, 5, 7, 10] : [0];
+// FORMS=1: every rematch form at each star (otherwise the form the game picks for that star).
+const FORMS: (BossForm | null)[] = process.env.FORMS ? BOSS_FORMS : [null];
 Object.assign(BOSS, over);
 for (const [lvl, g0] of gear.entries()) {
   for (const star of STARS) {
   // Gear keeps growing after the last pond: a player on ★7-10 has a better rod and line.
   const late: Record<number, [number, number]> = { 1: [17, 14], 3: [18, 15], 5: [22, 17], 7: [26, 19], 10: [30, 20] };
   const g = star ? { ...g0, rod: late[star][0], line: late[star][1] } : g0;
+  for (const formOpt of FORMS) {
+  const form = formOpt ?? bossForm(lvl, star);
   for (const p of players) {
     let wins = 0;
     const times: number[] = [];
@@ -35,7 +40,7 @@ for (const [lvl, g0] of gear.entries()) {
       let outcome = '';
       const f = new Fishing(rng, () => fishingStats(s, 0, 0), { end: (o) => (outcome = o) });
       f.lineLevel = g.line;
-      f.startBoss(lvl, star);
+      f.startBoss(lvl, star, form);
       const hist: { t: number; v: number }[] = [];
       let t = 0;
       let warnAt = -1;
@@ -63,7 +68,8 @@ for (const [lvl, g0] of gear.entries()) {
       }
     }
     times.sort((a, b) => a - b);
-    console.log(`${g.pond.padEnd(7)} ★${star} ${p.name.padEnd(8)} first-try win ${((wins / 300) * 100).toFixed(0)}%  median ${times[Math.floor(times.length / 2)]?.toFixed(1) ?? '-'}s`);
+    console.log(`${g.pond.padEnd(7)} ★${star} ${form.padEnd(7)} ${p.name.padEnd(8)} first-try win ${((wins / 300) * 100).toFixed(0)}%  median ${times[Math.floor(times.length / 2)]?.toFixed(1) ?? '-'}s`);
   }
+}
 }
 }

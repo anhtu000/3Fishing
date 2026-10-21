@@ -134,6 +134,19 @@ class App extends Emitter<{ language: [lang: string] }> {
     }
   }
 
+  /**
+   * Funnel event for the portal's analytics (Poki: PokiSDK.measure, shown with test results).
+   * Example: measure('boss', 'old_whiskers', 'win'). Characters Poki rejects are stripped.
+   */
+  measure(category: string, what: string, action?: string) {
+    const clean = (v: string) => v.replace(/[/^]/g, '-');
+    try {
+      this.platform.measure?.(clean(category), clean(what), action === undefined ? undefined : clean(action));
+    } catch {
+      // analytics never break the game
+    }
+  }
+
   /** Opens the pause overlay on top of a gameplay scene. */
   openPause(from: Phaser.Scene) {
     if (this.game.scene.isActive('Pause')) return;

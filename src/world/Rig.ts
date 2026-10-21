@@ -146,11 +146,12 @@ export class Rig {
   }
 
   /** What is on the line. Dark until landed. */
-  setTarget(key: string, size: number) {
+  /** The hooked fish, seen as a dark shape under water. `shade` tints it (boss rematch forms). */
+  setTarget(key: string, size: number, shade = 0x10243d) {
     this.targetKey = key;
     this.targetSize = size;
     setArt(this.target, key, size);
-    this.target.setTint(0x10243d).setTintMode(Phaser.TintModes.FILL).setAlpha(0);
+    this.target.setTint(shade).setTintMode(Phaser.TintModes.FILL).setAlpha(0);
   }
 
   splash(x: number, y: number, n = 12) {

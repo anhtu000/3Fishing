@@ -2,7 +2,7 @@
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
 import { claimDaily, dailyStatus, dayKey } from '../../core/time';
-import { AD, BOSS_LURE, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { AD, BOSS_FORM_COINS, BOSS_LURE, bossForm, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
@@ -454,7 +454,7 @@ export class PondGame {
     s.tickets.used += 1;
     const before = this.starsTotal;
     s.bossStars[pond.boss.id] = Math.max(s.bossStars[pond.boss.id] ?? 0, star);
-    const coins = Math.round(BOSS_STARS.coins * pond.priceMult * (1 + BOSS_STARS.coinsPerStar * star));
+    const coins = Math.round(BOSS_STARS.coins * pond.priceMult * (1 + BOSS_STARS.coinsPerStar * star) * BOSS_FORM_COINS[bossForm(PONDS.indexOf(pond), star)]);
     this.earn(coins);
     const tier = star >= BOSS_STARS.legendaryFrom ? 4 : 3;
     const where = storeEgg(s, tier, pond.id, BOSS_STARS.shiny + BOSS_STARS.shinyPerStar * star);

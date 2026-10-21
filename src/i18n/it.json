@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Esca d'oro! Fortuna x2 per 5 minuti",
     "incubatorFull": "L'incubatrice è piena. Prima schiudi un uovo!",
-    "autoOn": "Pesca automatica attiva: più lenta e perde qualche abboccata. Tocca l'acqua per pescare da solo.",
+    "autoOn": "Pesca automatica attiva: più lenta, perde qualche abboccata.",
     "autoOff": "Pesca automatica disattivata",
     "autoUnlocked": "Pesca automatica sbloccata! Tocca il pulsante rotondo a sinistra.",
     "phase": "Fase {n}!",
@@ -61,7 +61,7 @@
     "todayFish": "Pesce del giorno: {fish} ({pond})! x5 monete e un uovo speciale",
     "nestEgg": "Uovo speciale nel nido! Si schiude tra {t}",
     "todayDone": "Pesce del giorno pescato! Domani ce n'è un altro",
-    "lateUnlock": "Novità: Sfide (pulsante trofeo), medaglie nel Pescedex, rivincite boss con stelle e guardaroba in Migliora!",
+    "lateUnlock": "Novità: Sfide, medaglie, stelle boss e guardaroba!",
     "slip": "Si è slamato!",
     "bossHeal": "Troppo presto! Il boss si cura"
   },
@@ -393,5 +393,15 @@
     "hint": "Abbocca il pesce più vicino all'esca. Mira bene!",
     "fishShort": "Pesci {n}/{max}",
     "kindsShort": "Specie {n}/{max}"
+  },
+  "form": {
+    "frenzy": "Forma frenetica",
+    "ghost": "Forma fantasma",
+    "giant": "Forma gigante",
+    "golden": "Forma dorata",
+    "frenzyTip": "Strattoni veloci, uno dopo l'altro!",
+    "ghostTip": "La zona verde si sposta. Seguila!",
+    "giantTip": "Una lotta lunga, ma la lenza resiste di più.",
+    "goldenTip": "La forma più forte. +50% monete!"
   }
 }

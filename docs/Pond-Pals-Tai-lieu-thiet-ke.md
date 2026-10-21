@@ -54,6 +54,22 @@ Một lần câu gồm ba nhịp, tổng cộng 5–12 giây, cả ba đều ch�
 
 **Độ hiếm của cá và trứng:** Thường 60% · Khá 25% · Hiếm 10% · Sử thi 4% · Huyền thoại 1%. Mỗi 1% luck chuyển 1 điểm tỉ lệ từ bậc Thường sang các bậc trên, chia đều theo tỉ lệ của chúng.
 
+**Boss.** Mỗi hồ có một boss, xuất hiện khi Sổ cá đủ 6/7/8 loài. Trận boss là một lần kéo dài 25–40 giây: boss giật theo nhịp, có cảnh báo "LET GO!" trước mỗi cú giật; giữ dây lúc giật thì dây mòn dần.
+- Bấm giữ trong lúc boss đang cảnh báo (sau 0,25 giây phản xạ) thì boss hồi máu, tối đa một lần mỗi cảnh báo: boss đầu (Cozy Pond) hồi 10%, các boss sau và trận đấu lại hồi 25%.
+- Thua thì phải câu thêm 5/8/10 con trong hồ để dụ boss quay lại, hoặc xem quảng cáo để kéo tiếp.
+
+**Đấu lại boss (cuối game).** Mỗi boss có 10 sao, mỗi ngày 3 vé thắng. Sao càng cao boss kéo càng mạnh, thưởng xu và trứng càng lớn. Từ ★2, boss xuất hiện ở các **dạng** khác nhau để mỗi trận chơi khác đi:
+
+| Dạng | Nhìn | Khác ở trận đấu |
+| --- | --- | --- |
+| Thường (★1) | Như boss gốc | Không |
+| Cuồng nộ (Frenzy) | Đỏ, nhe răng | Cú giật nhỏ hơn nhưng dồn dập; bấm sai chỉ hồi 40% mức thường |
+| Ma (Ghost) | Xanh bạc hà, trong suốt, phát sáng | Vùng xanh trôi lên xuống, phải bám theo |
+| Khổng lồ (Giant) | Màu đá rêu, to hơn | Kéo lâu gần gấp đôi, dây bền hơn |
+| Vàng (Golden; ★10 luôn là dạng này) | Vàng, đội vương miện | Khó hơn một chút, thưởng xu ×1,5 |
+
+★2–9 xoay vòng 4 dạng, lệch nhau giữa 3 hồ nên cùng một sao thì ba boss mang ba dạng khác nhau. Tỉ lệ thắng của từng dạng được cân bằng gần bằng dạng thường bằng `tools/formtune.ts`.
+
 **Tự câu** mở khóa ở hồ thứ 2. Bật lên thì game tự thả và kéo với hiệu suất 50% so với câu tay, hợp với người vừa chơi vừa xem video.
 
 ## Trứng và thú cưng

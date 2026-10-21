@@ -375,3 +375,42 @@ Thu nhập mỗi phút (sim, người chơi trung bình): Cozy khoảng 180–20
 Đấu lại theo sao (đồ cuối game): ★1 ~58–77%, ★3 ~46–57%, ★5 ~40%, ★7 ~30%, ★10 ~10–22%.
 
 **Nhãn sao boss rõ nghĩa.** ★ là độ khó trận đấu lại, mỗi boss tính riêng (tối đa 10). Nút ghi "Rematch: boss ★N"; Fishdex có dòng giải thích và hàng 10 sao (sao đã đạt tô vàng); Wardrobe ghi tiến độ mũ Captain "★ n/15" và lời nhắc cách kiếm sao.
+
+## 16. v1.12: sửa lỗi nộp Poki, boss đầu dễ hơn, dạng boss khi đấu lại, chuẩn bị Player Fit Test
+
+**Lỗi đã sửa (theo bản đánh giá nộp Poki ngày 22/10):**
+
+| Lỗi | Trước | Sau |
+| --- | --- | --- |
+| Phím cuộn trang Poki | PageDown, End cuộn trang; khi SDK bị chặn thì cả mũi tên xuống | Chặn mũi tên, Space, PageUp/PageDown, Home/End, con lăn; bật cả khi SDK không tải được. Đo lại: 0 px ở cả hai trường hợp |
+| ESC khi đang có dây dưới nước | Bị bỏ qua hoặc báo "Finish this catch first!" | Pause được mọi lúc. Lượt câu, cửa sổ cắn câu, trận boss, tự câu và đồng hồ ấp trứng đứng yên đến khi tiếp tục. Đang gồng lực thì bỏ lượt quăng chứ không quăng |
+| Âm thanh tải trước khi vào game | 636 KB tải trước | Tải nền sau khi hồ hiện ra. Đến `gameLoadingFinished`: 4G 5,8 → 5,5 s; 3G nhanh 10,7 → 8,2 s; 3G chậm 35,5 → 18,6 s |
+| Thông báo chồng nhau | Hai thông báo có thể đè lên nhau | Thông báo mới thay thông báo cũ; cùng nội dung thì chỉ kéo dài thời gian hiện |
+| Thông báo dài | Mở tính năng cuối game 112 ký tự; bật tự câu 82 ký tự | Còn khoảng 50 ký tự, cả 6 ngôn ngữ |
+| Tay chỉ hướng dẫn (điện thoại ngang) | Đè lên nút Map | Luôn ở trên hàng nút |
+
+**Boss hồi máu khi bấm trượt:** boss Cozy Pond (trận đầu) hồi 10%, boss Misty, Frozen và mọi trận đấu lại hồi 25%. Thắng lần đầu (người mới / trung bình / giỏi): Cozy 72/85/87% (v1.11: 51/79/83%), Misty 67/80/85%, Frozen 64/80/84%. Mô phỏng: người mới hạ boss Cozy ở phút 3,6 (v1.11: 4,4).
+
+**Dạng boss khi đấu lại:** ★1 là boss gốc, ★10 luôn là dạng Vàng, ★2–9 xoay vòng 4 dạng và lệch nhau giữa 3 hồ. Mỗi dạng có màu riêng (bóng dưới nước, thanh máu, banner) và một thay đổi trong trận:
+
+| Dạng | Thay đổi | Thắng trung bình ★1–10 | Thời gian trận ★1 |
+| --- | --- | --- | --- |
+| Thường | | 55% | 27 s |
+| Cuồng nộ | Giật dồn dập (khoảng cách ×0,7), mỗi cú nhẹ hơn (×0,72), bấm sai hồi ×0,4 | 60% | 35 s |
+| Ma | Vùng xanh hẹp hơn 10% và trôi lên xuống ±0,15 | 58% | 24 s |
+| Khổng lồ | Kéo chậm hơn (×0,8), dây hồi nhanh hơn, giữ đỏ lâu hơn 0,15 s | 60% | 52 s |
+| Vàng | Kéo và giật mạnh hơn một chút, vùng xanh hẹp hơn 5%; thưởng xu ×1,5 | 44% | 25 s |
+
+Tỉ lệ thắng tính trung bình cho 3 kiểu người chơi, 3 boss, ★1/3/5/7/10 (`tools/formtune.ts`). Fishdex ghi dạng của trận tiếp theo ngay dưới hàng sao.
+
+**Player Fit Test:** game gửi sự kiện phễu `PokiSDK.measure` (hướng dẫn, boss, đấu lại, mở hồ, quà ngày, thử thách) để đọc biểu đồ test. Hồ sơ dán vào P4D (mô tả, cách chơi, thể loại, hướng màn hình, lộ trình) và cách đọc kết quả nằm ở `docs/Poki-Nop-Game.md`.
+
+**Nhịp chơi (mô phỏng 150 lượt mỗi kiểu, 60 phút):**
+
+| Mốc | Người mới | Trung bình | Giỏi |
+| --- | --- | --- | --- |
+| Boss Cozy | 3,6 phút | 2,9 phút | 2,5 phút |
+| Mở Misty | 18,1 phút | 14,9 phút | 11,7 phút |
+| Mở Frozen | 49,5 phút | 41,0 phút | 33,0 phút |
+| Boss cuối | 53,3 phút | 44,4 phút | 36,2 phút |
+| Hạ boss cuối trong 60 phút | 84% | 100% | 100% |

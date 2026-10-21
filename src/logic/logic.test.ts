@@ -2,11 +2,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Rng } from '../../core/rng';
-import { CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS } from '../content/data';
-import { Fishing, FishingBot } from './fishing';
+import { BOSS_FORMS, BOSS_STARS, CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS, bossForm } from '../content/data';
+import { BOSS, Fishing, FishingBot } from './fishing';
 import { PondGame } from './game';
 import { defaultSave } from './model';
-import { addEgg, addPet, fishPrice, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
+import { addEgg, addPet, fishingStats, fishPrice, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
 
 test('price follows B x S x P x (1 + M)', () => {
   const pond = PONDS[1];
@@ -316,4 +316,62 @@ test('reeling: about 20% of fish shake free (not during onboarding), a lost boss
   assert.equal(g.bossReady, false, 'lure first');
   for (let i = 0; i < 5; i++) g.applyCatch({ kind: 'fish', fish: PONDS[0].fish[0], size: 1 }, false);
   assert.equal(g.bossReady, true, 'lured back after 5 catches');
+});
+
+test('rematch forms: ★1 classic, ★10 golden, the three bosses differ at the same star', () => {
+  for (let p = 0; p < 3; p++) {
+    assert.equal(bossForm(p, 0), 'classic');
+    assert.equal(bossForm(p, 1), 'classic');
+    assert.equal(bossForm(p, 10), 'golden');
+  }
+  for (let star = 2; star <= 9; star++) {
+    const forms = [0, 1, 2].map((p) => bossForm(p, star));
+    assert.equal(new Set(forms).size, 3, `star ${star}: ${forms}`);
+  }
+  // Every form shows up while climbing one boss's stars.
+  assert.deepEqual(new Set(Array.from({ length: 10 }, (_, i) => bossForm(0, i + 1))), new Set(BOSS_FORMS));
+});
+
+test('boss mis-press: the first boss heals 10%, later bosses and rematches 25%', () => {
+  const heal = (level: number, star: number) => {
+    let healed = 0;
+    const f = new Fishing(new Rng(3), () => fishingStats(defaultSave(), 0, 0), { bossHeal: (h) => (healed = h) });
+    f.startBoss(level, star);
+    f.progress = 0.6;
+    // Run until the first warning, past the reaction grace, then press.
+    for (let i = 0; i < 400 && !(f.warning); i++) f.update(1 / 60);
+    for (let i = 0; i < 20; i++) f.update(1 / 60);
+    f.press();
+    return healed;
+  };
+  assert.equal(heal(0, 0), BOSS.misHealFirst);
+  assert.equal(heal(1, 0), BOSS.misHeal);
+  assert.equal(heal(0, 1), BOSS.misHeal);
+});
+
+test('golden form pays 50% more coins than the classic rematch at the same star', () => {
+  const coins = (star: number) => {
+    const s = defaultSave();
+    s.unlocked = ['cozy', 'misty'];
+    s.bosses = ['old_whiskers'];
+    s.pond = 'cozy';
+    const g = new PondGame(s, new Rng(1));
+    return g.winRematch(star)!.coins;
+  };
+  // Cozy: ★5 is golden, ★4 is giant (see bossForm).
+  assert.equal(bossForm(0, 5), 'golden');
+  const base = (star: number) => Math.round(BOSS_STARS.coins * (1 + BOSS_STARS.coinsPerStar * star));
+  assert.equal(coins(5), Math.round(base(5) * 1.5));
+  assert.equal(coins(4), base(4));
+});
+
+test('pause while charging drops the cast instead of throwing the line', () => {
+  const f = new Fishing(new Rng(5), () => fishingStats(defaultSave(), 0, 0));
+  f.press();
+  f.update(0.3);
+  assert.equal(f.phase, 'charging');
+  f.cancelCharge();
+  assert.equal(f.phase, 'ready');
+  f.release();
+  assert.equal(f.phase, 'ready');
 });

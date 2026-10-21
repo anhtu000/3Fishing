@@ -286,6 +286,23 @@ export const BOSS_LURE = [5, 8, 10];
 /** Boss rematch: stars 1-10 per boss; a win uses a ticket, 3 tickets a day. A loss is free. */
 export const BOSS_STARS = { max: 10, ticketsPerDay: 3, coins: 200, coinsPerStar: 0.25, shiny: 0.03, shinyPerStar: 0.02, legendaryFrom: 8 };
 
+/**
+ * Rematch forms: the same boss with a twist, so climbing the stars does not replay one fight.
+ * ★1 is the boss as you know it, ★10 is always the Golden form; ★2-9 cycle through the forms,
+ * shifted per pond so the three bosses never show the same form at the same star.
+ */
+export type BossForm = 'classic' | 'frenzy' | 'ghost' | 'giant' | 'golden';
+export const BOSS_FORMS: BossForm[] = ['classic', 'frenzy', 'ghost', 'giant', 'golden'];
+/** Coin reward multiplier by form (the Golden form is the hardest). */
+export const BOSS_FORM_COINS: Record<BossForm, number> = { classic: 1, frenzy: 1, ghost: 1, giant: 1, golden: 1.5 };
+
+export function bossForm(pondIndex: number, star: number): BossForm {
+  if (star <= 1) return 'classic';
+  if (star >= BOSS_STARS.max) return 'golden';
+  const cycle: BossForm[] = ['frenzy', 'ghost', 'giant', 'golden'];
+  return cycle[(star - 2 + pondIndex) % cycle.length];
+}
+
 /** A fish this much over its usual size is a giant (needed for a gold medal). */
 export const GIANT_SIZE = 1.4;
 /** Catches for bronze and silver, by rarity. Gold = silver + one giant. */

@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Appât doré ! Chance x2 pendant 5 minutes",
     "incubatorFull": "L'incubateur est plein. Fais d'abord éclore un œuf !",
-    "autoOn": "Pêche auto activée : plus lente, et elle rate des touches. Touche l'eau pour pêcher toi-même.",
+    "autoOn": "Pêche auto activée : plus lente, rate des touches.",
     "autoOff": "Pêche auto désactivée",
     "autoUnlocked": "Pêche auto débloquée ! Touche le bouton rond à gauche.",
     "phase": "Phase {n} !",
@@ -61,7 +61,7 @@
     "todayFish": "Poisson du jour : {fish} ({pond}) ! x5 pièces et un œuf spécial",
     "nestEgg": "Œuf spécial dans le nid ! Éclot dans {t}",
     "todayDone": "Poisson du jour attrapé ! Un nouveau demain",
-    "lateUnlock": "Nouveau : Défis (bouton trophée), médailles dans le Poissodex, revanches de boss avec étoiles et garde-robe dans Améliorer !",
+    "lateUnlock": "Nouveau : Défis, médailles, étoiles de boss et garde-robe !",
     "slip": "Il s'est décroché !",
     "bossHeal": "Trop tôt ! Le boss se soigne"
   },
@@ -393,5 +393,15 @@
     "hint": "Le poisson le plus proche de l'appât mord. Vise bien !",
     "fishShort": "Poissons {n}/{max}",
     "kindsShort": "Espèces {n}/{max}"
+  },
+  "form": {
+    "frenzy": "Forme furie",
+    "ghost": "Forme fantôme",
+    "giant": "Forme géante",
+    "golden": "Forme dorée",
+    "frenzyTip": "Les tractions s'enchaînent vite !",
+    "ghostTip": "La zone verte bouge. Suis-la !",
+    "giantTip": "Un long combat, mais ta ligne tient plus longtemps.",
+    "goldenTip": "La forme la plus forte. +50 % de pièces !"
   }
 }

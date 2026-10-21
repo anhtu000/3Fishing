@@ -468,7 +468,7 @@ export class Hud {
   }
 
   /** Boss health (1 - progress). */
-  drawBoss(name: string, hp: number, phase: number) {
+  drawBoss(name: string, hp: number, phase: number, color = 0xff4d6d) {
     this.bossBar.setVisible(true);
     this.bossName.setText(`${name}${phase > 0 ? `  ·  ${t('hud.phase', { n: phase + 1 })}` : ''}`);
     const g = this.bossG;
@@ -477,7 +477,7 @@ export class Hud {
     g.clear();
     g.fillStyle(INK, 1).fillRoundedRect(-w / 2 - 5, -h / 2 - 5, w + 10, h + 10, (h + 10) / 2);
     g.fillStyle(0x5a2340, 1).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
-    g.fillStyle(0xff4d6d, 1).fillRoundedRect(-w / 2, -h / 2, Math.max(h, w * hp), h, h / 2);
+    g.fillStyle(color, 1).fillRoundedRect(-w / 2, -h / 2, Math.max(h, w * hp), h, h / 2);
     g.fillStyle(0xffffff, 0.3).fillRoundedRect(-w / 2 + 6, -h / 2 + 4, Math.max(10, w * hp - 12), 7, 4);
   }
 

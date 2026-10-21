@@ -11,12 +11,6 @@ import { queueTextures } from './render/textures';
 import { save } from './save';
 import { PlayScene } from './scenes/PlayScene';
 
-/** Sound effects and music (public/audio, made by tools/make_audio.py). */
-export const SOUNDS = [
-  'ui-tap', 'open', 'buy', 'nope', 'reward', 'coin', 'gem', 'catch', 'junk', 'new', 'rare', 'chest', 'wobble', 'hatch',
-  'cast', 'plop', 'nibble', 'bite', 'hook', 'perfect', 'splash', 'snap', 'miss', 'boss', 'win', 'unlock', 'charge', 'pop',
-];
-
 startGame({
   id: game.id,
   title: game.title,
@@ -31,16 +25,8 @@ startGame({
   ads: { midgameGapSec: __TARGET__ === 'poki' ? 0 : 180 },
   // Vector sprites are separate textures; see GameConfig.maxTextures.
   maxTextures: 1,
-  preload: (scene) => {
-    queueTextures(scene);
-    // A single-file build carries the sounds inline in window.__ASSETS.
-    const inline = (window as unknown as { __ASSETS?: Record<string, string> }).__ASSETS;
-    for (const key of SOUNDS) {
-      const path = `audio/${key}.mp3`;
-      scene.load.audio(key, inline?.[path] ?? path);
-    }
-    scene.load.audio('music', inline?.['audio/music.mp3'] ?? 'audio/music.mp3');
-  },
+  // Only the art before the pond appears; the sounds follow in the background (src/sounds.ts).
+  preload: (scene) => queueTextures(scene),
   theme: {
     font: 'Fredoka, system-ui, sans-serif',
     background: game.background,

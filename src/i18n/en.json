@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Golden bait! Luck x2 for 5 minutes",
     "incubatorFull": "The incubator is full. Hatch an egg first!",
-    "autoOn": "Auto fishing on: slower, and it misses some bites. Tap the water to fish yourself.",
+    "autoOn": "Auto fishing on: slower, misses some bites.",
     "autoOff": "Auto fishing off",
     "autoUnlocked": "Auto fishing unlocked! Tap the round button on the left.",
     "phase": "Phase {n}!",
@@ -61,7 +61,7 @@
     "todayFish": "Today's fish: {fish} in {pond}! x5 coins and a special egg",
     "nestEgg": "Special egg in the nest! Hatches in {t}",
     "todayDone": "Today's fish caught! A new one tomorrow",
-    "lateUnlock": "New: Challenges (trophy button), medals in the Fishdex, boss rematches with stars, and the wardrobe in Upgrades!",
+    "lateUnlock": "New: Challenges, medals, boss stars and the wardrobe!",
     "slip": "It shook off the hook!",
     "bossHeal": "Too soon! The boss heals"
   },
@@ -393,5 +393,15 @@
     "hint": "The fish closest to your bait bites. Aim your cast!",
     "fishShort": "Fish {n}/{max}",
     "kindsShort": "Kinds {n}/{max}"
+  },
+  "form": {
+    "frenzy": "Frenzy Form",
+    "ghost": "Ghost Form",
+    "giant": "Giant Form",
+    "golden": "Golden Form",
+    "frenzyTip": "Fast pulls, one after another!",
+    "ghostTip": "The green zone drifts. Follow it!",
+    "giantTip": "A long fight, but your line lasts longer.",
+    "goldenTip": "Strongest form. +50% coins!"
   }
 }

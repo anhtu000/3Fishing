@@ -1,4 +1,4 @@
-# Game #3 — Pond Pals: Hatch & Fish (v1.11)
+# Game #3 — Pond Pals: Hatch & Fish (v1.12)
 
 Game câu cá thư giãn một chạm, ấp trứng ra thú cưng giúp câu. Đường phát hành A: Poki (độc quyền web).
 Tài liệu thiết kế: `docs/Pond-Pals-Tai-lieu-thiet-ke.md`. Báo cáo kinh tế, nhịp chơi và giữ chân: `docs/PondPals-BaoCao-KinhTe-v1.3.md` (mục 8: v1.4, mục 9: v1.5, mục 10: v1.6, mục 11: phương án D3/D7, mục 12: v1.8).
@@ -71,3 +71,4 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
 - v1.9: chế độ Thử thách (24 màn, kỷ lục, sẵn chỗ cho bảng xếp hạng), 36 loài cá, cá tuột 20% khi kéo, boss hồi máu khi bấm sai và phải dụ lại sau khi thua, mồi câu trong tủ đồ, bán trứng trong giỏ, ô thú 4/5 giá 25k/150k, sắp chỗ thú 4–5.
 - v1.10: giá trứng chỉ theo độ hiếm; hệ số giá 3 hồ ×1/×2/×4 (trước ×1/×3/×9); thưởng thử thách tăng đều 600–2.900; Frozen Lake 11.000; hạ giá các món cuối game.
 - v1.11: art pet theo độ hiếm (hào quang, đá quý, tia sáng, lấp lánh); boss hồi 25% khi bấm trượt (ân hạn 0,25 s); nhãn sao boss rõ nghĩa (Fishdex hàng 10 sao, Wardrobe ★ n/15).
+- v1.12: sửa lỗi theo đánh giá nộp Poki (chặn cuộn trang, ESC pause mọi lúc, âm thanh tải sau khi vào game, thông báo không chồng nhau); boss đầu hồi 10%; 4 dạng boss khi đấu lại (Cuồng nộ, Ma, Khổng lồ, Vàng); sự kiện phễu `PokiSDK.measure`; hồ sơ nộp Poki `docs/Poki-Nop-Game.md`.

@@ -1,7 +1,7 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
 import { app } from '@core';
-import { BOSS_STARS, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
+import { BOSS_STARS, bossForm, type BossForm, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
 import { dexCount, eggCoins, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
@@ -31,6 +31,8 @@ export interface PanelCtx {
 
 const DARK = '#3b2a4d';
 const DIM = '#7a6a8a';
+/** Rematch form colours on light panels (darker than on the banner, to read on cream). */
+const FORM_TEXT: Record<BossForm, string> = { classic: DARK, frenzy: '#d9472b', ghost: '#1f9a8a', giant: '#5b7f2f', golden: '#c48a00' };
 
 function upgradeValue(id: UpgradeId, lv: number) {
   switch (id) {
@@ -259,7 +261,7 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
     title: t('dex.title'),
     w: 660,
     // Late game: room for the medal line and the rematch button.
-    h: ctx.game.lateGame ? 1340 : 1200,
+    h: ctx.game.lateGame ? 1380 : 1200,
     color: COLORS.blue,
     // The commercial break on the way back to play is handled by the scene for every menu.
     onClose: () => ctx.refresh(),
@@ -332,6 +334,13 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
         st.setScale(fitScale('icon:i_star', sz));
         if (k >= best) st.setTint(0xd8cfe0).setTintMode(Phaser.TintModes.FILL).setAlpha(0.8);
         page.add(st);
+      }
+      // The next rematch's form and its twist (★1 is the boss as you know it).
+      const next = g.rematchStar(pond);
+      const form = next === null ? 'classic' : bossForm(PONDS.indexOf(pond), next);
+      if (next !== null && form !== 'classic') {
+        const line = txt(scene, 0, gridBottom + 162, `★${next}  ${t(`form.${form}`)}: ${t(`form.${form}Tip`)}`, 22, { color: FORM_TEXT[form], stroke: false });
+        page.add(fitText(line, pw - 60));
       }
     }
     // Rematch (late game, boss beaten, in this pond): next star, 3 winning tickets a day.
@@ -433,6 +442,7 @@ export function mapPanel(scene: Phaser.Scene, ctx: PanelCtx) {
           color: s.coins >= p.unlockCost ? COLORS.orange : COLORS.grey,
           onClick: () => {
             if (g.unlockPond(p)) {
+              app.measure('pond', p.id, 'unlock');
               app.audio.play('unlock');
               panel.close();
               ctx.travel(p.id);

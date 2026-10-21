@@ -39,4 +39,6 @@ export interface Platform {
   isMobile(): boolean;
   /** The portal can force mute. Called once right away with the current value, then on change. */
   onMuteChange(fn: (muted: boolean) => void): void;
+  /** Optional funnel analytics (Poki measure). */
+  measure?(category: string, what: string, action?: string): void;
 }

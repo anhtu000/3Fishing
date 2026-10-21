@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "¡Cebo dorado! Suerte x2 durante 5 minutos",
     "incubatorFull": "La incubadora está llena. ¡Primero haz eclosionar un huevo!",
-    "autoOn": "Pesca automática activada: más lenta y falla algunas picadas. Toca el agua para pescar tú.",
+    "autoOn": "Pesca automática activada: más lenta, falla algunas picadas.",
     "autoOff": "Pesca automática desactivada",
     "autoUnlocked": "¡Pesca automática desbloqueada! Toca el botón redondo de la izquierda.",
     "phase": "¡Fase {n}!",
@@ -61,7 +61,7 @@
     "todayFish": "¡Pez del día: {fish} en {pond}! x5 monedas y un huevo especial",
     "nestEgg": "¡Huevo especial en el nido! Eclosiona en {t}",
     "todayDone": "¡Pez del día atrapado! Mañana habrá otro",
-    "lateUnlock": "Nuevo: Desafíos (botón del trofeo), medallas en el Pezdex, revanchas de jefe con estrellas y el armario en Mejorar.",
+    "lateUnlock": "Nuevo: Desafíos, medallas, estrellas de jefe y armario.",
     "slip": "¡Se ha soltado del anzuelo!",
     "bossHeal": "¡Demasiado pronto! El jefe se cura"
   },
@@ -393,5 +393,15 @@
     "hint": "Pica el pez más cercano al cebo. ¡Apunta bien!",
     "fishShort": "Peces {n}/{max}",
     "kindsShort": "Especies {n}/{max}"
+  },
+  "form": {
+    "frenzy": "Forma frenética",
+    "ghost": "Forma fantasma",
+    "giant": "Forma gigante",
+    "golden": "Forma dorada",
+    "frenzyTip": "¡Tirones rápidos, uno tras otro!",
+    "ghostTip": "La zona verde se mueve. ¡Síguela!",
+    "giantTip": "Una lucha larga, pero tu sedal aguanta más.",
+    "goldenTip": "La forma más fuerte. ¡+50 % de monedas!"
   }
 }

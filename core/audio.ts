@@ -21,6 +21,8 @@ export class AudioManager extends Emitter<{ change: [muted: boolean] }> {
   private game: Phaser.Game | null = null;
   private portalMuted = false;
   private pauseMuted = false;
+  /** True while the game loads its sounds in the background: a sound not there yet stays silent. */
+  quietMissing = false;
 
   constructor(private settings: Settings) {
     super();
@@ -69,7 +71,7 @@ export class AudioManager extends Emitter<{ change: [muted: boolean] }> {
     const game = this.game;
     if (!game || this.muted || this.pauseMuted) return;
     if (!game.cache.audio.exists(key)) {
-      console.warn(`[audio] missing sound "${key}"`);
+      if (!this.quietMissing) console.warn(`[audio] missing sound "${key}"`);
       return;
     }
     const jitter = options.pitchJitter ? (Math.random() * 2 - 1) * options.pitchJitter : 0;

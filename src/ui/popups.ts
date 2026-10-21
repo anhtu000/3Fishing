@@ -294,7 +294,21 @@ export function say(scene: Phaser.Scene, x: number, y: number, message: string, 
 }
 
 /** Bottom toast in the house style. */
+/** The note on screen, per scene: a new note replaces it, so two notes never sit on top of each other. */
+const current = new WeakMap<Phaser.Scene, { c: Phaser.GameObjects.Container; message: string; hide: Phaser.Tweens.Tween }>();
+
 export function note(scene: Phaser.Scene, message: string, ms = 2200) {
+  const prev = current.get(scene);
+  if (prev && prev.c.active) {
+    // Same message again (a repeated tap): keep it up a little longer instead of stacking a copy.
+    if (prev.message === message) {
+      prev.hide.remove();
+      prev.hide = scene.tweens.add({ targets: prev.c, alpha: 0, delay: ms, duration: 300, onComplete: () => prev.c.destroy() });
+      return;
+    }
+    prev.hide.remove();
+    prev.c.destroy();
+  }
   const vp = app.viewport.info;
   const label = txt(scene, 0, -2, message, 30, { wrap: Math.min(600, vp.width - 80) });
   const g = scene.add.graphics();
@@ -303,5 +317,6 @@ export function note(scene: Phaser.Scene, message: string, ms = 2200) {
   g.fillStyle(INK, 0.85).fillRoundedRect(-w / 2, -h / 2, w, h, 22);
   const c = scene.add.container(vp.width / 2, vp.height * 0.3, [g, label]).setDepth(DEPTH + 40).setAlpha(0);
   scene.tweens.add({ targets: c, alpha: 1, y: c.y - 16, duration: 180 });
-  scene.tweens.add({ targets: c, alpha: 0, delay: ms, duration: 300, onComplete: () => c.destroy() });
+  const hide = scene.tweens.add({ targets: c, alpha: 0, delay: ms, duration: 300, onComplete: () => c.destroy() });
+  current.set(scene, { c, message, hide });
 }

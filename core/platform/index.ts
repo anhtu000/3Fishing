@@ -1,6 +1,6 @@
 import { CrazyGamesPlatform } from './crazygames';
 import { LocalPlatform, type LocalAdMode } from './local';
-import { PokiPlatform } from './poki';
+import { PokiPlatform, preventPageJumps } from './poki';
 import type { Platform } from './types';
 
 export type { AdKind, AdOutcome, Platform } from './types';
@@ -19,6 +19,8 @@ export async function createPlatform(): Promise<Platform> {
     }
   }
   if (__TARGET__ === 'poki') {
+    // Before the SDK: the page must never scroll, even when an ad blocker stops the SDK script.
+    preventPageJumps();
     try {
       return await PokiPlatform.create();
     } catch (err) {

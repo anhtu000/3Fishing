@@ -33,7 +33,7 @@
   "msg": {
     "goldenOn": "Altın yem! 5 dakika boyunca şans x2",
     "incubatorFull": "Kuluçka makinesi dolu. Önce bir yumurtayı çatlat!",
-    "autoOn": "Otomatik avlanma açık: daha yavaş ve bazı vuruşları kaçırır. Kendin avlanmak için suya dokun.",
+    "autoOn": "Otomatik avlanma açık: daha yavaş, bazı vuruşları kaçırır.",
     "autoOff": "Otomatik avlanma kapalı",
     "autoUnlocked": "Otomatik avlanma açıldı! Soldaki yuvarlak düğmeye dokun.",
     "phase": "Aşama {n}!",
@@ -61,7 +61,7 @@
     "todayFish": "Günün balığı: {fish} ({pond})! x5 altın ve özel yumurta",
     "nestEgg": "Yuvada özel yumurta! {t} sonra çıkar",
     "todayDone": "Günün balığı yakalandı! Yarın yenisi gelir",
-    "lateUnlock": "Yeni: Meydan okumalar (kupa düğmesi), Balıkdex'te madalyalar, yıldızlı boss rövanşları ve Geliştir'de gardırop!",
+    "lateUnlock": "Yeni: Meydan okumalar, madalyalar, boss yıldızları ve gardırop!",
     "slip": "Oltadan kurtuldu!",
     "bossHeal": "Çok erken! Boss iyileşiyor"
   },
@@ -393,5 +393,15 @@
     "hint": "Yeme en yakın balık vurur. İyi nişan al!",
     "fishShort": "Balık {n}/{max}",
     "kindsShort": "Tür {n}/{max}"
+  },
+  "form": {
+    "frenzy": "Çılgın Form",
+    "ghost": "Hayalet Form",
+    "giant": "Dev Form",
+    "golden": "Altın Form",
+    "frenzyTip": "Çekişler art arda, hızlı geliyor!",
+    "ghostTip": "Yeşil alan kayıyor. Onu takip et!",
+    "giantTip": "Uzun bir dövüş, ama oltan daha uzun dayanır.",
+    "goldenTip": "En güçlü form. +%50 altın!"
   }
 }
