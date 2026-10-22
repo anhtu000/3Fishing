@@ -414,3 +414,27 @@ Tỉ lệ thắng tính trung bình cho 3 kiểu người chơi, 3 boss, ★1/3/
 | Mở Frozen | 49,5 phút | 41,0 phút | 33,0 phút |
 | Boss cuối | 53,3 phút | 44,4 phút | 36,2 phút |
 | Hạ boss cuối trong 60 phút | 84% | 100% | 100% |
+
+## 17. v1.13: đổi tên Kitty Pond: Hatch & Fish, kiểm tra toàn bộ trước khi nộp (22/10)
+
+**Tên mới:** Kitty Pond: Hatch & Fish. Tìm trên web (Google Play, App Store, Steam, itch.io, Poki, CrazyGames) chưa thấy game nào tên "Kitty Pond". Đây là tìm kiếm trên web, chưa phải tra cứu nhãn hiệu. Đã loại các tên trùng hoặc gần trùng: Pond Pals (HyperBeard), Pondlings (Steam, itch.io), Bobber Buddies (itch.io), Whisker… (Whisker Waters trên Switch). Khóa lưu tiến trình `pondpals` giữ nguyên.
+
+**Kết quả kiểm tra trên bản build Poki v1.13:**
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| Kiểm kiểu, test | TypeScript sạch; 27 + 10 test đạt (gồm kiểm đủ khóa dịch 6 ngôn ngữ); font đủ ký tự |
+| Dung lượng | 2,23 MB, 32 file; chỉ gọi ra ngoài `game-cdn.poki.com`; không còn hook dev |
+| Sự kiện SDK | `gameLoadingFinished` lúc tải xong, `gameplayStart` ở lần chạm đầu; mở/đóng menu: `gameplayStop > commercialBreak > gameplayStart`; 0 cặp trùng, 0 sự kiện lúc quảng cáo chạy, không lỗi console |
+| Chặn quảng cáo, ẩn danh | Vào game và chơi được; có chặn quảng cáo thì vẫn lưu, không trao thưởng |
+| Cuộn trang Poki | 0 px với Space, mũi tên, PageDown, End, con lăn (SDK chạy hoặc bị chặn) |
+| 8 kích thước màn hình | Desktop 640×360, 836×470, 1031×580; điện thoại dọc 360×640, 390×844, ngang 844×390; tablet dọc, ngang: phủ kín, không lỗi |
+| ESC pause | Giữa lúc chờ cá, giữa trận boss, lúc đang gồng lực: đúng như thiết kế |
+| Dạng boss | 4 dạng: banner, bóng cá, thanh máu, màn thắng đúng; thưởng dạng Vàng ×1,5 |
+| Bản thử điện thoại 1 file | Âm thanh tải nền đủ 29 file, nhạc chạy, không lỗi |
+| Chơi thử 2 phút bằng chuột thật | Xong cả 6 bước hướng dẫn chính (quăng, cắn câu, kéo, trứng, nở, nâng cấp), không lỗi |
+| Menu bằng tiếng Đức (điện thoại) và tiếng Anh (desktop) | Chữ vừa khung; nút thường ở trên nút xem quảng cáo, cùng cỡ |
+| Thời gian tới `gameLoadingFinished` (CPU chậm 4 lần) | 4G 7,1–7,5 s; 3G nhanh 9,6–10,4 s; 3G chậm 20,4–21,1 s. Máy ảo hôm nay chậm hơn máy hôm qua (cùng code v1.12 hôm qua đo được 5,5 / 8,2 / 18,6 s); cần đo lại trên điện thoại thật |
+| Boss lần đầu (người mới / trung bình / giỏi) | Cozy 72/85/87%, Misty 67/80/85%, Frozen 64/80/84% |
+| Nhịp chơi (mô phỏng) | Cá đầu 3,2–3,6 s; nở pet đầu 43–50 s; boss Cozy 2,5–3,6 phút; boss cuối 36–53 phút; 84–100% hạ boss cuối trong 60 phút |
+| Chơi liên tục 10 phút (tự câu, nở trứng, mở/đóng 5 menu, đổi hồ) | Bộ nhớ JS lên 88 MB rồi đứng (87,5 → 88,0 MB ở 5 lần đo cuối); texture 250–266; không lỗi |

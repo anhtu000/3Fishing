@@ -1,5 +1,5 @@
 // Game content: ponds, fish, pets, junk, upgrades, quests. Numbers come from the design doc
-// (Pond Pals — Tài liệu thiết kế, "Kinh tế và công thức") and are tuned by tools/sim.ts.
+// (Kitty Pond — Tài liệu thiết kế, "Kinh tế và công thức") and are tuned by tools/sim.ts.
 
 export const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 export type Rarity = 0 | 1 | 2 | 3 | 4;

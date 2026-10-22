@@ -1,10 +1,12 @@
-# Game #3 — Pond Pals: Hatch & Fish — Tài liệu thiết kế
+# Game #3 — Kitty Pond: Hatch & Fish — Tài liệu thiết kế
+
+(Tên cũ: Pond Pals: Hatch & Fish, đổi ở v1.13.)
 
 Ngày: 14/10/2026 · Bản gốc có thể chỉnh sửa: https://claude.ai/code/artifact/d79f1125-36b4-4d20-b33d-45a465f2efa8
 
 ## Tổng quan & định vị
 
-Pond Pals là game câu cá thư giãn một chạm. Mỗi lần câu có thể ra trứng, ấp thành thú cưng, và thú cưng giúp câu tốt hơn. Game ghép hai ngách cầu cao, cung thấp: câu cá (27 game trên CrazyGames) và thú cưng (12 game).
+Kitty Pond là game câu cá thư giãn một chạm. Mỗi lần câu có thể ra trứng, ấp thành thú cưng, và thú cưng giúp câu tốt hơn. Game ghép hai ngách cầu cao, cung thấp: câu cá (27 game trên CrazyGames) và thú cưng (12 game).
 
 | Hạng mục | Quyết định |
 | --- | --- |

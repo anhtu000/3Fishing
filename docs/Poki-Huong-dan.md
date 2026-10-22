@@ -8,7 +8,7 @@ Cách dùng file này:
 2. Trong lúc làm: bám theo mục 4–10.
 3. Trước mỗi lần upload: chạy hết checklist ở mục 11.
 
-Mục 12 ghi bộ khung chung đã làm sẵn những gì. Mục 13 là kết quả kiểm tra Pond Pals (game #3) theo file này.
+Mục 12 ghi bộ khung chung đã làm sẵn những gì. Mục 13 là kết quả kiểm tra Pond Pals (game #3, nay đổi tên là Kitty Pond: Hatch & Fish) theo file này.
 
 ---
 

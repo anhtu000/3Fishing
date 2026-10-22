@@ -1,4 +1,4 @@
-# Nguồn tài nguyên — Pond Pals
+# Nguồn tài nguyên — Kitty Pond: Hatch & Fish
 
 Mọi hình ảnh và âm thanh trong game đều do dự án tự tạo bằng code, không dùng tài nguyên của bên thứ ba.
 

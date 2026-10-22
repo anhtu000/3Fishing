@@ -1,5 +1,5 @@
 {
-  "name": "pond-pals",
+  "name": "kitty-pond",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "build": "tsc --noEmit && vite build --mode poki && node scripts/check-build.mjs dist/poki poki",
     "build:poki": "npm run build",
     "build:web": "tsc --noEmit && vite build --mode web && node scripts/check-build.mjs dist/web web",
-    "build:single": "npm run build:web && node scripts/build-single.mjs dist/web dist/single/PondPals_PhoneTest_v1.html",
+    "build:single": "npm run build:web && node scripts/build-single.mjs dist/web dist/single/KittyPond_PhoneTest_v1.html",
     "preview": "vite preview --outDir dist/poki",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/core.test.ts && bun test src/logic",

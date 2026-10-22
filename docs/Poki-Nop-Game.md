@@ -1,14 +1,14 @@
 # Bộ hồ sơ nộp Poki: Player Fit Test
 
-Dùng cho game #3 (bản v1.12). Nội dung bên dưới dán thẳng vào P4D (app.poki.dev). Các trường tiếng Anh để nguyên, vì Poki tự viết lại mô tả chuẩn SEO.
+Dùng cho game #3, **Kitty Pond: Hatch & Fish** (bản v1.13). Nội dung bên dưới dán thẳng vào P4D (app.poki.dev). Các trường tiếng Anh để nguyên, vì Poki tự viết lại mô tả chuẩn SEO.
 
-**Trước khi tạo game trên P4D phải đổi tên.** "Pond Pals" trùng tên game của HyperBeard (Google Play, 5/2026). Chỗ nào có `[NEW NAME]` thì thay bằng tên mới. Khi đổi tên trong code, sửa `src/game.json` (`title`) và `<title>` trong `index.html`. Giữ nguyên `id` (`pondpals`): đó là khóa lưu tiến trình, người chơi không thấy.
+Kết quả kiểm tra toàn bộ trước khi nộp (22/10): báo cáo kinh tế, mục 17. Tên cũ "Pond Pals" đã đổi ở v1.13 vì trùng tên game của HyperBeard (Google Play, 5/2026). Tên mới lấy từ `src/game.json` (`title`) cho cả `<title>` trang lẫn màn tải. Khóa lưu tiến trình `pondpals` giữ nguyên (người chơi không thấy).
 
 ## 1. Các bước tới Player Fit Test
 
 | Bước | Việc làm | Xong khi |
 | --- | --- | --- |
-| 1 | Tạo game trên P4D với tên mới; upload `builds/PondPals_Poki_v1.12.zip` (đổi tên file sau) | Qua content moderation (vài giờ) |
+| 1 | Tạo game trên P4D với tên mới; upload `builds/KittyPond_Poki_v1.13.zip` | Qua content moderation (vài giờ) |
 | 2 | Chạy Playtest, xem đủ 10 video | Mở khóa Player Fit Test |
 | 3 | Điền phần "Game page" (mục 2) và upload thumbnail (mục 3) | Đủ điều kiện chạy test |
 | 4 | Chạy Player Fit Test (500 người, khoảng 5 giờ, tối đa 2 lần/ngày) | Trung bình > 3 phút và ≥ 25% lượt > 3 phút |
@@ -18,7 +18,7 @@ Trước bước 1, tự chơi bản điện thoại 15–20 phút và chạy Po
 
 ## 2. Thông tin trang game (dán vào P4D)
 
-**Name:** `[NEW NAME]`
+**Name:** `Kitty Pond: Hatch & Fish`
 
 **Mobile orientation:** Both (portrait and landscape). Game hỗ trợ cả hai, dọc là chính.
 
