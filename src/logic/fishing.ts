@@ -15,7 +15,16 @@ export interface Target {
   /** Junk, eggs and chests do not fight. */
   fights: boolean;
   boss?: boolean;
+  /** The WANTED fish: fights harder than its kind (WANTED_FIGHT). */
+  wanted?: boolean;
 }
+
+/**
+ * WANTED fish fight: on top of its kind's fight it pulls and surges harder, has a smaller green zone
+ * and takes longer to reel in (a Common fights at least like an Uncommon). It can still slip off.
+ * Not more: one rarity tier up made a Rare WANTED fish unwinnable with early gear (tools/wantedtest.ts).
+ */
+export const WANTED_FIGHT = { pull: 1.25, green: 0.8, surge: 1.4, reel: 0.8 };
 
 export interface FishingEvents {
   cast?: (zone: CastZone, power: number) => void;
@@ -52,24 +61,25 @@ export const RED_AT = 0.86;
 /** Normal fish: share of fights where the fish shakes off the hook while reeling (not during onboarding). */
 export const SLIP = { chance: 0.2, from: 0.35, spread: 0.45 };
 
-export const BOSS = { misHeal: 0.25, misHealFirst: 0.1, misGrace: 0.25, warn: 0.5, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.012, surgePerStar: 0.04, wearPerStar: 0.006 };
+export const BOSS = { rematchHp: 1.3, hpPerStar: 0, misHeal: 0.25, misHealFirst: 0.1, misGrace: 0.25, warn: 0.5, reel: 0.2, decay: 0.02, pull: 0.48, pullPerPhase: 0.1, pullPerLevel: 0.05, surge: 1.8, surgePerLevel: 0.05, hold: 1.0, holdPerLine: 0.04, wear: 0.28, pullPerStar: 0.008, surgePerStar: 0.03, wearPerStar: 0.006 };
 
 /**
  * Rematch forms (see bossForm in content/data.ts), as changes to the fight. Tuned with
  * tools/formtune.ts so each form wins about as often as the classic fight at the same star
- * (average over stars 1-10, three player types, three bosses: classic 55%, frenzy 60%,
- * ghost 58%, giant 60% with fights about twice as long, golden 44%).
+ * (average over stars 1, 3, 5, 7, 10, three player types, three bosses, with the rematch health
+ * x1.3 of v1.14: classic 44%, frenzy 49%, ghost 44%, giant 51% with fights about twice as long,
+ * golden 30%; classic fights 22-36 s).
  * gap/surge/pull scale the pulls, reel/decay the progress, wear/hold the line, green the zone width,
  * drift moves the green zone up and down (amplitude, tension units).
  */
 export const FORM_FIGHT: Record<BossForm, { gap: number; surge: number; pull: number; reel: number; decay: number; wear: number; hold: number; green: number; drift: number; heal: number }> = {
   classic: { gap: 1, surge: 1, pull: 1, reel: 1, decay: 1, wear: 1, hold: 0, green: 1, drift: 0, heal: 1 },
   // Many small pulls, closer together: a rhythm fight. More warnings, so each fumble heals less.
-  frenzy: { gap: 0.7, surge: 0.72, pull: 1, reel: 1.1, decay: 1, wear: 1, hold: 0, green: 1, drift: 0, heal: 0.4 },
+  frenzy: { gap: 0.7, surge: 0.76, pull: 1, reel: 1.1, decay: 1, wear: 1, hold: 0, green: 1, drift: 0, heal: 0.4 },
   // The sweet spot sways up and down: watch the bar, not just the fish.
   ghost: { gap: 1, surge: 1, pull: 1.02, reel: 1, decay: 1, wear: 1, hold: 0, green: 0.9, drift: 0.15, heal: 1 },
   // A long tug of war: slower progress, the line lasts longer.
-  giant: { gap: 1, surge: 1, pull: 1.02, reel: 0.8, decay: 1, wear: 1.2, hold: 0.15, green: 1, drift: 0, heal: 1 },
+  giant: { gap: 1, surge: 1, pull: 1.02, reel: 0.78, decay: 1, wear: 1.2, hold: 0.15, green: 1, drift: 0, heal: 1 },
   // A bit harder all round, paid with 50% more coins (BOSS_FORM_COINS).
   golden: { gap: 1, surge: 1.05, pull: 1.03, reel: 1, decay: 1, wear: 1, hold: 0, green: 0.95, drift: 0, heal: 1 },
 };
@@ -304,7 +314,7 @@ export class Fishing {
 
   private startReel() {
     const f = fightOf(this.target.rarity);
-    this.green = this.target.boss ? 0.3 * FORM_FIGHT[this.bossForm].green : this.target.fights ? f.green : 0.6;
+    this.green = this.target.boss ? 0.3 * FORM_FIGHT[this.bossForm].green : this.target.fights ? f.green * (this.target.wanted ? WANTED_FIGHT.green : 1) : 0.6;
     this.greenCenter = GREEN_CENTER;
     this.tension = this.perfect ? 0.38 : 0.45;
     this.progress = this.perfect ? 0.38 : 0.25;
@@ -324,7 +334,7 @@ export class Fishing {
     const s = this.stats();
     const boss = !!target.boss;
     const form = FORM_FIGHT[boss ? this.bossForm : 'classic'];
-    const pull = boss ? (BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel + this.bossStar * BOSS.pullPerStar) * form.pull : target.fights ? f.pull : 0.06;
+    const pull = boss ? (BOSS.pull + this.bossPhase * BOSS.pullPerPhase + this.bossLevel * BOSS.pullPerLevel + this.bossStar * BOSS.pullPerStar) * form.pull : target.fights ? f.pull * (target.wanted ? WANTED_FIGHT.pull : 1) : 0.06;
     const gentle = this.assist ? 0.5 : 1;
     // Ghost form: the green zone sways slowly (about one swing every 4.5 s).
     if (form.drift > 0) this.greenCenter = GREEN_CENTER + form.drift * Math.sin(this.t * 1.4);
@@ -342,7 +352,7 @@ export class Fishing {
         this.warning = false;
         this.healedThisWarn = false;
         this.surgeLeft = 0.32;
-        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? (BOSS.surge + this.bossLevel * BOSS.surgePerLevel + this.bossStar * BOSS.surgePerStar) * form.surge : 1.25);
+        this.surgePower = pull * (0.9 + this.rng.next() * 0.6) * (boss ? (BOSS.surge + this.bossLevel * BOSS.surgePerLevel + this.bossStar * BOSS.surgePerStar) * form.surge : 1.25 * (target.wanted ? WANTED_FIGHT.surge : 1));
         const gap = boss ? [1.3, 1.0, 0.75][this.bossPhase] : 1.5 - pull;
         // Never shorter than the warning plus a beat, so every pull can still be read.
         this.surgeIn = boss ? Math.max(BOSS.warn + 0.15, (gap + this.rng.next() * 0.9) * form.gap) : gap + this.rng.next() * 0.9;
@@ -363,12 +373,15 @@ export class Fishing {
     const lo = this.greenCenter - this.green / 2;
     const hi = this.greenCenter + this.green / 2;
     const red = this.tension >= RED_AT;
-    const reel = boss ? BOSS.reel * Math.sqrt(s.reelMult) * form.reel : (target.fights ? f.reel : 0.9) * s.reelMult * (this.auto ? 0.5 : 1) * (this.assist ? 1.6 : 1);
+    // Rematches have 30% more health: reeling moves the bar less, and so does letting go. Each star
+    // still pulls and surges harder (a bit less steeply than before, so ★10 stays winnable).
+    const hp = boss && this.bossStar > 0 ? BOSS.rematchHp + BOSS.hpPerStar * this.bossStar : 1;
+    const reel = boss ? (BOSS.reel * Math.sqrt(s.reelMult) * form.reel) / hp : (target.fights ? f.reel : 0.9) * s.reelMult * (this.auto ? 0.5 : 1) * (this.assist ? 1.6 : 1) * (target.wanted ? WANTED_FIGHT.reel : 1);
     if (this.holding) {
       const zone = this.tension >= lo && this.tension <= hi ? 1 : red ? 0.3 : 0.6;
       this.progress += reel * zone * dt;
     } else {
-      this.progress -= (boss ? BOSS.decay * form.decay : pull * 0.12) * dt;
+      this.progress -= (boss ? (BOSS.decay * form.decay) / hp : pull * 0.12) * dt;
     }
 
     if (red) {

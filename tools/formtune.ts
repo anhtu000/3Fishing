@@ -2,12 +2,14 @@
 //   bun tools/formtune.ts ['{"frenzy":{"gap":0.7}}']
 import { Rng } from '../core/rng';
 import { BOSS_FORMS } from '../src/content/data';
-import { FORM_FIGHT, Fishing } from '../src/logic/fishing';
+import { BOSS, FORM_FIGHT, Fishing } from '../src/logic/fishing';
 import { fishingStats } from '../src/logic/rules';
 import { defaultSave } from '../src/logic/model';
 
 const over = process.argv[2] ? JSON.parse(process.argv[2]) : {};
 for (const [k, v] of Object.entries(over)) Object.assign(FORM_FIGHT[k as keyof typeof FORM_FIGHT], v);
+// Second argument: BOSS overrides, e.g. '{"rematchHp":1.2}'.
+if (process.argv[3]) Object.assign(BOSS, JSON.parse(process.argv[3]));
 const players = [
   { delay: 0.22, greed: 0.0, notice: 0.7 },
   { delay: 0.14, greed: 0.03, notice: 0.85 },

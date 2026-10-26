@@ -54,7 +54,6 @@
     "needCoins": "Il te faut {n} pièces. Continue de pêcher !",
     "unlockHow": "Attrape {n} espèces à {pond}, puis bats {boss}.",
     "comeBackTomorrow": "Reviens demain pour le prochain cadeau !",
-    "newWanted": "Nouveau poisson RECHERCHÉ !",
     "again": "Raté ! Il remord...",
     "softEarly": "Pas encore ! Attends la grosse éclaboussure",
     "streak": "Parfait x{n} ! +{p} % de pièces",
@@ -320,7 +319,9 @@
   },
   "wanted": {
     "label": "RECHERCHÉ",
-    "reward": "pièces x3"
+    "reward": "pièces x4",
+    "appear": "Un poisson RECHERCHÉ ! Lance juste à côté !",
+    "gone": "Le poisson RECHERCHÉ est parti."
   },
   "today": {
     "label": "POISSON DU JOUR",

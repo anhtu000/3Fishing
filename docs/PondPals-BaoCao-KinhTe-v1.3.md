@@ -438,3 +438,71 @@ Tỉ lệ thắng tính trung bình cho 3 kiểu người chơi, 3 boss, ★1/3/
 | Boss lần đầu (người mới / trung bình / giỏi) | Cozy 72/85/87%, Misty 67/80/85%, Frozen 64/80/84% |
 | Nhịp chơi (mô phỏng) | Cá đầu 3,2–3,6 s; nở pet đầu 43–50 s; boss Cozy 2,5–3,6 phút; boss cuối 36–53 phút; 84–100% hạ boss cuối trong 60 phút |
 | Chơi liên tục 10 phút (tự câu, nở trứng, mở/đóng 5 menu, đổi hồ) | Bộ nhớ JS lên 88 MB rồi đứng (87,5 → 88,0 MB ở 5 lần đo cuối); texture 250–266; không lỗi |
+
+## 18. v1.14: sửa theo trang "What we look for" của Poki, cá TRUY NÃ theo thời gian, boss đấu lại máu ×1,3 (26/10)
+
+**6 việc theo trang What we look for:**
+
+| Việc | Đã làm | Kết quả đo |
+| --- | --- | --- |
+| Thumbnail và ảnh cho form | Thumbnail mới: mèo đội mũ mưa to ở giữa, đang kéo con cá vịt vàng lên khỏi mặt nước; không chữ. 3 ảnh chơi dọc 1080×1920 trong `store/screenshots/` (thẻ cá Epic, nở pet, trận boss) | Ảnh chụp từ game thật, gợi ý quăng cần không còn hiện sau thẻ cá |
+| Tải hình theo lượt | Màn tải chỉ nạp hình của hồ đang chơi, cá và boss các hồ đã mở, thú trong đội, mũ và phao đang dùng. 71 hình còn lại tải nền sau khi vào game; menu mở chờ tải xong | Đến `gameLoadingFinished` (CPU chậm 4 lần): 4G 3,7 s, 3G nhanh 6,1 s, 3G chậm 17,1 s (v1.12: 5,5 / 8,2 / 18,6 s). Phần tải nền xong khoảng 0,2–0,5 s sau khi vào game |
+| Điều khiển menu bằng phím | Mũi tên/WASD di chuyển giữa các nút theo vị trí, Tab/Shift+Tab xoay vòng, Enter/Space bấm nút đang chọn (hoặc nút chính), ESC đóng. Viền chọn chỉ hiện khi dùng phím | Mua nâng cấp, đóng bảng, pause, tiếp tục, đóng màn nở trứng chỉ bằng phím; Space ngoài menu vẫn quăng cần; trang Poki không cuộn |
+| Thú giúp thấy được | Mỗi lần câu, một thú trong đội nhảy lên, lấp lánh và hiện chữ ngắn khi perk của nó có tác dụng (ví dụ "Lucky +2%"), mỗi thú nghỉ 1,8 s | Một chữ mỗi lần câu, không chồng nhau |
+| Nhạc riêng 3 hồ | Cozy 84 bpm 2:17, Misty 72 bpm 2:13, Frozen 92 bpm 2:26; mỗi bài khoảng 0,9–1 MB, chỉ tải bài của hồ đang chơi, đổi hồ thì chuyển nhạc mượt | Đổi hồ Misty → Cozy chuyển đúng bài. Nhạc tổng hợp bằng code, cần nghe thử trên máy thật |
+| Gom nút bên trái | Nút "…" mở Tự câu và Thử thách theo chiều xuống, tự đóng sau 5 s | Không còn đè mèo khi mở |
+
+**Cá TRUY NÃ (thay cá truy nã mỗi ngày):** sau khi xong hướng dẫn, cá truy nã đầu tiên xuất hiện sau 150 s chơi trong hồ, các con sau cách nhau 180–300 s. Đồng hồ chỉ chạy khi hồ đang hiện (không tính lúc mở menu, xem thẻ cá, đấu boss, chơi thử thách). Cá bơi ở chỗ ngẫu nhiên trong tầm quăng, có vầng sáng vàng, ở lại 75 s rồi bơi đi. Quăng mồi cách nó dưới 130 đơn vị thì nó cắn. Cá truy nã to hơn cá cùng loài (×1,25–1,5), kéo khó hơn (vùng xanh hẹp hơn 20%, kéo mạnh hơn 25%, giật mạnh hơn 40%, cuộn dây chậm hơn 20%), độ hiếm tối thiểu Uncommon. Thưởng: giá ×4 cộng 60 xu × hệ số hồ. Biển truy nã trên HUD đếm ngược số giây còn lại.
+
+Mô phỏng 60 phút, 150 lượt mỗi kiểu (giả định người mới / trung bình / giỏi nhắm vào cá truy nã ở 40/60/80% lượt quăng khi nó đang bơi):
+
+| | Người mới | Trung bình | Giỏi |
+| --- | --- | --- | --- |
+| Cá truy nã đầu tiên | phút 5,7 | phút 5,3 | phút 5,1 |
+| Số lần xuất hiện / bắt được trong 60 phút | 10 / 10 | 11 / 11 | 11 / 11 |
+| Lượt cắn câu cá truy nã kéo lên được | 79% | 80% | 80% |
+| Lượt câu thường kéo lên được | 85% | 85% | 85% |
+
+**Boss đấu lại:** máu ×1,3 (★1 trở lên), mỗi sao kéo mạnh hơn 0,8% và giật mạnh hơn 3%. Tỉ lệ thắng trung bình 3 kiểu người chơi và 3 boss (`tools/formtune.ts`):
+
+| Dạng | ★1 | ★3 | ★5 | ★7 | ★10 | Trung bình (v1.12) | Trận ★1 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Thường | 67% | 51% | 45% | 34% | 19% | 44% (55%) | 36 s |
+| Cuồng nộ | 93% | 69% | 45% | 31% | 7% | 49% (60%) | 56 s |
+| Ma | 68% | 53% | 45% | 36% | 21% | 44% (58%) | 32 s |
+| Khổng lồ | 74% | 66% | 55% | 39% | 20% | 51% (60%) | 72 s |
+| Vàng | 50% | 36% | 31% | 23% | 12% | 30% (44%) | 33 s |
+
+Boss lần đầu không đổi: Cozy 72/85/87%, Misty 67/80/85%, Frozen 64/80/84%.
+
+**Nhịp chơi (mô phỏng, từ v1.14 có thêm cá hôm nay, lượt câu may mắn và cá truy nã sau hướng dẫn):**
+
+| Mốc | Người mới | Trung bình | Giỏi |
+| --- | --- | --- | --- |
+| Cá đầu tiên | 3,6 s | 3,4 s | 3,2 s |
+| Nở pet đầu | 50 s | 46 s | 43 s |
+| Boss Cozy | 3,3 phút | 2,6 phút | 2,5 phút |
+| Mở Misty | 17,1 phút | 14,2 phút | 11,0 phút |
+| Mở Frozen | 50,4 phút | 41,6 phút | 33,9 phút |
+| Boss cuối | 53,7 phút | 45,6 phút | 37,7 phút |
+| Hạ boss cuối trong 60 phút | 77% | 99% | 100% |
+| Phần thưởng lớn trong 10 phút đầu | 57 | 63 | 67 |
+| Khoảng trống dài nhất không có thưởng lớn (10 phút đầu) | 58 s | 55 s | 55 s |
+
+Tắt cá truy nã (`WANTED=0 bun tools/econ.ts`): mở Misty chậm hơn 2–3 phút (20,2 / 17,4 / 13,3 phút).
+
+**Kết quả kiểm tra trên bản build Poki v1.14:**
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| Kiểm kiểu, test | TypeScript sạch; 29 + 10 test đạt (thêm test cá truy nã xuất hiện, bơi đi, trả ×4 và máu boss đấu lại); font đủ ký tự |
+| Dung lượng | 4,68 MB, 34 file (3 bài nhạc 2,8 MB, tải sau); html+js+css 1,69 MB; chỉ gọi ra ngoài `game-cdn.poki.com`; không còn hook dev |
+| Sự kiện SDK | Đúng thứ tự như v1.13; 0 cặp trùng, 0 sự kiện lúc quảng cáo chạy, không lỗi console. Thêm `PokiSDK.measure('wanted', <hồ>, spawn/catch/gone)` |
+| Chặn quảng cáo, ẩn danh | Vào game và chơi được |
+| Cuộn trang Poki | 0 px với Space, mũi tên, PageDown, End, con lăn |
+| 8 kích thước màn hình | Phủ kín, không lỗi |
+| ESC pause | Giữa lúc chờ cá, giữa trận boss, lúc đang gồng lực: đúng như thiết kế |
+| Bản thử điện thoại 1 file | 5,95 MB; âm thanh và nhạc hồ đang chơi tải nền, nhạc chạy, không lỗi |
+| Chơi thử 2 phút bằng chuột thật | Xong cả 6 bước hướng dẫn, không lỗi |
+| Menu (điện thoại dọc, desktop ngang) | 7 bảng chụp lại, không đè, không lỗi |
+| Chơi liên tục 10 phút | Bộ nhớ JS 65 → 83 MB rồi đứng (83,2–83,4 MB ở 6 lần đo cuối); texture 252–268; không lỗi |

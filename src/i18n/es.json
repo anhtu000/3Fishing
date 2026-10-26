@@ -54,7 +54,6 @@
     "needCoins": "Necesitas {n} monedas. ¡Sigue pescando!",
     "unlockHow": "Pesca {n} especies en {pond} y luego vence a {boss}.",
     "comeBackTomorrow": "¡Vuelve mañana para el próximo regalo!",
-    "newWanted": "¡Nuevo pez SE BUSCA!",
     "again": "¡Fallaste! Vuelve a picar...",
     "softEarly": "¡Aún no! Espera el gran chapuzón",
     "streak": "¡Perfecto x{n}! +{p} % monedas",
@@ -320,7 +319,9 @@
   },
   "wanted": {
     "label": "SE BUSCA",
-    "reward": "monedas x3"
+    "reward": "monedas x4",
+    "appear": "¡Un pez SE BUSCA! ¡Lanza justo a su lado!",
+    "gone": "El pez SE BUSCA se fue nadando."
   },
   "today": {
     "label": "PEZ DEL DÍA",

@@ -1,6 +1,7 @@
 // Reward moments: the catch card, coins flying home, the egg hatch reveal and small toasts.
 // These are the moments players screenshot, so they get the most juice: rays, sparkles, bounce, sound.
 import Phaser from 'phaser';
+import { KeyNav } from './keynav';
 import { app, shapeTexture } from '@core';
 import { PERKS, RARITY_COLOR, RARITY_CSS, petById, type PetDef } from '../content/data';
 import { eggName, fishName, junkName, perkText, petName, rarityName, t } from '../i18n/t';
@@ -274,6 +275,8 @@ export function hatchReveal(scene: Phaser.Scene, tier: number, petId: string, re
           },
         });
         layer.add([h, name, p2, btn]);
+        // Space or Enter says "Yay!" too.
+        new KeyNav(scene, layer).primary = btn;
         for (const o of [h, name, p2, btn]) {
           o.setAlpha(0);
           scene.tweens.add({ targets: o, alpha: 1, duration: 300, delay: 300 });

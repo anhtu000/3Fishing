@@ -3,23 +3,24 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { BOSS_LURE, BOSS_STARS, CHALLENGE, PONDS, bossForm, type BossForm, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
+import { BOSS_LURE, BOSS_STARS, CHALLENGE, PERKS, PONDS, WANTED, bossForm, type BossForm, type PerkKind, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
-import { anyUpgradeAffordable, pondGold, questsClaimable, readyEggIndex, rollSize as rollFishSize, type CatchRoll } from '../logic/rules';
+import { anyUpgradeAffordable, perkValue, pondGold, questsClaimable, readyEggIndex, rollSize as rollFishSize, type CatchRoll } from '../logic/rules';
 import { LocalLeaderboard, formatTime, type Leaderboard } from '../logic/leaderboard';
 import { devPreset } from '../dev';
 import { bossName, duration, eggName, fishName, pondName, t } from '../i18n/t';
 import { save } from '../save';
-import { loadSounds } from '../sounds';
+import { loadMusic, loadSounds, musicKey } from '../sounds';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
 import { basketPanel, challengePanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
 import { Rig } from '../world/Rig';
-import { loadBossForm } from '../render/textures';
+import { KeyNav } from '../ui/keynav';
+import { artIsReady, artReady, loadBossForm, loadLaterTextures } from '../render/textures';
 
 /** Colour of each rematch form: name on the banner and the boss health bar. */
 const FORM_CSS: Record<BossForm, string> = { classic: '#ffe066', frenzy: '#ff7a5c', ghost: '#7fffe4', giant: '#b6d98a', golden: '#ffd23f' };
@@ -56,6 +57,7 @@ export class PlayScene extends BaseScene {
   private coinSfxAt = 0;
   private ticker = 0;
   private music: Phaser.Sound.BaseSound | null = null;
+  private musicKeyPlaying = '';
   private seenPets = 0;
   private seenDex = 0;
 
@@ -167,6 +169,17 @@ export class PlayScene extends BaseScene {
       },
       () => {
         if (this.run) return this.pickChallengeFish();
+        // The hook landed next to the WANTED fish: it bites, and fights harder than its kind.
+        const w = this.pg.wanted;
+        if (w && this.pond.wantedNear(this.rig.landX, WANTED.reach)) {
+          this.pond.hideWanted(true);
+          this.rollWanted = true;
+          const roll: CatchRoll = { kind: 'fish', fish: w.fish, size: w.size };
+          this.roll = roll;
+          this.rig.setTarget(rollKey(roll), rollSize(roll));
+          return { rarity: Math.max(1, w.fish.rarity), fights: true, wanted: true };
+        }
+        this.rollWanted = false;
         const r = this.pg.rollForCast(this.fishing.zone, this.lucky);
         this.roll = r.roll;
         this.rig.setTarget(rollKey(r.roll), rollSize(r.roll));
@@ -181,8 +194,17 @@ export class PlayScene extends BaseScene {
     // Wardrobe look and the gold-pond cup.
     this.applyStyle();
     this.pond.setTrophy(this.pg.lateGame && pondGold(s, this.pond.pond));
-    loadSounds(this, () => this.startMusic());
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.music?.stop());
+    // A WANTED fish still out there from last time.
+    const wanted = this.pg.wanted;
+    if (wanted) this.pond.showWanted(wanted.fish, wanted.size);
+    // The art left out of the loading screen (other ponds, pets, hats), then the sounds.
+    loadLaterTextures(this);
+    loadSounds(this, this.s.pond, () => this.startMusic());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.music?.destroy();
+      this.music = null;
+      this.musicKeyPlaying = '';
+    });
 
     // Welcome back: angler pets fished while you were away; then the daily gift.
     const rebuilt = PlayScene.restarting;
@@ -285,6 +307,8 @@ export class PlayScene extends BaseScene {
   private onHook(perfect: boolean) {
     this.rig.hooked();
     app.audio.play('hook');
+    // A sharp-eyed pet gave you a longer bite window.
+    this.petHelp('sharp');
     if (this.roll) this.hud.setProgressIcon(rollKey(this.roll));
     if (perfect) {
       say(this, this.rig.bobber.x, this.pond.L.water - 80, t('msg.perfect'), '#7dffb0', 44);
@@ -299,7 +323,14 @@ export class PlayScene extends BaseScene {
     if (f.target.boss) return this.onBossEnd(o);
     if (o === 'caught' && this.roll && this.run) return this.onChallengeCatch();
     if (o === 'caught' && this.roll) {
-      const res = this.pg.applyCatch(this.roll, f.perfect);
+      const res = this.pg.applyCatch(this.roll, f.perfect, this.rollWanted);
+      if (this.rollWanted) {
+        this.rollWanted = false;
+        if (res.bounty) {
+          this.pond.clearWanted(true);
+          app.measure('wanted', this.s.pond, 'catch');
+        }
+      }
       this.s.rng = this.rng.state;
       const from = this.rig.landed();
       this.completeStep('reel');
@@ -308,6 +339,20 @@ export class PlayScene extends BaseScene {
         this.pond.refreshKnown();
         app.moments.emit('collectionNew', { id: this.roll.kind === 'fish' ? this.roll.fish.id : '' });
       }
+      // Pets that helped with this catch say so (luck for a rarer catch, price for a fish, eggs...).
+      const roll = this.roll;
+      // One label per catch, the most telling help first.
+      this.time.delayedCall(450, () => {
+        const order: PerkKind[] =
+          roll.kind === 'fish'
+            ? [...(roll.fish.rarity >= 1 ? (['luck'] as const) : []), ...(roll.fish.rarity >= 2 ? (['strong'] as const) : []), 'merchant']
+            : roll.kind === 'egg'
+              ? [...(roll.tier >= 1 ? (['luck'] as const) : []), 'nurture']
+              : roll.kind === 'chest'
+                ? ['luck']
+                : [];
+        for (const perk of order) if (this.petHelp(perk)) break;
+      });
       if (this.roll.kind === 'fish' && this.roll.fish.rarity >= 3) app.moments.emit('rarePull', { tier: this.roll.fish.rarity, odds: this.roll.fish.rarity === 4 ? 0.01 : 0.04, label: this.roll.fish.name });
       const view = {
         result: res,
@@ -345,12 +390,6 @@ export class PlayScene extends BaseScene {
         }
       };
       if (res.streak >= 2 && res.roll.kind === 'fish') this.time.delayedCall(500, () => say(this, this.vp.width / 2, this.pond.L.water - 170, t('msg.streak', { n: res.streak, p: res.streakBonus }), '#7dffb0', 34));
-      if (res.newBounty) {
-        this.time.delayedCall(1300, () => {
-          note(this, t('msg.newWanted'));
-          app.audio.play('pop');
-        });
-      }
       if (isBigCatch(res)) {
         this.modal++;
         this.hud.setVisible(false);
@@ -367,6 +406,11 @@ export class PlayScene extends BaseScene {
       return;
     }
     this.pg.breakStreak();
+    // The WANTED fish got away: it is back in the water somewhere else.
+    if (this.rollWanted) {
+      this.rollWanted = false;
+      this.pond.hideWanted(false);
+    }
     const msg: Record<string, string> = { early: t('msg.early'), missed: t('msg.missed'), snap: t('msg.snap'), escape: t(this.slipped ? 'msg.slip' : 'msg.escape') };
     this.slipped = false;
     say(this, this.vp.width / 2, this.pond.L.water - 120, msg[o] ?? '', '#ffffff', 36);
@@ -381,6 +425,34 @@ export class PlayScene extends BaseScene {
       this.rig.clear();
       this.fishing.reset();
     });
+  }
+
+  /** When each pet last showed its help (scene time), so the pond does not fill with labels. */
+  private helpShownAt = new Map<string, number>();
+
+  /**
+   * A team pet with this perk shows that it helped: it hops, sparkles and says its bonus
+   * ("Lucky +2%"). Makes the hatch -> pet -> better fishing loop visible from the first pet on.
+   */
+  private petHelp(perk: PerkKind): boolean {
+    const now = this.time.now;
+    for (const id of this.s.team) {
+      const def = petById.get(id);
+      if (!def || def.perk !== perk) continue;
+      if (now - (this.helpShownAt.get(id) ?? -1e9) < 1800) continue;
+      const img = this.pond.petImage(id);
+      if (!img || !img.visible) continue;
+      this.helpShownAt.set(id, now);
+      const level = this.s.pets[id]?.level ?? 1;
+      const v = perkValue(perk, def.rarity, level);
+      const unit = PERKS[perk].unit;
+      const amount = unit === 'pct' ? `+${Math.round(v)}%` : unit === 'sec' ? `+${v.toFixed(2)}s` : '';
+      say(this, img.x, img.y - 95, `${t(`perk.${perk}`)} ${amount}`.trim(), '#ffe066', 26);
+      sparkles(this, img.x, img.y - 30, 6, 70);
+      this.tweens.add({ targets: img, y: img.y - 22, duration: 150, yoyo: true, ease: 'Quad.Out' });
+      return true;
+    }
+    return false;
   }
 
   private afterCatch(roll: CatchRoll) {
@@ -457,6 +529,11 @@ export class PlayScene extends BaseScene {
    */
   private open(make: () => CPanel, freeze = false) {
     if (this.panel && !this.panel.isClosed) return;
+    // Menus can show any pond, pet or hat: in the first seconds, wait for the rest of the art.
+    if (!freeze && !artIsReady()) {
+      void artReady.then(() => this.open(make, freeze));
+      return;
+    }
     if (!freeze) {
       if (this.fishing.phase === 'charging') this.fishing.release();
       if (this.fishing.busy && this.fishing.phase !== 'done') {
@@ -483,9 +560,9 @@ export class PlayScene extends BaseScene {
     if (this.fishing.phase === 'charging') this.fishing.cancelCharge();
     this.open(() => {
       const p = new CPanel(this, { title: t('pause.title'), w: 600, h: 680, color: COLORS.teal });
-      p.content.add(
-        new CButton(this, 0, p.top + 120, { w: 340, h: 100, label: t('pause.resume'), fontSize: 40, color: COLORS.green, onClick: () => p.close() }),
-      );
+      const resume = new CButton(this, 0, p.top + 120, { w: 340, h: 100, label: t('pause.resume'), fontSize: 40, color: COLORS.green, onClick: () => p.close() });
+      p.content.add(resume);
+      p.nav.primary = resume;
       const sound = new CButton(this, 0, p.top + 250, {
         w: 340,
         h: 84,
@@ -598,7 +675,9 @@ export class PlayScene extends BaseScene {
     });
     // Poki: the free option sits above the rewarded one and is at least as big.
     const ads = app.ads.rewardedAvailable && !app.clean;
-    p.content.add(new CButton(this, 0, p.bottom - (ads ? 200 : 110), { w: 400, h: 96, label: t('core.collect'), fontSize: 38, color: COLORS.orange, onClick: () => give(1) }));
+    const collect = new CButton(this, 0, p.bottom - (ads ? 200 : 110), { w: 400, h: 96, label: t('core.collect'), fontSize: 38, color: COLORS.orange, onClick: () => give(1) });
+    p.content.add(collect);
+    p.nav.primary = collect;
     if (ads) p.content.add(new CButton(this, 0, p.bottom - 90, { w: 400, h: 96, label: t('offline.collectDouble'), fontSize: 38, color: COLORS.ad, ad: true, onClick: () => this.watchAd(() => give(2)) }));
   }
 
@@ -660,6 +739,7 @@ export class PlayScene extends BaseScene {
     // Leaving for another pond ends a challenge in progress.
     if (this.run) this.abandonChallenge();
     const p = pondById.get(id as 'cozy');
+    if (!artIsReady()) await artReady;
     if (!p || !this.pg.travel(p)) return;
     // Next level: gameplayStop, commercial break, then gameplayStart in the new pond.
     this.stopPlay();
@@ -667,10 +747,12 @@ export class PlayScene extends BaseScene {
     this.modal++;
     this.cameras.main.fadeOut(300, 255, 255, 255);
     this.time.delayedCall(320, () => {
+      this.pond.clearWanted(true);
       this.pond.setPond(id);
       this.pond.setPets(this.s.team);
       this.layout(this.vp);
       this.refresh();
+      void this.pondMusic();
       this.cameras.main.fadeIn(400, 255, 255, 255);
       app.audio.play('unlock');
       const title = txt(this, this.vp.width / 2, this.vp.height * 0.25, pondName(p.id), 72).setDepth(1500).setScale(0.5);
@@ -792,15 +874,21 @@ export class PlayScene extends BaseScene {
     const next = r?.next && this.pg.challengeUnlocked(r.next) ? r.next : null;
     let y = p.bottom - 300;
     if (next) {
-      p.content.add(new CButton(this, 0, y, { w: 400, h: 92, label: t('challenge.next'), fontSize: 34, color: COLORS.green, onClick: () => void leave(next.id) }));
+      const go = new CButton(this, 0, y, { w: 400, h: 92, label: t('challenge.next'), fontSize: 34, color: COLORS.green, onClick: () => void leave(next.id) });
+      p.content.add(go);
+      p.nav.primary = go;
       y += 110;
     }
-    p.content.add(new CButton(this, 0, y, { w: 400, h: 92, label: t('challenge.retry'), fontSize: 34, color: COLORS.orange, onClick: () => void leave(def.id) }));
+    const retry = new CButton(this, 0, y, { w: 400, h: 92, label: t('challenge.retry'), fontSize: 34, color: COLORS.orange, onClick: () => void leave(def.id) });
+    p.content.add(retry);
+    p.nav.primary ??= retry;
     p.content.add(new CButton(this, 0, p.bottom - 60, { w: 260, h: 72, label: t('challenge.exit'), fontSize: 28, color: COLORS.grey, onClick: () => void leave() }));
   }
 
   // ---------- boss ----------
 
+  /** The fish on the hook is the WANTED fish. */
+  private rollWanted = false;
   /** Star of the rematch in progress (0: the first fight with the pond's boss). */
   private rematchStar = 0;
   /** Form of the boss in the fight in progress (rematches have forms; see bossForm). */
@@ -913,6 +1001,7 @@ export class PlayScene extends BaseScene {
       },
     });
     layer.add([...lines, btn]);
+    new KeyNav(this, layer).primary = btn;
   }
 
   private bossLabel() {
@@ -968,6 +1057,7 @@ export class PlayScene extends BaseScene {
         },
       });
       layer.add([head, sub, egg, eggT, gem, gemT, tip, btn]);
+      new KeyNav(this, layer).primary = btn;
       return;
     }
     // Lost: continue once with an ad (keeps progress), or lure the boss back with a few catches.
@@ -1000,10 +1090,10 @@ export class PlayScene extends BaseScene {
               done();
               this.bossContinued = true;
               this.rig.cast(0.55, 2);
-              this.rig.setTarget(`fish:${boss.id}`, 0.95);
+              this.rig.setTarget(this.bossTex || `fish:${boss.id}`, this.rematchForm === 'giant' ? 1.15 : 0.95, FORM_SHADE[this.rematchForm]);
               this.fishing.lineLevel = this.s.upgrades.line;
               this.fishing.continueBoss(progress);
-              this.hud.drawBoss(this.bossLabel(), 1 - progress, this.fishing.bossPhase);
+              this.hud.drawBoss(this.bossLabel(), 1 - progress, this.fishing.bossPhase, FORM_BAR[this.rematchForm]);
               app.gameplay.start();
             }),
         }),
@@ -1012,24 +1102,24 @@ export class PlayScene extends BaseScene {
     // No free retry: the boss swims off and comes back after a few more catches in this pond.
     const lureN = BOSS_LURE[Math.max(0, PONDS.indexOf(this.pond.pond))] ?? 8;
     p.content.add(txt(this, 0, p.top + 330, t('lure.how', { n: lureN, boss: bossName(boss.id) }), 26, { color: '#c0392b', stroke: false, wrap: 520 }));
-    p.content.add(
-      new CButton(this, 0, p.bottom - (revive ? 300 : 190), {
-        w: 400,
-        h: 96,
-        label: t('lure.ok'),
-        fontSize: 36,
-        color: COLORS.orange,
-        onClick: () => {
-          done();
-          this.pg.loseBoss();
-          this.rematchStar = 0;
-          this.fishing.reset();
-          this.rig.clear();
-          this.refresh();
-          void this.resumePlay();
-        },
-      }),
-    );
+    const ok = new CButton(this, 0, p.bottom - (revive ? 300 : 190), {
+      w: 400,
+      h: 96,
+      label: t('lure.ok'),
+      fontSize: 36,
+      color: COLORS.orange,
+      onClick: () => {
+        done();
+        this.pg.loseBoss();
+        this.rematchStar = 0;
+        this.fishing.reset();
+        this.rig.clear();
+        this.refresh();
+        void this.resumePlay();
+      },
+    });
+    p.content.add(ok);
+    p.nav.primary = ok;
   }
 
   // ---------- coach (tutorial) ----------
@@ -1144,14 +1234,31 @@ export class PlayScene extends BaseScene {
   // ---------- music ----------
 
   private startMusic() {
-    if (!this.cache.audio.exists('music')) return;
+    const key = musicKey(this.s.pond);
+    if (!this.cache.audio.exists(key)) return;
+    if (this.music && this.musicKeyPlaying === key) return;
     const play = () => {
-      if (this.music) return;
-      this.music = this.sound.add('music', { loop: true, volume: 0.32 });
+      if (this.musicKeyPlaying === key && this.music) return;
+      // Cross-fade from the previous pond's music.
+      const old = this.music;
+      if (old) {
+        this.tweens.add({ targets: old, volume: 0, duration: 700, onComplete: () => old.destroy() });
+      }
+      this.musicKeyPlaying = key;
+      this.music = this.sound.add(key, { loop: true, volume: old ? 0 : 0.32 });
       this.music.play();
+      if (old) this.tweens.add({ targets: this.music, volume: 0.32, duration: 900 });
     };
     if (this.sound.locked) this.sound.once(Phaser.Sound.Events.UNLOCKED, play);
     else play();
+  }
+
+  /** New pond: its own music (loaded the first time). */
+  private async pondMusic() {
+    const pond = this.s.pond;
+    if (await loadMusic(this, pond)) {
+      if (this.s.pond === pond) this.startMusic();
+    }
   }
 
   // ---------- frame ----------
@@ -1168,6 +1275,23 @@ export class PlayScene extends BaseScene {
     if (this.modal === 0 || f.phase === 'reeling') {
       if (f.auto && this.modal === 0) this.bot.update(dt);
       f.update(dt);
+    }
+    // WANTED fish: its clock runs only while you are fishing (not on the hook, in a boss fight or a challenge).
+    const fishingNow = this.modal === 0 && !this.run && !f.target.boss;
+    this.pond.setWantedShown(!f.target.boss && !this.run);
+    if (fishingNow && !(this.rollWanted && f.busy)) {
+      const ev = this.pg.tickWanted(dt);
+      const w = this.pg.wanted;
+      if (ev === 'spawn' && w) {
+        this.pond.showWanted(w.fish, w.size);
+        note(this, t('wanted.appear'), 2600);
+        app.audio.play('pop');
+        app.measure('wanted', this.s.pond, 'spawn');
+      } else if (ev === 'gone') {
+        this.pond.clearWanted();
+        note(this, t('wanted.gone'));
+        app.measure('wanted', this.s.pond, 'gone');
+      }
     }
     // Economy tick: eggs and angler pets.
     this.ticker += dt;
@@ -1215,12 +1339,13 @@ export class PlayScene extends BaseScene {
       bossReady: this.pg.bossReady && !this.run,
       challengeOpen: this.pg.challengeOpen,
       challenge: this.run ? { timeMs: this.run.timeMs, fish: this.run.fish, fishGoal: this.run.def.fish, kinds: this.run.kinds.size, kindsGoal: this.run.def.species } : null,
-      showHint: tutDone && !f.auto,
+      showHint: tutDone && !f.auto && this.modal === 0,
       adsOk: app.ads.rewardedAvailable && !app.clean,
       ...(() => {
-        // Today's fish takes the poster while it is still out there; WANTED otherwise.
-        const id = this.pg.todayFish?.id ?? s.bounty;
-        return { wanted: id, wantedKnown: !!(id && s.dex[id]), wantedToday: !!this.pg.todayFish };
+        // A WANTED fish in the water takes the poster (with its countdown); today's fish otherwise.
+        const w = this.pg.wanted;
+        const id = w ? w.fish.id : (this.pg.todayFish?.id ?? null);
+        return { wanted: id, wantedKnown: !!w || !!(id && s.dex[id]), wantedToday: !w && !!this.pg.todayFish, wantedLeft: w ? Math.max(0, Math.ceil(w.left)) : null };
       })(),
       goal: this.goalView(),
     });

@@ -280,6 +280,14 @@ export const CHALLENGES: ChallengeDef[] = PONDS.flatMap((pond, pi) =>
 );
 export const challengeById = new Map(CHALLENGES.map((c) => [c.id, c]));
 
+/**
+ * WANTED fish: after a few minutes of play a big fish of the pond swims in at a random spot. Cast
+ * so the hook lands next to it (within `reach` design units) to hook it; it fights harder than its
+ * kind (see WANTED_FIGHT in logic/fishing.ts) and pays `priceMult` x its price plus a bonus. It swims
+ * off after `staySec`; the next one comes `gapMin`-`gapMax` seconds of play later.
+ */
+export const WANTED = { firstSec: 150, gapMin: 180, gapMax: 300, staySec: 75, reach: 130, priceMult: 4, bonus: 60, sizeMin: 1.25, sizeMax: 1.5 };
+
 /** Fish to catch in the pond to lure a boss back after a lost fight (by pond: Cozy, Misty, Frozen). */
 export const BOSS_LURE = [5, 8, 10];
 

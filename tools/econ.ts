@@ -15,6 +15,9 @@ const OUT = process.argv[3] ?? '/tmp/claude-0/econ.json';
 const DT = 1 / 30;
 const MINUTES = 60;
 const IMPULSE = Number(process.env.IMPULSE ?? 0.06);
+/** v1.14: the tutorial ends after the first hatch and upgrade, which turns on today's fish, the lucky cast
+ *  and the WANTED fish (set WANTED=0 to leave the tutorial open, as in the v1.13 runs). */
+const WANTED_ON = process.env.WANTED !== '0';
 
 interface Profile {
   name: string;
@@ -35,12 +38,14 @@ interface Profile {
   idleSec: number;
   /** Chance to notice the thrash warning and let go before a pull. */
   notice: number;
+  /** Chance a cast is aimed at the WANTED fish while it swims in the pond. */
+  aimWanted: number;
 }
 
 const PROFILES: Profile[] = [
-  { name: 'novice', react: [0.38, 0.45], nibbleStrike: 0.35, reelDelay: 0.22, reelGreed: 0.0, cardSec: 2.0, menuSec: 7, idleEvery: 50, idleSec: 4, notice: 0.7 },
-  { name: 'average', react: [0.3, 0.3], nibbleStrike: 0.18, reelDelay: 0.14, reelGreed: 0.03, cardSec: 1.4, menuSec: 5, idleEvery: 70, idleSec: 3, notice: 0.85 },
-  { name: 'skilled', react: [0.22, 0.18], nibbleStrike: 0.06, reelDelay: 0.08, reelGreed: 0.05, cardSec: 0.9, menuSec: 3.5, idleEvery: 120, idleSec: 2, notice: 0.95 },
+  { name: 'novice', react: [0.38, 0.45], nibbleStrike: 0.35, reelDelay: 0.22, reelGreed: 0.0, cardSec: 2.0, menuSec: 7, idleEvery: 50, idleSec: 4, notice: 0.7, aimWanted: 0.4 },
+  { name: 'average', react: [0.3, 0.3], nibbleStrike: 0.18, reelDelay: 0.14, reelGreed: 0.03, cardSec: 1.4, menuSec: 5, idleEvery: 70, idleSec: 3, notice: 0.85, aimWanted: 0.6 },
+  { name: 'skilled', react: [0.22, 0.18], nibbleStrike: 0.06, reelDelay: 0.08, reelGreed: 0.05, cardSec: 0.9, menuSec: 3.5, idleEvery: 120, idleSec: 2, notice: 0.95, aimWanted: 0.8 },
 ];
 
 type Ev = { t: number; kind: string };
@@ -133,7 +138,15 @@ function runOne(p: Profile, seed: number) {
   const game = new PondGame(s, rng, () => 1_700_000_000_000 + clock * 1000);
   game.refreshDay();
   let roll: ReturnType<PondGame['rollForCast']> | null = null;
+  let wantedCast = false;
   const f = new Fishing(rng, () => game.stats(), {}, () => {
+    const w = game.wanted;
+    wantedCast = !!w && rng.next() < p.aimWanted;
+    if (w && wantedCast) {
+      const target = { rarity: Math.max(1, w.fish.rarity), fights: true, wanted: true };
+      roll = { roll: { kind: 'fish', fish: w.fish, size: w.size }, target } as unknown as ReturnType<PondGame['rollForCast']>;
+      return target;
+    }
     roll = game.rollForCast(f.zone, false);
     return roll.target;
   });
@@ -151,6 +164,9 @@ function runOne(p: Profile, seed: number) {
   const firsts: Record<string, number> = {};
   const first = (k: string) => (firsts[k] ??= clock);
   let pause = 0;
+  let idling = false;
+  let wantedTries = 0;
+  let wantedLanded = 0;
   let nextIdle = p.idleEvery;
   let bossFight = false;
   let bossFails = 0;
@@ -170,13 +186,23 @@ function runOne(p: Profile, seed: number) {
       const cheapest = Math.min(...UPGRADE_IDS.map((id) => upgradeCost(id, s.upgrades[id])));
       nextCostAt.push(cheapest);
     }
+    // The WANTED clock runs while the pond is on screen (as in PlayScene): not behind cards or
+    // menus, not in a boss fight, not while the WANTED fish itself is on the line.
+    if (WANTED_ON && !bossFight && (pause <= 0 || idling) && !(wantedCast && (f.phase === 'reeling' || f.phase === 'bite'))) {
+      const w = game.tickWanted(DT);
+      if (w === 'spawn') (at('wantedSpawn'), first('wantedSpawn'));
+    }
     if (pause > 0) {
       pause -= DT;
       continue;
     }
+    idling = false;
+    // The tutorial ends once the first pet has hatched and the first upgrade is bought.
+    if (WANTED_ON && firsts.hatch != null && firsts.upgrade != null && !s.tutorial.includes('done')) s.tutorial.push('done');
     if (clock > nextIdle && f.phase === 'ready') {
       nextIdle = clock + p.idleEvery * (0.6 + rng.next() * 0.8);
       pause = p.idleSec;
+      idling = true;
       continue;
     }
     human.update(DT);
@@ -187,6 +213,10 @@ function runOne(p: Profile, seed: number) {
     if (early10.length < 10 && !bossFight) early10.push(o);
     at('cast');
     if (o === 'early') human.learnEarly();
+    if (wantedCast && !bossFight && o !== 'early') {
+      wantedTries++;
+      if (o === 'caught') wantedLanded++;
+    }
     if (o !== 'caught') game.breakStreak();
     if (o === 'caught') {
       if (bossFight) {
@@ -196,13 +226,12 @@ function runOne(p: Profile, seed: number) {
         bossFight = false;
         pause = 6;
       } else if (roll) {
-        const r = game.applyCatch(roll.roll, f.perfect);
+        const r = game.applyCatch(roll.roll, f.perfect, wantedCast);
         at('catch');
         first('catch');
         if (r.isNew) at('newSpecies');
         if (r.record) at('record');
         if (r.bounty) at('wanted');
-        if (r.newBounty) at('newWanted');
         if (r.streak >= 2) at('streak');
         if (r.roll.kind === 'egg') (at('egg'), first('egg'));
         if (r.roll.kind === 'chest') (at('chest'), first('chest'));
@@ -264,6 +293,7 @@ function runOne(p: Profile, seed: number) {
         bought++;
         at('upgrade');
         first('upgrade');
+
       }
       if (bought) pause += p.menuSec;
     }
@@ -308,6 +338,10 @@ function runOne(p: Profile, seed: number) {
       coinsEarned: s.stats.coinsEarned,
       bossFails,
       pond: s.pond,
+      wantedSpawns: ev.filter((e) => e.kind === 'wantedSpawn').length,
+      wantedCaught: ev.filter((e) => e.kind === 'wanted').length,
+      wantedTries,
+      wantedLanded,
     },
     pendingAt: [3, 5, 10].map(() => 0),
     events: ev,
@@ -366,6 +400,12 @@ for (const p of PROFILES) {
       bait: m((r) => r.end.upgrades.bait),
       float: m((r) => r.end.upgrades.float),
       bossFails: m((r) => r.end.bossFails),
+    },
+    wanted: {
+      spawns60: m((r) => r.end.wantedSpawns),
+      caught60: m((r) => r.end.wantedCaught),
+      landRate: +(rs.reduce((a, r) => a + r.end.wantedLanded, 0) / Math.max(1, rs.reduce((a, r) => a + r.end.wantedTries, 0))).toFixed(3),
+      firstSpawnSec: F('wantedSpawn'),
     },
   };
   report[p.name] = out;

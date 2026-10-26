@@ -263,6 +263,8 @@ const ICONS: Record<string, Art> = {
   i_lock: { w: 96, h: 96, body: () => line('M30,42 L30,30 C30,10 66,10 66,30 L66,42', OUTLINE, 9) + line('M30,42 L30,30 C30,10 66,10 66,30 L66,42', '#b9b4c9', 4) + path('M20,40 L76,40 L76,86 L20,86 Z', '#ffcf3a') + circle(48, 60, 6, OUTLINE, false) + flat('M45,62 L51,62 L50,74 L46,74 Z', OUTLINE) },
   i_clock: { w: 96, h: 96, body: () => circle(48, 48, 38, '#ffffff') + line('M48,48 L48,24 M48,48 L64,58', OUTLINE, 5) + circle(48, 48, 4, OUTLINE, false) },
   i_auto: { w: 96, h: 96, body: () => circle(48, 48, 36, '#7fd3e6') + line('M30,46 A20,20 0 1,1 48,68', '#ffffff', 7) + flat('M22,40 L38,40 L30,54 Z', '#ffffff') },
+  // "More": three dots in a bubble (opens the late-game modes: auto fishing, challenges).
+  i_more: { w: 96, h: 96, body: () => circle(48, 48, 38, '#ffffff') + circle(28, 48, 8, '#3b2a4d') + circle(48, 48, 8, '#3b2a4d') + circle(68, 48, 8, '#3b2a4d') },
   i_quest: { w: 96, h: 96, body: () => path('M20,10 L76,10 L76,86 L20,86 Z', '#fff4dc') + path('M34,4 L62,4 L62,18 L34,18 Z', '#c9a26b') + line('M32,36 l8,8 l14,-16', '#5fd38d', 6) + line('M32,62 l32,0', '#c7a77a', 5) },
   i_crown: { w: 96, h: 96, body: () => path('M12,76 L8,28 L32,48 L48,18 L64,48 L88,28 L84,76 Z', '#ffd23f') + circle(48, 58, 6, '#ff5d8f') },
   i_sound: { w: 96, h: 96, body: () => path('M14,36 L32,36 L54,16 L54,80 L32,60 L14,60 Z', '#ffffff') + line('M66,34 Q76,48 66,62 M74,24 Q92,48 74,72', '#ffffff', 7) + line('M66,34 Q76,48 66,62 M74,24 Q92,48 74,72', OUTLINE, 0.01) },

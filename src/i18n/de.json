@@ -54,7 +54,6 @@
     "needCoins": "Du brauchst {n} Münzen. Angle weiter!",
     "unlockHow": "Fang {n} Fischarten in {pond} und besiege dann {boss}.",
     "comeBackTomorrow": "Komm morgen wieder für das nächste Geschenk!",
-    "newWanted": "Neuer GESUCHT-Fisch!",
     "again": "Verpasst! Er beißt noch mal...",
     "softEarly": "Noch nicht! Warte auf den großen Platscher",
     "streak": "Perfekt x{n}! +{p} % Münzen",
@@ -320,7 +319,9 @@
   },
   "wanted": {
     "label": "GESUCHT",
-    "reward": "Münzen x3"
+    "reward": "Münzen x4",
+    "appear": "Ein GESUCHTER Fisch! Wirf direkt daneben!",
+    "gone": "Der GESUCHTE Fisch ist weggeschwommen."
   },
   "today": {
     "label": "FISCH DES TAGES",

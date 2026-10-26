@@ -1,4 +1,4 @@
-# Game #3 — Kitty Pond: Hatch & Fish (v1.13)
+# Game #3 — Kitty Pond: Hatch & Fish (v1.14)
 
 Tên cũ "Pond Pals: Hatch & Fish" đã đổi ở v1.13 vì trùng tên game của HyperBeard. Tên file tài liệu và khóa lưu tiến trình (`pondpals`) giữ nguyên.
 
@@ -16,7 +16,8 @@ npm test               # test khung chung + luật game
 npm run sim            # mô phỏng cân bằng 1 giờ chơi
 bun tools/econ.ts 150  # mô phỏng 3 kiểu người chơi: mốc tiến trình, thưởng, thao tác mỗi phút
 bun tools/bosstest.ts  # tỉ lệ thắng boss lần đầu và thời lượng trận
-npm run audio          # tạo lại âm thanh (cần python3, numpy, ffmpeg)
+bun tools/formtune.ts  # tỉ lệ thắng 4 dạng boss khi đấu lại
+npm run audio          # tạo lại âm thanh (cần python3, numpy, scipy, ffmpeg); chỉ nhạc: python3 tools/make_audio.py music
 ```
 
 Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn boss), `#dev-misty` (hồ 2), `#dev-frozen` (hồ 3). Đổi ngôn ngữ để thử: `?lang=de` (en, fr, it, de, es, tr).
@@ -36,7 +37,7 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
 ## Poki
 
 - Quy định và checklist trước khi nộp: `docs/Poki-Huong-dan.md` (dùng chung cho mọi game đường A).
-- Thumbnail cửa hàng: `store/thumbnail_1024.png`, `store/thumbnail_628.png` (tạo lại: `bun tools/art/thumbnail.ts store/thumbnail_1024.png 1024`).
+- Thumbnail cửa hàng: `store/thumbnail_1024.png`, `store/thumbnail_628.png` (tạo lại: `bun tools/art/thumbnail.ts store/thumbnail_1024.png 1024`). 3 ảnh chơi dọc 1080×1920 cho form nộp: `store/screenshots/`.
 - Kiểm thứ tự sự kiện SDK bằng SDK giả: `npm run build && node tools/poki-events.mjs dist/poki`.
 
 ## Ghi chú kỹ thuật
@@ -75,3 +76,4 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
 - v1.11: art pet theo độ hiếm (hào quang, đá quý, tia sáng, lấp lánh); boss hồi 25% khi bấm trượt (ân hạn 0,25 s); nhãn sao boss rõ nghĩa (Fishdex hàng 10 sao, Wardrobe ★ n/15).
 - v1.12: sửa lỗi theo đánh giá nộp Poki (chặn cuộn trang, ESC pause mọi lúc, âm thanh tải sau khi vào game, thông báo không chồng nhau); boss đầu hồi 10%; 4 dạng boss khi đấu lại (Cuồng nộ, Ma, Khổng lồ, Vàng); sự kiện phễu `PokiSDK.measure`; hồ sơ nộp Poki `docs/Poki-Nop-Game.md`.
 - v1.13: đổi tên thành Kitty Pond: Hatch & Fish; chạy lại toàn bộ test trước khi nộp.
+- v1.14: theo trang "What we look for" của Poki: thumbnail mới (mèo là nhân vật chính), 3 ảnh chơi cho form; tải hình theo lượt (hồ đang chơi trước, phần còn lại tải nền); điều khiển menu bằng phím (mũi tên/WASD, Tab, Enter/Space, ESC); thú giúp hiện chữ khi có tác dụng; nhạc riêng 3 hồ (2–2,5 phút); gom nút bên trái vào nút "…". Cá TRUY NÃ xuất hiện theo thời gian chơi (lần đầu sau 4 phút, sau đó 3–5 phút một lần), bơi ở chỗ ngẫu nhiên 75 s, khó kéo hơn cá thường, giá ×4. Boss đấu lại máu ×1,3.

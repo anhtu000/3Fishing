@@ -54,7 +54,6 @@
     "needCoins": "{n} altın gerekiyor. Avlanmaya devam!",
     "unlockHow": "{pond} içinde {n} tür balık yakala, sonra {boss} adlı patronu yen.",
     "comeBackTomorrow": "Sonraki hediye için yarın tekrar gel!",
-    "newWanted": "Yeni ARANAN balık!",
     "again": "Kaçırdın! Yine vuruyor...",
     "softEarly": "Daha değil! Büyük sıçramayı bekle",
     "streak": "Mükemmel x{n}! +%{p} altın",
@@ -320,7 +319,9 @@
   },
   "wanted": {
     "label": "ARANIYOR",
-    "reward": "altın x3"
+    "reward": "altın x4",
+    "appear": "ARANAN balık geldi! Tam yanına at!",
+    "gone": "ARANAN balık yüzüp gitti."
   },
   "today": {
     "label": "GÜNÜN BALIĞI",

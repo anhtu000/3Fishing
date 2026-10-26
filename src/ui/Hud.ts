@@ -41,7 +41,11 @@ export class Hud {
   private shownCoins = 0;
   sound: CButton;
   bottom: CButton[] = [];
-  side: { quests: CButton; golden: CButton; mystery: CButton; auto: CButton; challenge: CButton };
+  side: { quests: CButton; golden: CButton; mystery: CButton; auto: CButton; challenge: CButton; more: CButton };
+  /** Late game: auto fishing and challenges sit behind one "more" button that opens to the side. */
+  private moreOpen = false;
+  private grouped = false;
+  private moreTimer: Phaser.Time.TimerEvent | null = null;
   private chBar!: Phaser.GameObjects.Container;
   private chTime!: Phaser.GameObjects.Text;
   private chFish!: Phaser.GameObjects.Text;
@@ -58,6 +62,7 @@ export class Hud {
   private wantedToday = false;
   private wantedFish: Phaser.GameObjects.Image;
   private wantedShown = '';
+  private wantedLeftShown = -1;
   private goal: Phaser.GameObjects.Container;
   private goalText: Phaser.GameObjects.Text;
   private goalBar: Phaser.GameObjects.Graphics;
@@ -101,7 +106,11 @@ export class Hud {
       golden: roundButton(scene, 0, 0, 'icon:i_bait', 84, 0xffc83d, act.golden, true),
       mystery: roundButton(scene, 0, 0, 'icon:i_gift', 84, COLORS.purple, act.mystery, true),
       auto: roundButton(scene, 0, 0, 'icon:i_auto', 84, COLORS.grey, act.auto),
-      challenge: roundButton(scene, 0, 0, 'icon:i_trophy', 84, COLORS.purple, act.challenges),
+      challenge: roundButton(scene, 0, 0, 'icon:i_trophy', 84, COLORS.purple, () => {
+        this.closeMore();
+        act.challenges();
+      }),
+      more: roundButton(scene, 0, 0, 'icon:i_more', 84, COLORS.teal, () => this.toggleMore()),
     };
     // Challenge run: timer, fish and kinds against the goal, and a way out.
     const chBg = scene.add.graphics();
@@ -167,7 +176,7 @@ export class Hud {
     this.goalBar = scene.add.graphics().setPosition(14, 16);
     this.goal = scene.add.container(0, 0, [goalBg, this.goalIcon, this.goalText, this.goalBar]).setVisible(false);
     this.root.add([this.wanted, this.goal]);
-    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.side.challenge, this.chBar, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.chip]);
+    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.side.challenge, this.side.more, this.chBar, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.chip]);
     this.shownCoins = s.coins;
     this.coins.label.setText(fmt(s.coins));
   }
@@ -202,6 +211,53 @@ export class Hud {
     this.scene.tweens.add({ targets: icon, scale: base, duration: 140, ease: 'Back.Out' });
   }
 
+  private sideX = 60;
+  private sideY = 250;
+  private sideStep = 104;
+
+  /** Left column: the visible buttons stacked without gaps; the grouped modes open to the right of "more". */
+  private placeSide() {
+    const col = [this.side.quests, this.side.golden, this.grouped ? this.side.more : null, this.grouped ? null : this.side.auto, this.grouped ? null : this.side.challenge];
+    let i = 0;
+    for (const b of col) {
+      if (!b || !b.visible) continue;
+      b.setPosition(this.sideX, this.sideY + i * this.sideStep);
+      i++;
+    }
+    if (this.grouped) {
+      // Opens downwards, over the water at the edge, never over the cat.
+      const m = this.side.more;
+      this.side.auto.setPosition(m.x, m.y + this.sideStep);
+      this.side.challenge.setPosition(m.x, m.y + this.sideStep * 2);
+    }
+  }
+
+  private toggleMore() {
+    if (this.moreOpen) return this.closeMore();
+    this.moreOpen = true;
+    this.side.more.setColor(COLORS.blue);
+    for (const b of [this.side.auto, this.side.challenge]) {
+      b.setVisible(true).setScale(0.4).setAlpha(0);
+      this.scene.tweens.add({ targets: b, scale: 1, alpha: 1, duration: 180, ease: 'Back.Out' });
+    }
+    this.placeSide();
+    // Folds back by itself after a while, so it never stays over the pond.
+    this.moreTimer?.remove();
+    this.moreTimer = this.scene.time.delayedCall(5000, () => this.closeMore());
+  }
+
+  closeMore() {
+    this.moreTimer?.remove();
+    this.moreTimer = null;
+    if (!this.moreOpen) return;
+    this.moreOpen = false;
+    this.side.more.setColor(COLORS.teal);
+    if (this.grouped) {
+      this.side.auto.setVisible(false);
+      this.side.challenge.setVisible(false);
+    }
+  }
+
   layout(w: number, h: number) {
     const portrait = h > w;
     const top = portrait ? 58 : 50;
@@ -213,12 +269,11 @@ export class Hud {
     } else {
       this.bottom.forEach((b, i) => b.setPosition(w / 2 + (i - 1.5) * 176, h - 66));
     }
-    const sx = portrait ? 60 : 62;
+    this.sideX = portrait ? 60 : 62;
     // Below Poki's pill (top-left on phones, 62 px tall at a 24 px offset).
-    const sy = portrait ? 250 : 150;
-    const step = portrait ? 104 : 96;
-    // The mystery-egg ad is gone (ads for eggs: only "hatch now"), so three side buttons.
-    [this.side.quests, this.side.golden, this.side.auto, this.side.challenge].forEach((b, i) => b.setPosition(sx, sy + i * step));
+    this.sideY = portrait ? 250 : 150;
+    this.sideStep = portrait ? 104 : 96;
+    this.placeSide();
     this.chBar.setPosition(w / 2 - (portrait ? 20 : 0), portrait ? 206 : 178);
     this.chBar.setScale(portrait ? Math.min(1, (w - 230) / 600) : 1);
     this.portrait = portrait;
@@ -239,7 +294,7 @@ export class Hud {
     this.bossBar.setPosition(w / 2, portrait ? 170 : 130);
   }
 
-  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; challengeOpen: boolean; challenge: { timeMs: number; fish: number; fishGoal: number; kinds: number; kindsGoal: number } | null; goal: { icon: string; text: string; progress: number } | null }) {
+  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; wantedLeft: number | null; challengeOpen: boolean; challenge: { timeMs: number; fish: number; fishGoal: number; kinds: number; kindsGoal: number } | null; goal: { icon: string; text: string; progress: number } | null }) {
     this.t += dt;
     const s = this.s;
     // Count-up numbers.
@@ -305,8 +360,16 @@ export class Hud {
     // No ad for eggs here: the only egg ad is "hatch now" on an egg that is warming up.
     this.side.mystery.setVisible(false);
     const ch = extra.challenge;
-    this.side.auto.setVisible(extra.autoUnlocked && !ch).setColor(extra.autoOn ? COLORS.green : COLORS.grey);
-    this.side.challenge.setVisible(extra.challengeOpen && !ch);
+    const autoOk = extra.autoUnlocked && !ch;
+    const chOk = extra.challengeOpen && !ch;
+    this.side.auto.setColor(extra.autoOn ? COLORS.green : COLORS.grey);
+    // Both late-game modes open: one "more" button instead of two (a calmer left column).
+    this.grouped = autoOk && chOk;
+    if (!this.grouped) this.moreOpen = false;
+    this.side.more.setVisible(this.grouped).setColor(this.moreOpen ? COLORS.blue : COLORS.teal);
+    this.side.auto.setVisible(this.grouped ? this.moreOpen : autoOk);
+    this.side.challenge.setVisible(this.grouped ? this.moreOpen : chOk);
+    this.placeSide();
     this.chBar.setVisible(!!ch);
     if (ch) {
       const sec = Math.max(0, Math.ceil(ch.timeMs / 1000));
@@ -329,13 +392,18 @@ export class Hud {
     if (f.target.boss && f.busy) chip = '';
     this.setChip(chip);
     this.wanted.setVisible(!!extra.wanted && !f.target.boss && !extra.challenge);
+    // WANTED countdown (seconds before it swims off).
+    if (extra.wanted && extra.wantedLeft !== null && extra.wantedLeft !== this.wantedLeftShown) {
+      this.wantedLeftShown = extra.wantedLeft;
+      fitText(this.wantedReward.setText(`${t('wanted.reward')} · ${extra.wantedLeft}s`).setScale(1), 140);
+    }
     if (extra.wanted && (extra.wanted !== this.wantedShown || extra.wantedToday !== this.wantedToday)) {
       this.wantedShown = extra.wanted;
       this.wantedToday = extra.wantedToday;
       // Today's fish uses a gold poster: "TODAY'S FISH / x5 + egg".
       this.wantedBg.setTint(extra.wantedToday ? 0xffd86b : 0xffffff);
       fitText(this.wantedLabel.setText(t(extra.wantedToday ? 'today.label' : 'wanted.label')).setColor(extra.wantedToday ? '#b4521a' : '#c0392b').setScale(1), 140);
-      fitText(this.wantedReward.setText(t(extra.wantedToday ? 'today.reward' : 'wanted.reward')).setScale(1), 140);
+      fitText(this.wantedReward.setText(extra.wantedToday ? t('today.reward') : extra.wantedLeft !== null ? `${t('wanted.reward')} · ${extra.wantedLeft}s` : t('wanted.reward')).setScale(1), 140);
       const key = `fish:${extra.wanted}`;
       this.wantedFish.setTexture(key).setScale(fitScale(key, 96));
       if (extra.wantedKnown) this.wantedFish.clearTint().setAlpha(1);

@@ -33,31 +33,120 @@ function queue(scene: Phaser.Scene, key: string, svg: string, w: number, h: numb
   scene.load.svg(key, toUrl(svg), { scale });
 }
 
-export function queueTextures(scene: Phaser.Scene) {
+/** One texture to draw: key, art (built only when queued) and size. */
+interface Job {
+  key: string;
+  svg: () => string;
+  w: number;
+  h: number;
+  scale: number;
+}
+
+/** What the first screen needs, read from the save before the game starts. */
+export interface FirstScreen {
+  /** Ponds the player can fish in (their fish and pets can show up at once: today's fish, eggs). */
+  unlocked: string[];
+  /** The pond the game opens in (its scenery). */
+  pond: string;
+  team: string[];
+  hat: string;
+  bobber: string;
+}
+
+/** Every vector texture of the game, in loading order. */
+function allJobs(): Job[] {
+  const jobs: Job[] = [];
   for (const [id, a] of Object.entries(FISH_ART)) {
     const { w, h } = fishSize(a);
-    queue(scene, `fish:${id}`, fishSvg(a), w, h, 1.5);
+    jobs.push({ key: `fish:${id}`, svg: () => fishSvg(a), w, h, scale: 1.5 });
   }
-  for (const p of ALL_PETS) queue(scene, `pet:${p.id}`, petSvg(p.id), PET_W, PET_H, 1.4);
-  for (let t = 0; t < 5; t++) queue(scene, `egg:${t}`, eggSvg(t), EGG_SIZE.w, EGG_SIZE.h, 1.5);
+  for (const p of ALL_PETS) jobs.push({ key: `pet:${p.id}`, svg: () => petSvg(p.id), w: PET_W, h: PET_H, scale: 1.4 });
+  for (let t = 0; t < 5; t++) jobs.push({ key: `egg:${t}`, svg: () => eggSvg(t), w: EGG_SIZE.w, h: EGG_SIZE.h, scale: 1.5 });
   for (const k of ITEM_KEYS) {
     const { w, h } = itemSize(k);
-    queue(scene, `item:${k}`, itemSvg(k), w, h, 1.5);
+    jobs.push({ key: `item:${k}`, svg: () => itemSvg(k), w, h, scale: 1.5 });
   }
   for (const k of ICON_KEYS) {
     const { w, h } = itemSize(k);
-    queue(scene, `icon:${k}`, itemSvg(k), w, h, 1.25);
+    jobs.push({ key: `icon:${k}`, svg: () => itemSvg(k), w, h, scale: 1.25 });
   }
   for (const pond of PONDS) {
     for (const [k, v] of Object.entries(sceneryPieces(pond.id))) {
       const big = v.w >= 1000;
-      queue(scene, `${pond.id}:${k}`, v.svg, v.w, v.h, big ? 1 : 1.4);
+      jobs.push({ key: `${pond.id}:${k}`, svg: () => v.svg, w: v.w, h: v.h, scale: big ? 1 : 1.4 });
     }
   }
-  for (const [k, v] of Object.entries(commonPieces())) queue(scene, `sc:${k}`, v.svg, v.w, v.h, k === 'cat' || k === 'catBlink' ? 1.6 : 1.3);
-  for (const [k, v] of Object.entries(hatPieces())) queue(scene, `hat:${k}`, v.svg, v.w, v.h, 1.6);
+  for (const [k, v] of Object.entries(commonPieces())) jobs.push({ key: `sc:${k}`, svg: () => v.svg, w: v.w, h: v.h, scale: k === 'cat' || k === 'catBlink' ? 1.6 : 1.3 });
+  for (const [k, v] of Object.entries(hatPieces())) jobs.push({ key: `hat:${k}`, svg: () => v.svg, w: v.w, h: v.h, scale: 1.6 });
   // Bobber colours from the wardrobe.
-  for (const c of COSMETICS) if (c.kind === 'bobber' && c.colors) queue(scene, `item:${c.id}`, bobberSvg(c.colors[0], c.colors[1]), 60, 90, 1.5);
+  for (const c of COSMETICS) if (c.kind === 'bobber' && c.colors) {
+    const [a, b] = c.colors;
+    jobs.push({ key: `item:${c.id}`, svg: () => bobberSvg(a, b), w: 60, h: 90, scale: 1.5 });
+  }
+  return jobs;
+}
+
+/** True when a texture is needed on the first screen (the rest is drawn after the pond appears). */
+function needsFirst(key: string, f: FirstScreen) {
+  const [kind, id] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+  const unlocked = PONDS.filter((p) => f.unlocked.includes(p.id));
+  if (kind === 'fish') return unlocked.some((p) => p.boss.id === id || p.fish.some((x) => x.id === id));
+  if (kind === 'pet') return f.team.includes(id) || unlocked.some((p) => p.pets.some((x) => x.id === id));
+  if (PONDS.some((p) => p.id === kind)) return kind === f.pond;
+  if (kind === 'hat') return key === f.hat || key === 'hat:rain';
+  if (key.startsWith('item:bobber:')) return key === `item:${f.bobber}`;
+  return true;
+}
+
+let later: Job[] = [];
+let ready = false;
+let markReady: () => void = () => {};
+/** Resolves when every texture is drawn (menus that show other ponds, pets or hats wait for it). */
+export const artReady = new Promise<void>((resolve) => (markReady = resolve));
+export const artIsReady = () => ready;
+
+/**
+ * Loading screen: only what the first screen shows (Poki: progressive loading). For a new player
+ * that is Cozy Pond, its fish and pets, the cat and the HUD: about half of the art. The rest is
+ * drawn by loadLaterTextures once the pond is on screen.
+ */
+export function queueTextures(scene: Phaser.Scene, first?: FirstScreen) {
+  later = [];
+  for (const j of allJobs()) {
+    if (!first || needsFirst(j.key, first)) queue(scene, j.key, j.svg(), j.w, j.h, j.scale);
+    else later.push(j);
+  }
+  if (__TARGET__ === 'web') (window as unknown as { __art: unknown }).__art = { later: later.length, at: performance.now() };
+  if (later.length === 0) {
+    ready = true;
+    markReady();
+  }
+}
+
+/** Draws the textures left out of the first load, in the background. Safe to call again (scene restart). */
+export function loadLaterTextures(scene: Phaser.Scene) {
+  if (ready) return;
+  const missing = later.filter((j) => !scene.textures.exists(j.key));
+  if (missing.length === 0) {
+    ready = true;
+    markReady();
+    return;
+  }
+  const pending = new Set(missing.map((j) => j.key));
+  const done = (key: string) => {
+    if (!pending.delete(key) || pending.size > 0) return;
+    scene.load.off('filecomplete', onFile);
+    scene.load.off('loaderror', onError);
+    ready = true;
+    markReady();
+    if (__TARGET__ === 'web') Object.assign((window as unknown as { __art: object }).__art, { readyAt: performance.now() });
+  };
+  const onFile = (key: string) => done(key);
+  const onError = (file: { key: string }) => done(file.key);
+  scene.load.on('filecomplete', onFile);
+  scene.load.on('loaderror', onError);
+  for (const j of missing) queue(scene, j.key, j.svg(), j.w, j.h, j.scale);
+  scene.load.start();
 }
 
 /** Texture key of a boss in a rematch form (the classic form is the boss's own texture). */

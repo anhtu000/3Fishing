@@ -62,6 +62,13 @@ def noise(dur):
 
 def lowpass(x, cutoff):
     """One-pole low-pass; cutoff may be an array (sweeps)."""
+    if np.ndim(cutoff) == 0:
+        try:
+            from scipy.signal import lfilter
+            a = 1 - np.exp(-2 * np.pi * float(cutoff) / SR)
+            return lfilter([a], [1, -(1 - a)], x)
+        except ImportError:
+            pass
     y = np.zeros_like(x)
     c = np.broadcast_to(np.asarray(cutoff, dtype=float), x.shape)
     a = 1 - np.exp(-2 * np.pi * c / SR)
@@ -248,7 +255,146 @@ def music():
     write('music', out, 0.7, bitrate='64k')
 
 
+# ---------- pond music: one longer piece per pond (v1.14) ----------
+
+SCALES = {
+    'C_major_penta': ['C', 'D', 'E', 'G', 'A'],
+    'D_dorian': ['D', 'E', 'F', 'G', 'A', 'B', 'C'],
+    'E_minor': ['E', 'F#', 'G', 'A', 'B', 'C', 'D'],
+}
+
+
+def chord_notes(root, kind, octave=3):
+    steps = {'maj7': [0, 4, 7, 11], 'm7': [0, 3, 7, 10], '7': [0, 4, 7, 10], 'add9': [0, 4, 7, 14], 'm9': [0, 3, 7, 14], 'maj': [0, 4, 7, 12], 'min': [0, 3, 7, 12], 'sus2': [0, 2, 7, 12]}[kind]
+    base = note(root + str(octave))
+    return [base * 2 ** (k / 12) for k in steps]
+
+
+def song(name, bpm, progression, sections, scale, seed, voice, lead, drums, bitrate='56k'):
+    """A loop of several sections. progression: {section: [(root, kind), ...4 bars]}; sections: list of
+    (section, bars, layers) with layers a set of 'pad', 'bass', 'drums', 'lead', 'bells'.
+    voice/lead pick the chord and melody instruments; the melody is made from 2-bar motifs that repeat
+    with small changes, so it sounds written rather than random. The tail wraps into the start."""
+    r = np.random.default_rng(seed)
+    beat = 60 / bpm
+    total_bars = sum(b for _, b, _ in sections)
+    n = int(SR * total_bars * 4 * beat)
+    out = np.zeros(n + 4 * SR)
+
+    def add(x, start, gain=1.0):
+        i = int(start * SR)
+        j = min(len(out), i + len(x))
+        if j > i:
+            out[i:j] += x[: j - i] * gain
+
+    def pad(f, d):
+        m = int(SR * d)
+        t = np.arange(m) / SR
+        x = np.sin(2 * np.pi * f * t) + 0.3 * np.sin(2 * np.pi * f * 1.003 * t) + 0.12 * np.sin(2 * np.pi * 2 * f * t)
+        return x * env(m, min(0.8, d * 0.3), d * 0.8, 0.5, min(0.6, d * 0.3))
+
+    def epiano(f, d):
+        m = int(SR * d)
+        t = np.arange(m) / SR
+        x = np.sin(2 * np.pi * f * t) + 0.25 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t * 3)
+        return x * env(m, 0.01, 1.2, 0.0, 0.2) * (1 + 0.15 * np.sin(2 * np.pi * 4.5 * t))
+
+    def kalimba(f, d):
+        return pluck(f, d, 0.45) * 0.9 + bell(f * 2, d, 0.15, 0.3) * 0.15
+
+    chord_voice = {'epiano': epiano, 'pad': pad, 'bells': lambda f, d: bell(f, d, 0.9, 0.5)}[voice]
+    lead_voice = {'bell': lambda f, d: bell(f, d + 0.6, 0.35, 0.7), 'kalimba': lambda f, d: kalimba(f, d + 0.5), 'celesta': lambda f, d: bell(f, d + 0.8, 0.5, 1.1)}[lead]
+    tones = SCALES[scale]
+
+    def scale_note(i, octave=5):
+        k = len(tones)
+        return note(tones[i % k] + str(octave + i // k))
+
+    # Motifs: rhythm (beats) + scale steps; each section reuses them with small changes.
+    rhythms = [[1, 1, 1.5, 0.5, 2, 2], [0.5, 0.5, 1, 2, 1, 1, 2], [1.5, 0.5, 1, 1, 1, 1, 2], [2, 1, 1, 1.5, 0.5, 2]]
+    def motif():
+        rh = rhythms[r.integers(len(rhythms))]
+        steps = [int(r.integers(0, len(tones)))]
+        for _ in rh[1:]:
+            steps.append(max(0, min(len(tones) + 3, steps[-1] + int(r.choice([-2, -1, -1, 1, 1, 2, 0])))))
+        return list(zip(rh, steps))
+    motifs = {sec: [motif(), motif()] for sec in progression}
+
+    bar0 = 0
+    for sec, bars, layers in sections:
+        prog = progression[sec]
+        a, b = motifs[sec]
+        for bar in range(bars):
+            start = (bar0 + bar) * 4 * beat
+            root, kind = prog[bar % len(prog)]
+            cn = chord_notes(root, kind, 3)
+            if 'pad' in layers:
+                for k, f in enumerate(cn):
+                    if voice == 'epiano':
+                        add(chord_voice(f, 4 * beat), start + k * 0.012, 0.15)
+                        add(chord_voice(f, 2 * beat), start + 2.5 * beat + k * 0.01, 0.07)
+                    else:
+                        add(chord_voice(f, 4 * beat + 0.3), start, 0.11)
+            if 'bass' in layers:
+                bf = note(root + '2')
+                add(pluck(bf, 1.6 * beat, 0.6), start, 0.34)
+                add(pluck(bf * 1.5, 0.9 * beat, 0.3), start + 2.5 * beat, 0.2)
+            if 'drums' in layers:
+                for h in range(8):
+                    hat = highpass(noise(0.05), 6000) * env(int(SR * 0.05), 0.001, 0.015 if h % 2 else 0.03)
+                    add(hat, start + h * beat / 2 + (0.03 if h % 2 else 0), drums['hat'] * (0.7 if h % 2 else 1))
+                kick = sine(lambda t: 90 * np.exp(-t * 18) + 45, 0.3) * env(int(SR * 0.3), 0.002, 0.1)
+                add(kick, start, drums['kick'])
+                add(kick, start + 2.5 * beat, drums['kick'] * 0.6)
+                snare = lowpass(noise(0.18), 3500) * env(int(SR * 0.18), 0.002, 0.05)
+                add(snare, start + beat, drums['snare'])
+                add(snare, start + 3 * beat, drums['snare'])
+            if 'bells' in layers and bar % 2 == 0:
+                for k, f in enumerate(chord_notes(root, kind, 5)[:3]):
+                    add(bell(f, 1.2, 0.4, 0.6), start + k * beat * 0.5, 0.05)
+            # Melody: two bars per motif, A A' B A'' over 8 bars.
+            if 'lead' in layers and bar % 2 == 0:
+                which = (bar // 2) % 4
+                m = a if which in (0, 1, 3) else b
+                shift = [0, 0, 0, -1][which] if which != 2 else 0
+                t0 = start
+                for i, (d, step) in enumerate(m):
+                    if which == 1 and i == len(m) - 1:
+                        step += 2  # the answer ends higher
+                    if which == 3 and i == len(m) - 1:
+                        step = 0  # resolve home
+                    add(lead_voice(scale_note(step + shift), d * beat), t0, 0.15)
+                    t0 += d * beat
+        bar0 += bars
+    out = out[:n] + np.concatenate([out[n:], np.zeros(n - len(out[n:]))])
+    out = lowpass(out, 7000)
+    write(name, out, 0.7, bitrate=bitrate)
+    print(name, round(n / SR, 1), 's')
+
+
+def pond_music():
+    full = {'pad', 'bass', 'drums', 'lead'}
+    # Cozy Pond: the lo-fi feel of the old loop, now with a bridge and a quiet break.
+    song('music_cozy', 84,
+         {'A': [('C', 'maj7'), ('A', 'm7'), ('F', 'maj7'), ('G', 'add9')], 'B': [('A', 'm7'), ('F', 'maj7'), ('C', 'maj7'), ('G', 'add9')], 'C': [('F', 'maj7'), ('E', 'm7'), ('D', 'm7'), ('G', 'add9')]},
+         [('A', 4, {'pad', 'bass'}), ('A', 8, full), ('B', 8, full), ('C', 8, {'pad', 'bass', 'bells', 'lead'}), ('A', 8, full), ('B', 8, full | {'bells'}), ('A', 4, {'pad', 'bass', 'drums'})],
+         'C_major_penta', 11, 'epiano', 'bell', {'hat': 0.1, 'kick': 0.35, 'snare': 0.12})
+    # Misty Creek: slower, dreamy pads, a kalimba tune, light drums.
+    song('music_misty', 72,
+         {'A': [('D', 'm9'), ('E', 'm7'), ('F', 'maj7'), ('E', 'm7')], 'B': [('B', 'm7'), ('C', 'maj7'), ('D', 'm9'), ('A', 'm7')], 'C': [('F', 'maj7'), ('G', 'sus2'), ('D', 'm9'), ('D', 'm9')]},
+         [('A', 4, {'pad'}), ('A', 8, {'pad', 'bass', 'lead'}), ('B', 8, {'pad', 'bass', 'drums', 'lead'}), ('C', 8, {'pad', 'bells', 'lead'}), ('A', 8, {'pad', 'bass', 'drums', 'lead'}), ('B', 4, {'pad', 'bass'})],
+         'D_dorian', 23, 'pad', 'kalimba', {'hat': 0.06, 'kick': 0.25, 'snare': 0.07})
+    # Frozen Lake: brighter and quicker, celesta and bells over a light shuffle.
+    song('music_frozen', 92,
+         {'A': [('E', 'min'), ('C', 'maj7'), ('G', 'maj'), ('D', 'sus2')], 'B': [('A', 'm7'), ('E', 'min'), ('C', 'maj7'), ('D', 'sus2')], 'C': [('C', 'maj7'), ('D', 'sus2'), ('B', 'm7'), ('E', 'min')]},
+         [('A', 4, {'pad', 'bells'}), ('A', 8, full), ('B', 8, full | {'bells'}), ('C', 8, {'pad', 'bass', 'lead', 'bells'}), ('A', 8, full), ('B', 8, full), ('C', 8, {'pad', 'bass', 'drums', 'lead'}), ('A', 4, {'pad', 'bells'})],
+         'E_minor', 37, 'bells', 'celesta', {'hat': 0.09, 'kick': 0.3, 'snare': 0.1})
+
+
 if __name__ == '__main__':
-    sfx()
-    music()
+    import sys
+    # `make_audio.py music` rebuilds only the pond music (the effects stay byte-identical).
+    if 'music' not in sys.argv[1:]:
+        sfx()
+    pond_music()
     print('ok', sorted(os.listdir(OUT)))

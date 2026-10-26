@@ -54,7 +54,6 @@
     "needCoins": "Ti servono {n} monete. Continua a pescare!",
     "unlockHow": "Pesca {n} specie in {pond}, poi sconfiggi {boss}.",
     "comeBackTomorrow": "Torna domani per il prossimo regalo!",
-    "newWanted": "Nuovo pesce RICERCATO!",
     "again": "Mancato! Abbocca di nuovo...",
     "softEarly": "Non ancora! Aspetta il grande schizzo",
     "streak": "Perfetto x{n}! +{p}% monete",
@@ -320,7 +319,9 @@
   },
   "wanted": {
     "label": "RICERCATO",
-    "reward": "monete x3"
+    "reward": "monete x4",
+    "appear": "Un pesce RICERCATO! Lancia proprio lì accanto!",
+    "gone": "Il pesce RICERCATO è scappato."
   },
   "today": {
     "label": "PESCE DEL GIORNO",

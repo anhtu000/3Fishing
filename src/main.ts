@@ -25,8 +25,14 @@ startGame({
   ads: { midgameGapSec: __TARGET__ === 'poki' ? 0 : 180 },
   // Vector sprites are separate textures; see GameConfig.maxTextures.
   maxTextures: 1,
-  // Only the art before the pond appears; the sounds follow in the background (src/sounds.ts).
-  preload: (scene) => queueTextures(scene),
+  // Only the art the first screen shows; the rest of the art and the sounds follow in the background
+  // (loadLaterTextures, src/sounds.ts).
+  preload: (scene) => {
+    const s = save.data;
+    // Dev presets (web build only) jump to other ponds after loading: draw everything up front there.
+    if (__TARGET__ === 'web' && location.hash.startsWith('#dev')) return queueTextures(scene);
+    queueTextures(scene, { unlocked: s.unlocked, pond: s.pond, team: s.team, hat: s.style?.hat ?? 'hat:rain', bobber: s.style?.bobber ?? 'bobber:classic' });
+  },
   theme: {
     font: 'Fredoka, system-ui, sans-serif',
     background: game.background,

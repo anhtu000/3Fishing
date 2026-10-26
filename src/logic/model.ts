@@ -1,6 +1,6 @@
 // Saved game state. Plain data only, so it survives JSON and can be used by tests and the balance sim.
 import type { DailyState } from '../../core/time';
-import { START_TEAM_SLOTS, type UpgradeId } from '../content/data';
+import { START_TEAM_SLOTS, WANTED, type UpgradeId } from '../content/data';
 
 export interface EggSlot {
   tier: number;
@@ -67,10 +67,13 @@ export interface SaveData {
   luckyDay: string;
   ads: { mysteryAt: number; goldenAt: number; goldenUntil: number };
   autoFish: boolean;
-  /** WANTED fish: catch it for triple coins. Null between bounties. */
+  /** WANTED fish swimming in the current pond (fish id), null between them. */
   bounty: string | null;
-  /** Catches until the next WANTED fish appears. */
+  /** Seconds of play until the next WANTED fish swims in. */
   bountyIn: number;
+  /** Size of the WANTED fish (x its usual length) and seconds before it swims off. */
+  bountySize: number;
+  bountyLeft: number;
   /**
    * Today's fish: one special species a day for the whole game. Picked once at the start of the day
    * from the ponds open then, so travelling or opening a new pond does not change it.
@@ -113,7 +116,9 @@ export function defaultSave(): SaveData {
     ads: { mysteryAt: 0, goldenAt: 0, goldenUntil: 0 },
     autoFish: false,
     bounty: null,
-    bountyIn: 8,
+    bountyIn: WANTED.firstSec,
+    bountySize: 1,
+    bountyLeft: 0,
     todayFish: { day: '', pond: '', fish: '', caught: false },
     bossLure: null,
     challenge: { best: {}, cleared: [], replays: { day: '', n: 0 } },

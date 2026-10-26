@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { app, shapeTexture } from '@core';
 import { TEX } from '../render/textures';
+import { KeyNav } from './keynav';
 
 export const INK = 0x3b2a4d;
 export const INK_CSS = '#3b2a4d';
@@ -188,6 +189,17 @@ export class CButton extends Phaser.GameObjects.Container {
     });
   }
 
+  /** Keyboard press (Space/Enter on the focused button): same sound and feedback as a tap. */
+  press() {
+    if (!this.enabled || !this.active) return;
+    if (this.opts.sound !== false) app.audio.play(this.opts.sound ?? 'ui-tap', { pitchJitter: 50, volume: 0.6 });
+    this.face.y = 4;
+    this.scene.time.delayedCall(90, () => {
+      if (this.active) this.face.y = 0;
+    });
+    this.opts.onClick();
+  }
+
   private unpress() {
     if (!this.pressed) return;
     this.pressed = false;
@@ -324,6 +336,8 @@ export class CPanel extends Phaser.GameObjects.Container {
   private closed = false;
   private offResize: () => void;
   private onEsc = () => this.close();
+  /** Keyboard control; set `nav.primary` for the button Space/Enter should press right away. */
+  readonly nav: KeyNav;
   constructor(
     scene: Phaser.Scene,
     private opts: CPanelOpts,
@@ -357,6 +371,8 @@ export class CPanel extends Phaser.GameObjects.Container {
     this.add([this.dim, this.box]);
     this.setDepth(1500);
     scene.add.existing(this);
+    // Keyboard: arrows or WASD move between the buttons, Space or Enter presses (Poki: menus by keyboard).
+    this.nav = new KeyNav(scene, this.box);
     this.place();
     this.offResize = app.viewport.on('change', () => this.place());
     this.once(Phaser.GameObjects.Events.DESTROY, () => {

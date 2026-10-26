@@ -2,7 +2,7 @@
 // sim all use this class. The scene only draws and animates what it returns.
 import type { Rng } from '../../core/rng';
 import { claimDaily, dailyStatus, dayKey } from '../../core/time';
-import { AD, BOSS_FORM_COINS, BOSS_LURE, bossForm, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { AD, WANTED, BOSS_FORM_COINS, BOSS_LURE, bossForm, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
 import type { Target } from './fishing';
 import type { SaveData } from './model';
 import {
@@ -62,7 +62,6 @@ export interface CatchResult {
   /** Extra percent on the fish price from the perfect streak. */
   streakBonus: number;
   /** A new WANTED fish was posted after this catch. */
-  newBounty: string | null;
   /** This was today's fish (x5 coins and an overnight egg). */
   today: boolean;
   /** An egg went into the overnight nest. */
@@ -81,7 +80,6 @@ export interface CatchResult {
 export const STREAK_STEP = 10;
 export const STREAK_MAX = 5;
 /** Catches between WANTED fish. */
-export const BOUNTY_GAP = 6;
 
 export interface AnglerCatch {
   petId: string;
@@ -173,11 +171,6 @@ export class PondGame {
       const missing = pond.fish.filter((f) => !s.dex[f.id] && f.rarity <= Math.max(1, roll.kind === 'fish' ? roll.fish.rarity : 0));
       if (missing.length && s.stats.fish >= 10 && this.rng.chance(0.12)) roll = { kind: 'fish', fish: this.rng.pick(missing), size: rollSize(this.rng, luck) };
     }
-    // The WANTED fish shows up a little more often, so the short goal stays reachable.
-    if (s.bounty && roll.kind === 'fish' && roll.fish.id !== s.bounty) {
-      const want = pond.fish.find((f) => f.id === s.bounty);
-      if (want && want.rarity <= roll.fish.rarity + 1 && this.rng.chance(0.18)) roll = { kind: 'fish', fish: want, size: rollSize(this.rng, luck) };
-    }
     // Today's fish swims up now and then (Legendary a bit less often).
     const today = this.todayFish;
     if (today && s.stats.catches >= 3 && roll.kind === 'fish' && roll.fish.id !== today.id && this.rng.chance(today.rarity >= 4 ? TODAY_FISH.chanceLegendary : TODAY_FISH.chance)) {
@@ -188,10 +181,10 @@ export class PondGame {
   }
 
   /** The player landed the catch: pay out and record it. */
-  applyCatch(roll: CatchRoll, perfect: boolean): CatchResult {
+  applyCatch(roll: CatchRoll, perfect: boolean, wanted = false): CatchResult {
     const s = this.s;
     const pond = this.pond;
-    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, newBounty: null, today: false, nestEgg: false, medal: 0, giant: false, pondGold: false, lured: false };
+    const res: CatchResult = { roll, coins: 0, gems: 0, isNew: false, record: false, cm: 0, eggStored: false, eggWhere: null, questsDone: [], bounty: false, streak: 0, streakBonus: 0, today: false, nestEgg: false, medal: 0, giant: false, pondGold: false, lured: false };
     s.stats.catches += 1;
     this.streak = perfect ? this.streak + 1 : 0;
     res.streak = this.streak;
@@ -223,11 +216,12 @@ export class PondGame {
         res.streakBonus = Math.min(STREAK_MAX, this.streak) * STREAK_STEP;
         const goldBonus = pondGold(s, pond) ? 1 + POND_GOLD_BONUS : 1;
         res.coins = Math.round(fishPrice(roll.fish, roll.size, pond, this.perk('merchant')) * (1 + res.streakBonus / 100) * goldBonus);
-        if (s.bounty === roll.fish.id) {
+        // The WANTED fish (hooked where it swam): big pay, and the next one comes later.
+        if (wanted && s.bounty === roll.fish.id) {
           res.bounty = true;
-          res.coins = res.coins * 3 + 40 * pond.priceMult;
+          res.coins = res.coins * WANTED.priceMult + WANTED.bonus * pond.priceMult;
           s.bounty = null;
-          s.bountyIn = BOUNTY_GAP;
+          s.bountyIn = this.wantedGap();
         }
         const today = this.todayFish;
         if (today && today.id === roll.fish.id) {
@@ -277,10 +271,6 @@ export class PondGame {
     this.earn(res.coins, quests);
     s.gems += res.gems;
     res.questsDone = quests;
-    if (!s.bounty && !res.bounty && !this.todayFish) {
-      s.bountyIn -= 1;
-      if (s.bountyIn <= 0) res.newBounty = this.postBounty();
-    }
     return res;
   }
 
@@ -289,15 +279,55 @@ export class PondGame {
     this.streak = 0;
   }
 
-  /** Picks a WANTED fish of this pond: mostly Common or Uncommon, sometimes Rare. */
+  /** Picks a WANTED fish of this pond: mostly Common or Uncommon, sometimes Rare; always big. */
   postBounty(): string {
     const pond = this.pond;
     const r = this.rng.next();
-    const tier = r < 0.5 ? 0 : r < 0.85 ? 1 : 2;
+    const tier = r < 0.45 ? 0 : r < 0.85 ? 1 : 2;
     const options = pond.fish.filter((f) => f.rarity === tier);
     const fish = this.rng.pick(options.length ? options : pond.fish);
     this.s.bounty = fish.id;
+    this.s.bountySize = Math.round((WANTED.sizeMin + this.rng.next() * (WANTED.sizeMax - WANTED.sizeMin)) * 100) / 100;
+    this.s.bountyLeft = WANTED.staySec;
     return fish.id;
+  }
+
+  /** Seconds of play until the next WANTED fish. */
+  private wantedGap() {
+    return Math.round(WANTED.gapMin + this.rng.next() * (WANTED.gapMax - WANTED.gapMin));
+  }
+
+  /** The WANTED fish swimming here now, with its size and the seconds before it swims off. */
+  get wanted(): { fish: FishDef; size: number; left: number } | null {
+    const s = this.s;
+    const fish = s.bounty ? this.pond.fish.find((f) => f.id === s.bounty) : undefined;
+    return fish ? { fish, size: s.bountySize || WANTED.sizeMin, left: s.bountyLeft } : null;
+  }
+
+  /**
+   * Play-time clock of the WANTED fish (call only while the player is fishing: not in menus, boss
+   * fights or challenges). Returns 'spawn' when one swims in, 'gone' when it swims off uncaught.
+   */
+  tickWanted(sec: number): 'spawn' | 'gone' | null {
+    const s = this.s;
+    if (!s.tutorial.includes('done')) return null;
+    if (s.bounty) {
+      if (!this.wanted) {
+        // Old saves: a WANTED fish of another pond.
+        s.bounty = null;
+        s.bountyIn = Math.min(s.bountyIn, 60);
+        return null;
+      }
+      s.bountyLeft -= sec;
+      if (s.bountyLeft > 0) return null;
+      s.bounty = null;
+      s.bountyIn = this.wantedGap();
+      return 'gone';
+    }
+    s.bountyIn -= sec;
+    if (s.bountyIn > 0) return null;
+    this.postBounty();
+    return 'spawn';
   }
 
   /** Adds coins and counts them for the coin quest. */
@@ -665,8 +695,11 @@ export class PondGame {
   travel(p: PondDef) {
     if (!this.s.unlocked.includes(p.id)) return false;
     this.s.pond = p.id;
-    // A WANTED fish belongs to one pond: post a new one for the new pond.
-    if (this.s.bounty) this.postBounty();
+    // A WANTED fish belongs to one pond: it swims off, and a new one shows up here soon.
+    if (this.s.bounty) {
+      this.s.bounty = null;
+      this.s.bountyIn = Math.min(this.s.bountyIn, 60);
+    }
     return true;
   }
 

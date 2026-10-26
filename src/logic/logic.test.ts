@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Rng } from '../../core/rng';
-import { BOSS_FORMS, BOSS_STARS, CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS, bossForm } from '../content/data';
+import { BOSS_FORMS, BOSS_STARS, CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS, WANTED, bossForm } from '../content/data';
 import { BOSS, Fishing, FishingBot } from './fishing';
 import { PondGame } from './game';
 import { defaultSave } from './model';
@@ -374,4 +374,44 @@ test('pause while charging drops the cast instead of throwing the line', () => {
   assert.equal(f.phase, 'ready');
   f.release();
   assert.equal(f.phase, 'ready');
+});
+
+test('WANTED fish: swims in after minutes of play, leaves if not caught, pays x4 when hooked', () => {
+  const s = defaultSave();
+  s.tutorial.push('cast', 'bite', 'reel', 'egg', 'hatch', 'upgrade', 'done');
+  const g = new PondGame(s, new Rng(9));
+  assert.equal(g.tickWanted(WANTED.firstSec - 1), null);
+  assert.equal(g.wanted, null);
+  assert.equal(g.tickWanted(2), 'spawn');
+  const w = g.wanted!;
+  assert.ok(w && w.size >= WANTED.sizeMin && w.size <= WANTED.sizeMax);
+  assert.ok(g.pond.fish.some((f) => f.id === w.fish.id));
+  // Not hooked in time: it swims off, the next one comes 3-5 minutes later.
+  assert.equal(g.tickWanted(WANTED.staySec + 1), 'gone');
+  assert.equal(g.wanted, null);
+  assert.ok(s.bountyIn >= WANTED.gapMin && s.bountyIn <= WANTED.gapMax);
+  // Next one, hooked: x4 its price plus the bonus.
+  g.tickWanted(s.bountyIn + 1);
+  const w2 = g.wanted!;
+  const plain = g.applyCatch({ kind: 'fish', fish: w2.fish, size: w2.size }, false, false);
+  assert.equal(plain.bounty, false);
+  const res = g.applyCatch({ kind: 'fish', fish: w2.fish, size: w2.size }, false, true);
+  assert.equal(res.bounty, true);
+  assert.equal(res.coins, plain.coins * WANTED.priceMult + WANTED.bonus * g.pond.priceMult);
+  assert.equal(g.wanted, null);
+});
+
+test('rematches have more health: the same reeling moves the bar less than in the first fight', () => {
+  const run = (star: number) => {
+    const f = new Fishing(new Rng(4), () => fishingStats(defaultSave(), 0, 0));
+    f.startBoss(0, star);
+    f.progress = 0.5;
+    f.tension = 0.5;
+    f.holding = true;
+    f.update(0.2);
+    return f.progress - 0.5;
+  };
+  const first = run(0);
+  const rematch = run(1);
+  assert.ok(rematch > 0 && first > rematch * 1.2, `${first} vs ${rematch}`);
 });

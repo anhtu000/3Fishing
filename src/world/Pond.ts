@@ -242,6 +242,115 @@ export class Pond {
     });
   }
 
+  // ---------- WANTED fish: a big fish in its true colours, glowing, swimming where you can cast ----------
+
+  private wantedFish: { img: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; id: string; dir: number; y: number; hidden: boolean; spark: number } | null = null;
+
+  /** A WANTED fish swims in at a random spot within casting range. */
+  showWanted(fish: FishDef, size: number) {
+    this.clearWanted(true);
+    const L = this.L;
+    if (!L) return;
+    if (!this.scene.textures.exists('wanted-glow')) {
+      // Soft round glow, drawn once.
+      const c = this.scene.textures.createCanvas('wanted-glow', 128, 128);
+      const ctx = c?.getContext();
+      if (c && ctx) {
+        const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+        g.addColorStop(0, 'rgba(255,255,255,0.95)');
+        g.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 128, 128);
+        c.refresh();
+      }
+    }
+    const glow = this.scene.add.image(0, 0, 'wanted-glow').setDepth(12.4).setTint(0xffd23f).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
+    const img = this.scene.add.image(0, 0, `fish:${fish.id}`).setDepth(12.5).setAlpha(0);
+    setArt(img, `fish:${fish.id}`, 0.4 * size);
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    const lo = L.castNear + 60;
+    const hi = L.castFar - 40;
+    img.x = lo + Math.random() * (hi - lo);
+    const y = L.water + (L.floor - L.water) * (0.3 + Math.random() * 0.3);
+    img.y = y;
+    img.setFlipX(dir < 0);
+    glow.setPosition(img.x, img.y).setDisplaySize(img.displayWidth * 1.8, img.displayHeight * 2.2);
+    this.wantedFish = { img, glow, id: fish.id, dir, y, hidden: false, spark: 0 };
+    this.scene.tweens.add({ targets: img, alpha: 1, duration: 500 });
+    this.scene.tweens.add({ targets: glow, alpha: 0.55, duration: 500 });
+  }
+
+  /** It swam off or was caught. */
+  clearWanted(now = false) {
+    const w = this.wantedFish;
+    if (!w) return;
+    this.wantedFish = null;
+    if (now) {
+      w.img.destroy();
+      w.glow.destroy();
+      return;
+    }
+    this.scene.tweens.add({ targets: [w.img, w.glow], alpha: 0, duration: 400, onComplete: () => (w.img.destroy(), w.glow.destroy()) });
+  }
+
+  /** Hidden while it is on the hook; back in the water when it gets away. */
+  hideWanted(hidden: boolean) {
+    const w = this.wantedFish;
+    if (!w) return;
+    w.hidden = hidden;
+    w.img.setVisible(!hidden);
+    w.glow.setVisible(!hidden);
+    if (!hidden && this.L) {
+      // It got away: it bolts to another spot.
+      const L = this.L;
+      w.img.x = L.castNear + 60 + Math.random() * (L.castFar - L.castNear - 100);
+    }
+  }
+
+  /** True when a hook landing at x is close enough to the WANTED fish for it to bite. */
+  wantedNear(x: number, reach: number) {
+    const w = this.wantedFish;
+    return !!w && !w.hidden && Math.abs(w.img.x - x) <= reach;
+  }
+
+  /** Out of sight during boss fights, challenges and while it is on the hook. */
+  setWantedShown(on: boolean) {
+    const w = this.wantedFish;
+    if (!w) return;
+    const v = on && !w.hidden;
+    if (w.img.visible !== v) {
+      w.img.setVisible(v);
+      w.glow.setVisible(v);
+    }
+  }
+
+  get wantedPos() {
+    const w = this.wantedFish;
+    return w ? { x: w.img.x, y: w.img.y } : null;
+  }
+
+  private updateWanted(dt: number, t: number) {
+    const w = this.wantedFish;
+    const L = this.L;
+    if (!w || !L || w.hidden) return;
+    const lo = L.castNear + 40;
+    const hi = L.castFar - 20;
+    w.img.x += w.dir * 34 * dt;
+    if ((w.dir > 0 && w.img.x > hi) || (w.dir < 0 && w.img.x < lo)) {
+      w.dir *= -1;
+      w.img.setFlipX(w.dir < 0);
+    }
+    w.img.y = w.y + Math.sin(t * 1.3) * 10;
+    w.img.setAngle(Math.sin(t * 3.4) * 4);
+    w.glow.setPosition(w.img.x, w.img.y).setAlpha(0.4 + 0.25 * Math.sin(t * 3));
+    w.spark += dt;
+    if (w.spark > 0.7) {
+      w.spark = 0;
+      this.twinkle(w.img.x + (Math.random() - 0.5) * w.img.displayWidth * 0.8, w.img.y - w.img.displayHeight * 0.4, 0xffe066);
+    }
+  }
+
   private twinkle(x: number, y: number, tint: number) {
     const sp = art(this.scene, x, y, 'item:sparkle', 0.05).setDepth(19.5).setTint(tint);
     const k = sp.scaleX;
@@ -416,6 +525,7 @@ export class Pond {
       f.y += Math.cos(t * 1.2 + i * 3) * 12 * dt;
       f.setAlpha(0.5 + 0.5 * Math.sin(t * 2.4 + i * 1.9));
     });
+    this.updateWanted(dt, t);
     for (const f of this.swimmers) {
       f.img.x += f.speed * f.dir * dt;
       f.img.y = f.y + Math.sin(t * 0.9 + f.phase) * 14;

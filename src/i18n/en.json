@@ -54,7 +54,6 @@
     "needCoins": "You need {n} coins. Keep fishing!",
     "unlockHow": "Catch {n} kinds of fish in {pond}, then beat {boss}.",
     "comeBackTomorrow": "Come back tomorrow for the next gift!",
-    "newWanted": "New WANTED fish posted!",
     "again": "Missed! It bites again...",
     "softEarly": "Not yet! Wait for the big splash",
     "streak": "Perfect x{n}! +{p}% coins",
@@ -320,7 +319,9 @@
   },
   "wanted": {
     "label": "WANTED",
-    "reward": "x3 coins"
+    "reward": "x4 coins",
+    "appear": "A WANTED fish! Cast right next to it!",
+    "gone": "The WANTED fish swam away."
   },
   "today": {
     "label": "TODAY'S FISH",

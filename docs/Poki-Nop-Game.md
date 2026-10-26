@@ -1,14 +1,14 @@
 # Bộ hồ sơ nộp Poki: Player Fit Test
 
-Dùng cho game #3, **Kitty Pond: Hatch & Fish** (bản v1.13). Nội dung bên dưới dán thẳng vào P4D (app.poki.dev). Các trường tiếng Anh để nguyên, vì Poki tự viết lại mô tả chuẩn SEO.
+Dùng cho game #3, **Kitty Pond: Hatch & Fish** (bản v1.14). Nội dung bên dưới dán thẳng vào P4D (app.poki.dev). Các trường tiếng Anh để nguyên, vì Poki tự viết lại mô tả chuẩn SEO.
 
-Kết quả kiểm tra toàn bộ trước khi nộp (22/10): báo cáo kinh tế, mục 17. Tên cũ "Pond Pals" đã đổi ở v1.13 vì trùng tên game của HyperBeard (Google Play, 5/2026). Tên mới lấy từ `src/game.json` (`title`) cho cả `<title>` trang lẫn màn tải. Khóa lưu tiến trình `pondpals` giữ nguyên (người chơi không thấy).
+Kết quả kiểm tra toàn bộ trước khi nộp: báo cáo kinh tế, mục 17 (v1.13, 22/10) và mục 18 (v1.14, 26/10). Tên cũ "Pond Pals" đã đổi ở v1.13 vì trùng tên game của HyperBeard (Google Play, 5/2026). Tên mới lấy từ `src/game.json` (`title`) cho cả `<title>` trang lẫn màn tải. Khóa lưu tiến trình `pondpals` giữ nguyên (người chơi không thấy).
 
 ## 1. Các bước tới Player Fit Test
 
 | Bước | Việc làm | Xong khi |
 | --- | --- | --- |
-| 1 | Tạo game trên P4D với tên mới; upload `builds/KittyPond_Poki_v1.13.zip` | Qua content moderation (vài giờ) |
+| 1 | Tạo game trên P4D với tên mới; upload `builds/KittyPond_Poki_v1.14.zip` | Qua content moderation (vài giờ) |
 | 2 | Chạy Playtest, xem đủ 10 video | Mở khóa Player Fit Test |
 | 3 | Điền phần "Game page" (mục 2) và upload thumbnail (mục 3) | Đủ điều kiện chạy test |
 | 4 | Chạy Player Fit Test (500 người, khoảng 5 giờ, tối đa 2 lần/ngày) | Trung bình > 3 phút và ≥ 25% lượt > 3 phút |
@@ -34,7 +34,7 @@ Trước bước 1, tự chơi bản điện thoại 15–20 phút và chạy Po
 
 **What makes it different (cho phần mô tả cơ chế):**
 
-> A fishing game with a pet-collecting heart: every egg you fish up hatches into a pond pal with its own perk (luck, faster eggs, better prices, fishing helpers). Three ponds with 36 fish to discover, a boss at the end of each pond, boss rematches in four special forms (Frenzy, Ghost, Giant, Golden), 24 timed challenges, medals and a wardrobe for the cat. One currency, progress saves automatically.
+> A fishing game with a pet-collecting heart: every egg you fish up hatches into a pond pal with its own perk (luck, faster eggs, better prices, fishing helpers), and you see your pets help on every catch. Three ponds with 36 fish to discover and their own music, glowing WANTED fish that show up every few minutes and fight harder for a 4x reward, a boss at the end of each pond, boss rematches in four special forms (Frenzy, Ghost, Giant, Golden), 24 timed challenges, medals and a wardrobe for the cat. One currency, progress saves automatically. Menus work with mouse, touch or keyboard.
 
 **Roadmap (Poki thích game có đất để lớn):**
 
@@ -44,11 +44,21 @@ Trước bước 1, tự chơi bản điện thoại 15–20 phút và chạy Po
 
 | File | Dùng cho | Trạng thái |
 | --- | --- | --- |
-| `store/thumbnail_1024.png` | Thumbnail tĩnh (upload bản này) | Có: 1024×1024, không chữ, nền hoàng hôn ấm, xa màu nền Poki `#83FFE7` |
+| `store/thumbnail_1024.png` | Thumbnail tĩnh (upload bản này) | Có (v1.14): 1024×1024, không chữ; mèo đội mũ mưa là nhân vật chính, đang kéo cá vịt vàng lên khỏi mặt nước; nền hoàng hôn ấm, xa màu nền Poki `#83FFE7` |
 | `store/thumbnail_628.png` | Bản dự phòng kích thước tối thiểu | Có |
 | Thumbnail động `.mp4` | Bắt buộc trước Global Release | Chưa làm (1080×1080, ≥ 50 fps, 4–6 s) |
 
 Thumbnail không có chữ nên đổi tên game không phải làm lại.
+
+**3 ảnh chơi cho form "Share your game"** (dọc 1080×1920, chụp từ game thật, tiếng Anh):
+
+| File | Nội dung |
+| --- | --- |
+| `store/screenshots/1-big-catch.png` | Thẻ cá Epic Lantern Catfish, nhãn "Today's fish", +630 xu |
+| `store/screenshots/2-hatch.png` | Nở pet Epic Lily Turtle (perk ấp trứng nhanh) |
+| `store/screenshots/3-boss.png` | Trận boss Old Whiskers pha 2, cảnh báo "LET GO!" |
+
+Form mới: build phải chơi được không cần đăng nhập, không bắt buộc video; ở mục engine/công cụ có lựa chọn AI (Claude, ChatGPT…), chọn đúng cách đã làm.
 
 ## 4. Game gửi gì cho Poki (để đọc kết quả test)
 
@@ -65,6 +75,7 @@ Thumbnail không có chữ nên đổi tên game không phải làm lại.
 | pond | misty, frozen | unlock | Mở hồ mới |
 | daily | day1, day2, … | claim | Nhận quà đăng nhập (số ngày liên tiếp) |
 | challenge | `cozy-1` … `frozen-8` | clear / fail | Kết thúc một màn thử thách |
+| wanted | cozy, misty, frozen | spawn / catch / gone | Cá truy nã xuất hiện, bị bắt, hoặc bơi đi (mới ở v1.14) |
 
 ## 5. Đọc kết quả Player Fit Test
 
@@ -74,8 +85,9 @@ Theo mô phỏng (3 kiểu người chơi, 150 lượt mỗi kiểu):
 | --- | --- | --- |
 | Cá đầu tiên | khoảng 3 giây | tutorial / reel / complete |
 | Trứng, nâng cấp, nở pet đầu tiên | 16–50 giây | tutorial / egg, upgrade, hatch |
-| Boss Cozy Pond | 2,6–4,4 phút | boss / old_whiskers / start, win |
-| Mở Misty Creek | 12–18 phút | pond / misty / unlock |
+| Boss Cozy Pond | 2,5–3,3 phút | boss / old_whiskers / start, win |
+| Cá truy nã đầu tiên | 5–6 phút | wanted / cozy / spawn |
+| Mở Misty Creek | 11–17 phút | pond / misty / unlock |
 
 **Cách đọc:**
 
@@ -83,7 +95,7 @@ Theo mô phỏng (3 kiểu người chơi, 150 lượt mỗi kiểu):
 | --- | --- | --- |
 | Nhiều lượt dưới 1 phút | Tỉ lệ `tutorial cast` trên số người vào game; video Playtest đoạn 20 giây đầu | Hướng dẫn quăng cần, tốc độ tải |
 | Rơi ở 3–5 phút | Tỉ lệ `boss old_whiskers lose` trên `start` | Boss đầu đã giảm còn hồi 10%; nếu vẫn thua nhiều, giảm `BOSS.misHealFirst` hoặc tăng `misGrace` trong `src/logic/fishing.ts` |
-| Rơi ở 5–12 phút | Số người đạt `pond misty unlock` | Giá mở Misty (1.500 xu) hoặc thưởng nhiệm vụ |
+| Rơi ở 5–12 phút | Số người đạt `pond misty unlock`; tỉ lệ `wanted catch` trên `wanted spawn` | Giá mở Misty (1.500 xu) hoặc thưởng nhiệm vụ |
 | Trung bình trên 3 phút nhưng dưới 25% lượt vượt 3 phút | Phân bố bị lệch trái | Ấn tượng đầu: thumbnail, 10 giây đầu |
 
 Mỗi lần chỉ sửa một chỉ số rồi chạy lại test.
