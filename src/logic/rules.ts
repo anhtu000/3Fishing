@@ -2,6 +2,9 @@
 // No Phaser here, so tests and the balance sim (tools/sim.ts) run the same code as the game.
 import { pickWeighted, type Rng } from '../../core/rng';
 import {
+  petById,
+  EGG_SELL,
+  EGG_WEIGHTS,
   CATCH_WEIGHTS,
   FIGHT,
   BASKET_MAX,
@@ -112,10 +115,10 @@ export function luckOf(l: LuckInput) {
 }
 
 /** Rarity weights after luck. Luck is capped so Common never drops under 10%. */
-export function rarityWeights(luck: number): number[] {
-  const shift = Math.min(Math.max(0, luck), RARITY_WEIGHTS[0] - 10);
-  const rest = RARITY_WEIGHTS.slice(1).reduce((a, b) => a + b, 0);
-  return RARITY_WEIGHTS.map((w, i) => (i === 0 ? w - shift : w + (shift * w) / rest));
+export function rarityWeights(luck: number, base: readonly number[] = RARITY_WEIGHTS): number[] {
+  const shift = Math.min(Math.max(0, luck), base[0] - 10);
+  const rest = base.slice(1).reduce((a, b) => a + b, 0);
+  return base.map((w, i) => (i === 0 ? w - shift : w + (shift * w) / rest));
 }
 
 export type CatchKind = 'fish' | 'egg' | 'junk' | 'chest';
@@ -154,7 +157,7 @@ export function rollCatch(rng: Rng, pond: PondDef, luck: number): CatchRoll {
   const kinds: CatchKind[] = ['fish', 'egg', 'junk', 'chest'];
   const kind = kinds[pickWeighted(rng, kinds.map((k) => w[k]))];
   if (kind === 'fish') return { kind, ...rollFish(rng, pond, luck) };
-  if (kind === 'egg') return { kind, tier: rollRarityTier(rng, luck) };
+  if (kind === 'egg') return { kind, tier: pickWeighted(rng, rarityWeights(luck, EGG_WEIGHTS)) };
   if (kind === 'junk') return { kind, item: rng.pick(pond.junk) };
   return { kind };
 }
@@ -181,10 +184,9 @@ export function junkCoins(pond: PondDef) {
   return pond.priceMult;
 }
 
-/** Coins for an egg that found no free incubator slot. */
 /** Coins for an egg sold (no room, or from the basket): by rarity only, times the best pond reached. */
 export function eggCoins(tier: number, s: SaveData) {
-  return 10 * (tier + 1) * rewardMult(s);
+  return EGG_SELL[Math.max(0, Math.min(EGG_SELL.length - 1, tier))] * rewardMult(s);
 }
 
 
@@ -257,6 +259,20 @@ export function incubateFromBasket(s: SaveData, basketIndex: number, slot = -1):
 export function hasFreeEggSlot(s: SaveData) {
   for (let i = 0; i < s.incubatorSlots; i++) if (!s.eggs[i]) return true;
   return false;
+}
+
+/** How fast eggs warm up with the team's Nurture pets (1 = normal, 1.28 = 28% faster). */
+export function hatchSpeed(s: SaveData) {
+  return 1 + teamPerk(s, 'nurture', (id) => petById.get(id)) / 100;
+}
+
+/**
+ * Real seconds until an egg hatches. The egg's own clock (left) counts design seconds and Nurture
+ * makes it run faster, so every timer shown to the player divides by the speed (v1.14 showed the
+ * raw clock: a 10 min Epic egg still read 10:00 with a turtle in the team, only ticking faster).
+ */
+export function hatchSecLeft(s: SaveData, e: { left: number }) {
+  return e.left / hatchSpeed(s);
 }
 
 /** Time passes for every egg. nurturePct speeds it up. */

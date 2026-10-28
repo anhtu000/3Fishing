@@ -92,7 +92,7 @@ class App extends Emitter<{ language: [lang: string] }> {
   pause!: PauseManager;
   gameplay!: GameplayTracker;
   viewport!: Viewport;
-  /** Phones only: lowers the canvas resolution when frames are slow (see quality.ts). */
+  /** Lowers the canvas resolution when frames are slow (see quality.ts). */
   quality: QualityGovernor | null = null;
   theme: Theme = defaultTheme;
   /**
@@ -236,8 +236,8 @@ class App extends Emitter<{ language: [lang: string] }> {
     // would drop frames on a 60 Hz screen whenever a refresh comes a hair early).
     const mobile = this.platform.isMobile();
     if (mobile && !(fpsParam > 0)) fps.limit = 95;
-    // Resolution the governor settled on for this phone last time.
-    if (mobile && this.settings.renderDpr) this.viewport.setMaxDpr(this.settings.renderDpr);
+    // Resolution the governor settled on for this device last time.
+    if (this.settings.renderDpr) this.viewport.setMaxDpr(this.settings.renderDpr);
 
     const scenes: Phaser.Types.Scenes.SceneType[] = [BootScene, PauseScene, ...config.scenes];
     if (config.menu !== false && !config.menuScene) scenes.splice(1, 0, MenuScene);
@@ -257,7 +257,9 @@ class App extends Emitter<{ language: [lang: string] }> {
       scene: scenes,
     });
     this.viewport.attach(this.game);
-    if (mobile && !params.has('fixedres')) this.quality = new QualityGovernor(this);
+    // Every device, not only phones (game #3, 29/10): a laptop with a high-density screen drew the full
+    // 2x canvas, fell under 10 fps and the game slowed down (see the frame step in PlayScene).
+    if (!params.has('fixedres')) this.quality = new QualityGovernor(this);
     this.audio.attach(this.game);
     this.platform.onMuteChange((muted) => this.audio.setPortalMuted(muted));
     this.wirePause();

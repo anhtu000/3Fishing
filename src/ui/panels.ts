@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { app } from '@core';
 import { BOSS_STARS, bossForm, type BossForm, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
-import { dexCount, eggCoins, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
+import { dexCount, eggCoins, hatchSecLeft, hatchSpeed, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
 import { formatTime } from '../logic/leaderboard';
 import { CButton, COLORS, CPanel, CREAM_DARK, INK, art, card, drawBar, fitScale, fitText, fmt, txt } from './kit';
@@ -605,7 +605,7 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
     const tick = () => {
       const e = s.eggs[index];
       if (!e) return;
-      const sec = Math.ceil(e.left);
+      const sec = Math.ceil(hatchSecLeft(s, e));
       left.setText(sec > 0 ? t('incubator.hatchesIn', { t: duration(sec) }) : t('incubator.ready'));
       drawBar(bar, 380, 26, 1 - e.left / (e.total || HATCH_SEC[e.tier]), COLORS.purple);
     };
@@ -657,6 +657,71 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
 }
 
 /** Egg basket: pick which egg goes into a free incubator slot (slot -1: the first free one). */
+/**
+ * Portrait incubator panel (opened from the one incubator button): every open slot and the
+ * overnight nest as cards with live timers, plus the egg basket. Tapping a card does what the old
+ * egg button did (hatch, details, or pick an egg from the basket for an empty slot).
+ */
+export function eggsPanel(scene: Phaser.Scene, ctx: PanelCtx, onSlot: (i: number) => void, onBasket: () => void) {
+  const s = ctx.game.s;
+  const slots: number[] = [];
+  for (let i = 0; i < s.incubatorSlots; i++) slots.push(i);
+  if (s.eggs[NEST_INDEX]) slots.push(NEST_INDEX);
+  const cols = 3;
+  const rows = Math.ceil(slots.length / cols);
+  const cw = 190;
+  const ch = 230;
+  const hasBasket = s.basket.length > 0;
+  const h = 150 + rows * (ch + 20) + (hasBasket ? 130 : 0) + 40;
+  const panel = new CPanel(scene, { title: t('incubator.title'), w: 660, h, color: COLORS.purple, onClose: () => ctx.refresh() });
+  const go = (fn: () => void) => {
+    panel.close();
+    scene.time.delayedCall(120, fn);
+  };
+  const ticks: (() => void)[] = [];
+  slots.forEach((i, k) => {
+    const nest = i === NEST_INDEX;
+    const inRow = Math.min(cols, slots.length - Math.floor(k / cols) * cols);
+    const x = ((k % cols) - (inRow - 1) / 2) * (cw + 16);
+    const y = panel.top + 60 + ch / 2 + Math.floor(k / cols) * (ch + 20);
+    const c = new CButton(scene, x, y, { w: cw, h: ch, color: nest ? 0xe9c98f : 0xfffdf6, onClick: () => go(() => onSlot(i)) });
+    const img = art(scene, 0, -30, 'egg:0');
+    const name = txt(scene, 0, 52, '', 20, { color: DARK, stroke: false });
+    const time = txt(scene, 0, 84, '', 24, { color: DIM, stroke: false });
+    c.add([img, name, time]);
+    panel.content.add(c);
+    let tier = -1;
+    const tick = () => {
+      const e = s.eggs[i];
+      if (!e) {
+        img.setAlpha(0.25);
+        name.setText('');
+        time.setText(s.basket.length > 0 ? '+' : '');
+        c.setGlow(s.basket.length > 0);
+        return;
+      }
+      if (tier !== e.tier) {
+        tier = e.tier;
+        img.setTexture(`egg:${e.tier}`).setScale(fitScale(`egg:${e.tier}`, 110)).setAlpha(1);
+        fitText(name.setText(nest ? t('incubator.nestTitle') : eggName(e.tier)).setColor(RARITY_CSS[e.tier] === '#7d8b99' ? DARK : RARITY_CSS[e.tier]), cw - 20);
+      }
+      const sec = Math.ceil(hatchSecLeft(s, e));
+      fitText(time.setText(sec > 0 ? duration(sec) : t('hud.hatch')), cw - 20);
+      c.setGlow(sec <= 0);
+    };
+    tick();
+    ticks.push(tick);
+  });
+  if (hasBasket) {
+    const b = new CButton(scene, 0, panel.bottom - 110, { w: 420, h: 96, icon: 'icon:i_basket', iconSize: 56, label: `${t('basket.title')}  ${s.basket.length}`, fontSize: 30, color: COLORS.orange, onClick: () => go(onBasket) });
+    if (b.label) fitText(b.label, 320);
+    panel.content.add(b);
+  }
+  const timer = scene.time.addEvent({ delay: 250, loop: true, callback: () => ticks.forEach((f) => f()) });
+  panel.once(Phaser.GameObjects.Events.DESTROY, () => timer.remove());
+  return panel;
+}
+
 export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
   const g = ctx.game;
   const s = g.s;
@@ -717,7 +782,7 @@ export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
       const egg = art(scene, 0, -26, `egg:${b.tier}`);
       egg.setScale(fitScale(`egg:${b.tier}`, 82));
       const name = fitText(txt(scene, 0, 40, eggName(b.tier), 20, { color: RARITY_CSS[b.tier] === '#7d8b99' ? DARK : RARITY_CSS[b.tier], stroke: false }), cw - 14);
-      const time = txt(scene, 0, 66, duration(HATCH_SEC[b.tier]), 20, { color: DIM, stroke: false, weight: '500' });
+      const time = txt(scene, 0, 66, duration(Math.ceil(HATCH_SEC[b.tier] / hatchSpeed(s))), 20, { color: DIM, stroke: false, weight: '500' });
       c.add([egg, name, time]);
       if (b.shiny) {
         const st = art(scene, cw / 2 - 22, -66, 'icon:i_star');

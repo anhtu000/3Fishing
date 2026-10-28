@@ -1,4 +1,4 @@
-# Game #3 — Kitty Pond: Hatch & Fish (v1.14)
+# Game #3 — Kitty Pond: Hatch & Fish (v1.15)
 
 Tên cũ "Pond Pals: Hatch & Fish" đã đổi ở v1.13 vì trùng tên game của HyperBeard. Tên file tài liệu và khóa lưu tiến trình (`pondpals`) giữ nguyên.
 
@@ -20,7 +20,7 @@ bun tools/formtune.ts  # tỉ lệ thắng 4 dạng boss khi đấu lại
 npm run audio          # tạo lại âm thanh (cần python3, numpy, scipy, ffmpeg); chỉ nhạc: python3 tools/make_audio.py music
 ```
 
-Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn boss), `#dev-misty` (hồ 2), `#dev-frozen` (hồ 3). Đổi ngôn ngữ để thử: `?lang=de` (en, fr, it, de, es, tr).
+Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn boss), `#dev-misty` (hồ 2), `#dev-frozen` (hồ 3). Đổi ngôn ngữ để thử: `?lang=de` (en, fr, it, de, es, tr). Thử tốc độ game: `?speed=0.7` (0–2; mặc định máy tính 0,85, điện thoại 0,75, đặt ở `GAME_SPEED_DESKTOP` và `GAME_SPEED_PHONE` trong `src/content/data.ts`). `bun tools/bosstest.ts` nhận `SPEED=0.75` để mô phỏng boss trên điện thoại.
 
 ## Cấu trúc
 
@@ -77,3 +77,11 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
 - v1.12: sửa lỗi theo đánh giá nộp Poki (chặn cuộn trang, ESC pause mọi lúc, âm thanh tải sau khi vào game, thông báo không chồng nhau); boss đầu hồi 10%; 4 dạng boss khi đấu lại (Cuồng nộ, Ma, Khổng lồ, Vàng); sự kiện phễu `PokiSDK.measure`; hồ sơ nộp Poki `docs/Poki-Nop-Game.md`.
 - v1.13: đổi tên thành Kitty Pond: Hatch & Fish; chạy lại toàn bộ test trước khi nộp.
 - v1.14: theo trang "What we look for" của Poki: thumbnail mới (mèo là nhân vật chính), 3 ảnh chơi cho form; tải hình theo lượt (hồ đang chơi trước, phần còn lại tải nền); điều khiển menu bằng phím (mũi tên/WASD, Tab, Enter/Space, ESC); thú giúp hiện chữ khi có tác dụng; nhạc riêng 3 hồ (2–2,5 phút); gom nút bên trái vào nút "…". Cá TRUY NÃ xuất hiện theo thời gian chơi (lần đầu sau 4 phút, sau đó 3–5 phút một lần), bơi ở chỗ ngẫu nhiên 75 s, khó kéo hơn cá thường, giá ×4. Boss đấu lại máu ×1,3.
+- v1.15 (28–29/10, tài khoản B, chưa build bản Poki vì máy và cloud không chạy được npm; bản thử `builds/KittyPond_PhoneTest_v1.15-thu.html`):
+  - Tốc độ: mọi chuyển động chạy theo `GAME_SPEED`, máy tính 0,85, điện thoại và máy tính bảng 0,75 (nhận theo `pointer: coarse`). Bước thời gian giới hạn 0,25 s, câu cá chia bước nhỏ tối đa 1/30 s, nên máy tính chậm không còn bị chậm game. `QualityGovernor` và độ phân giải đã lưu dùng cho mọi máy, không chỉ điện thoại.
+  - Boss: lúc đầu trận boss đứng yên tới lần chạm đầu, sau đó 1 s êm; hồi máu chỉ sau khoảng êm. Hồ 1 máu ×0,68, lực ×1,05; hồ 2 máu ×0,92, lực ×0,97; hồ 3 giữ nguyên (chỉ trận đầu). Mô phỏng 60 fps, máy tính: hồ 1 thắng 93/89/93%, 19–22 s; hồ 2 76/81/89%, 26–29 s; hồ 3 64/70/69%. Điện thoại (0,75): hồ 1 95/92/95%, 21–25 s; hồ 2 79/86/93%, 30–33 s; hồ 3 65/75/78%.
+  - Boss thua có hai thông báo riêng: chạy mất (thanh hồi đầy, chờ 0,7 s cho người chơi thấy) và đứt dây. Thêm chỉ báo độ mòn dây 5 vạch dưới thanh căng.
+  - Trứng: giá bán 25/70/150/350/800 (×hệ số hồ), tỉ lệ ra trứng 70/18,5/7,5/2,5/1,5%. Mô phỏng kinh tế: xu sau 60 phút tăng khoảng 24–47%, tới hồ 3 sớm khoảng 6–8 phút so với v1.14. Thời gian nở hiển thị đã tính buff của rùa.
+  - Màn dọc: nút giỏ trứng gọn một nút (trứng, giờ nở, chấm ô lò, số trứng trong giỏ), bảng trứng mở ra từ nút đó; thú không bị che.
+  - Art: ếch bản 3; vịt, rái cá, rùa, kỳ giông và các thú còn lại bản 4; hải ly và thỏ giữ bản 1; Mist Fawn thành hươu cao cổ chibi (Mist Giraffe, đổi tên 6 ngôn ngữ); mèo kiểu C2 (`src/render/catArt.ts`). Phần trên bờ ba hồ vẽ lại (`src/render/shore.ts`): hồ 1 đồng cỏ, nhà, cây; hồ 2 núi sương, cầu đá, liễu; hồ 3 vách đá, tuyết trên đỉnh, thác đóng băng, nhà gỗ. Hiệu ứng nhẹ: chim, bướm, khói ống khói. Phần dưới nước giữ v1.14. Test mới `src/logic/art.test.ts` chặn thuộc tính SVG lặp (lỗi đó từng làm mất hình con diệc).
+  - Kiểm tra: tsc sạch, 32 test bun + 10 test core đạt. Kiểm bằng file tạm thay cho `npm run typecheck` (tsc toàn cục với khai báo Phaser giả) và build bằng `tools/bun-build.mjs` với Phaser lấy từ bản v1.14.

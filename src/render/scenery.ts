@@ -1,7 +1,9 @@
 // Pond scenery: sky details, far bank, dock, plants above and below the water, and the cat angler.
 // Each pond has its own palette. Pieces are separate sprites so the scene can be laid out for any
 // screen shape (tall phone, 16:9 desktop) and so plants can sway.
-import { OUTLINE, circle, darken, ellipse, eye, flat, happyEye, lighten, line, linear, nextId, path, radial, svg } from './svg';
+import { catSvg } from './catArt';
+import { bird, butterfly, cottage, frostBank, glacierFar, horizon, logCabin, meadowFar, meadowNear, mistyFar, mistyNear, oakTree, pineTree, puff, stoneBridge, willow } from './shore';
+import { OUTLINE, circle, darken, ellipse, flat, lighten, line, linear, nextId, path, radial, svg } from './svg';
 
 export interface PondPalette {
   skyTop: string;
@@ -88,161 +90,13 @@ function piece(w: number, h: number, build: (id: string, defs: string[]) => stri
   return { w, h, svg: svg(w, h, defs.join(''), body) };
 }
 
-/** Rolling hills strip, 1600 wide so it covers wide screens. */
-function hills(p: PondPalette, near: boolean): Piece {
-  const w = 1600;
-  const h = 260;
-  return piece(w, h, () => {
-    const col = near ? p.hillNear : p.hillFar;
-    let d = `M0,${h}`;
-    const base = near ? 150 : 110;
-    const amps = near ? [40, 26, 48, 22, 36, 30, 44, 28] : [60, 40, 70, 46, 64, 38, 58, 50];
-    const step = w / amps.length;
-    d += ` L0,${base}`;
-    for (let i = 0; i < amps.length; i++) {
-      const x0 = i * step;
-      d += ` Q${x0 + step / 2},${base - amps[i] * 1.6} ${x0 + step},${base - (i % 2 ? 10 : 0)}`;
-    }
-    d += ` L${w},${h} Z`;
-    const hi = lighten(col, 0.22);
-    return path(d, col, 'stroke-width="4"') + flat(`M0,${base + 18} Q${w / 4},${base - 6} ${w / 2},${base + 18} T${w},${base + 18} L${w},${base + 26} Q${(3 * w) / 4},${base + 8} ${w / 2},${base + 26} T0,${base + 26} Z`, hi, 'opacity="0.5"');
-  });
-}
 
-/** Misty Creek far side: tall jagged mountains fading into the haze. */
-function gorgeFar(p: PondPalette): Piece {
-  const w = 1600;
-  const h = 360;
-  return piece(w, h, (id, defs) => {
-    defs.push(linear(`${id}m`, [[0, lighten(p.hillFar, 0.12)], [1, p.hillFar]]));
-    const tops = [150, 70, 120, 40, 110, 160, 60, 130, 30, 100, 150, 80, 140, 50, 120, 170];
-    const step = w / (tops.length - 1);
-    let d = `M0,${h} L0,${tops[0]}`;
-    tops.forEach((y, i) => {
-      if (i === 0) return;
-      const x = i * step;
-      d += ` L${x - step * 0.55},${y + 46} L${x - step * 0.3},${y + 20} L${x},${y}`;
-    });
-    d += ` L${w},${h} Z`;
-    // Light ridges on the left faces of the peaks.
-    let ridges = '';
-    tops.forEach((y, i) => {
-      if (i === 0) return;
-      const x = i * step;
-      ridges += flat(`M${x},${y} L${x - step * 0.3},${y + 20} L${x - step * 0.22},${y + 70} Z`, '#ffffff', 'opacity="0.22"');
-    });
-    return path(d, `url(#${id}m)`, 'stroke-width="4"') + ridges;
-  });
-}
 
-/** Misty Creek near side: flat-topped rock cliffs with layered strata and moss on top. */
-function gorgeNear(p: PondPalette): Piece {
-  const w = 1600;
-  const h = 260;
-  return piece(w, h, () => {
-    const blocks: [number, number, number][] = [[0, 230, 90], [200, 180, 130], [360, 260, 70], [600, 200, 120], [780, 240, 80], [1000, 200, 140], [1180, 220, 95], [1380, 220, 120]];
-    let out = '';
-    for (const [x, bw, top] of blocks) {
-      const d = `M${x},${h} L${x + 8},${top + 14} Q${x + 12},${top} ${x + 30},${top} L${x + bw - 30},${top + 6} Q${x + bw - 10},${top + 8} ${x + bw - 6},${top + 22} L${x + bw},${h} Z`;
-      out += path(d, p.hillNear, 'stroke-width="4"');
-      out += line(`M${x + 20},${top + 50} L${x + bw - 24},${top + 46} M${x + 30},${top + 90} L${x + bw - 40},${top + 88}`, darken(p.hillNear, 0.18), 3, 'opacity="0.6"');
-      out += flat(`M${x + 12},${top + 8} Q${x + 30},${top - 6} ${x + bw / 2},${top + 2} Q${x + bw - 20},${top - 4} ${x + bw - 8},${top + 14} L${x + bw - 10},${top + 22} Q${x + bw / 2},${top + 12} ${x + 10},${top + 20} Z`, p.weed2, 'opacity="0.9"');
-    }
-    return out;
-  });
-}
 
-/** Frozen Lake far side: big mountains with snow caps. */
-function peaksFar(p: PondPalette): Piece {
-  const w = 1600;
-  const h = 380;
-  return piece(w, h, () => {
-    const peaks: [number, number, number][] = [[120, 120, 260], [380, 40, 340], [640, 140, 260], [900, 20, 360], [1160, 110, 280], [1420, 50, 320], [1640, 130, 240]];
-    let out = '';
-    for (const [x, top, half] of peaks) {
-      const base = h;
-      out += path(`M${x - half},${base} L${x},${top} L${x + half},${base} Z`, p.hillFar === '#e6eefb' ? '#b9c9e6' : p.hillFar, 'stroke-width="4"');
-      out += flat(`M${x},${top} L${x + half},${base} L${x + half * 0.2},${base} Z`, '#8fa4cc', 'opacity="0.35"');
-      // Snow cap with a zigzag edge.
-      const cy = top + (base - top) * 0.32;
-      const cx = (cy - top) / (base - top) * half;
-      out += path(`M${x},${top} L${x + cx},${cy} L${x + cx * 0.5},${cy - 14} L${x + cx * 0.1},${cy + 6} L${x - cx * 0.35},${cy - 12} L${x - cx},${cy} Z`, '#ffffff', 'stroke-width="3.5"');
-    }
-    return out;
-  });
-}
 
-/** Frozen Lake near side: soft snowdrifts with a sparkle here and there. */
-function snowDrifts(p: PondPalette): Piece {
-  const w = 1600;
-  const h = 220;
-  return piece(w, h, () => {
-    let d = `M0,${h} L0,120`;
-    const amps = [30, 54, 24, 46, 36, 58, 28, 44];
-    const step = w / amps.length;
-    for (let i = 0; i < amps.length; i++) d += ` C${i * step + step * 0.3},${120 - amps[i]} ${i * step + step * 0.7},${120 - amps[i]} ${(i + 1) * step},120`;
-    d += ` L${w},${h} Z`;
-    let sparkles = '';
-    for (let i = 0; i < 18; i++) {
-      const x = (i * 211) % w;
-      const y = 130 + ((i * 37) % 60);
-      sparkles += flat(`M${x},${y - 7} L${x + 2},${y - 2} L${x + 7},${y} L${x + 2},${y + 2} L${x},${y + 7} L${x - 2},${y + 2} L${x - 7},${y} L${x - 2},${y - 2} Z`, '#ffffff', 'opacity="0.9"');
-    }
-    return path(d, p.hillNear, 'stroke-width="4"') + flat(`M0,130 C200,104 400,140 800,118 C1100,104 1400,136 1600,120 L1600,132 C1300,146 1000,118 800,132 C500,150 200,118 0,142 Z`, '#ffffff', 'opacity="0.7"') + sparkles;
-  });
-}
 
-// ----- Landmarks: one picture per pond, on the far bank -----
 
-/** Cozy Pond: a little cottage with a red roof, smoke and a picket fence. */
-function cottage(): Piece {
-  return piece(240, 190, () =>
-    // smoke puffs
-    circle(176, 26, 10, '#ffffff', false, 'opacity="0.8"') + circle(188, 12, 7, '#ffffff', false, 'opacity="0.6"') +
-    path('M164,74 L164,40 L186,40 L186,86 Z', '#b45c4a') +
-    // walls
-    path('M50,104 L190,104 L190,180 L50,180 Z', '#fff1d6') +
-    // roof
-    path('M34,110 L120,44 L206,110 Z', '#ff7262') + flat('M50,104 L120,52 L190,104 L186,108 L120,60 L54,108 Z', '#ffffff', 'opacity="0.3"') +
-    // door and windows
-    path('M108,136 L132,136 L132,180 L108,180 Z', '#c98a4b') + circle(127, 160, 2.5, OUTLINE, false) +
-    path('M64,124 L92,124 L92,150 L64,150 Z', '#9fe0f2') + line('M78,124 L78,150 M64,137 L92,137', OUTLINE, 3) +
-    path('M148,124 L176,124 L176,150 L148,150 Z', '#9fe0f2') + line('M162,124 L162,150 M148,137 L176,137', OUTLINE, 3) +
-    // flower box and fence
-    path('M62,150 L94,150 L94,158 L62,158 Z', '#8fcf7a') + circle(70, 148, 4, '#ff8fab', false) + circle(84, 148, 4, '#ffd23f', false) +
-    line('M6,170 L46,170 M196,170 L236,170', '#ffffff', 5) +
-    [12, 26, 40, 202, 216, 230].map((x) => path(`M${x - 4},186 L${x - 4},160 L${x},154 L${x + 4},160 L${x + 4},186 Z`, '#ffffff', 'stroke-width="3"')).join(''),
-  );
-}
 
-/** Misty Creek: a waterfall pouring down a mossy cliff, with spray at the bottom. */
-function waterfall(p: PondPalette): Piece {
-  return piece(200, 280, (id, defs) => {
-    defs.push(linear(`${id}w`, [[0, '#e8fbff'], [1, '#9fdcef']]));
-    return (
-      path('M10,276 L14,40 Q20,14 50,12 L150,12 Q182,14 186,40 L190,276 Z', p.rock) +
-      flat('M18,40 Q24,20 50,18 L150,18 Q176,20 182,40 L182,52 Q150,40 100,44 Q50,40 18,54 Z', p.weed2) +
-      line('M24,120 L60,116 M140,150 L176,146 M28,210 L58,206', darken(p.rock, 0.2), 3) +
-      path('M70,26 L130,26 L138,262 L62,262 Z', `url(#${id}w)`, 'stroke-width="3.5"') +
-      line('M84,40 L82,250 M100,34 L100,256 M116,40 L118,250', '#ffffff', 4, 'opacity="0.85"') +
-      ellipse(100, 262, 62, 16, '#ffffff', false, 'opacity="0.95"') + circle(56, 252, 12, '#ffffff', false, 'opacity="0.85"') + circle(146, 254, 10, '#ffffff', false, 'opacity="0.85"')
-    );
-  });
-}
-
-/** Frozen Lake: a red ice-fishing hut with a snowy roof, and an igloo next to it. */
-function iceHut(): Piece {
-  return piece(260, 170, () =>
-    // igloo
-    path('M150,166 C150,96 250,96 250,166 Z', '#f4f9ff') + line('M158,140 L242,140 M154,154 L246,154 M172,120 L228,120', '#c3d6ee', 3) + line('M186,140 L186,154 M214,140 L214,154 M200,120 L200,140 M178,154 L178,166 M222,154 L222,166', '#c3d6ee', 3) +
-    path('M184,166 C184,140 216,140 216,166 Z', '#5a6f96') +
-    // hut
-    path('M20,80 L130,80 L130,166 L20,166 Z', '#e0574b') + line('M20,104 L130,104 M20,128 L130,128 M20,150 L130,150', darken('#e0574b', 0.2), 3) +
-    path('M8,86 L75,34 L142,86 Z', '#ffffff') + flat('M24,80 L75,42 L126,80 Z', '#d7e6f6', 'opacity="0.6"') +
-    path('M60,118 L90,118 L90,166 L60,166 Z', '#7a4b3a') + path('M100,96 L120,96 L120,114 L100,114 Z', '#ffe27a') +
-    path('M104,48 L118,48 L118,70 L104,64 Z', '#7a4b3a'),
-  );
-}
 
 // ----- Sky extras -----
 
@@ -293,32 +147,7 @@ function iceCrystals(): Piece {
   });
 }
 
-function roundTree(p: PondPalette): Piece {
-  return piece(150, 190, (id, defs) => {
-    defs.push(radial(`${id}t`, [[0, lighten(p.tree, 0.25)], [1, p.tree]], 0.4, 0.3, 0.75));
-    return (
-      path('M66,120 L84,120 L88,186 L62,186 Z', p.trunk) +
-      path('M20,96 C6,70 26,40 52,44 C58,16 102,12 110,42 C138,40 150,74 132,96 C140,124 104,138 78,128 C52,140 12,126 20,96 Z', `url(#${id}t)`) +
-      circle(54, 72, 9, p.treeDark, false, 'opacity="0.5"') +
-      circle(98, 92, 11, p.treeDark, false, 'opacity="0.5"') +
-      ellipse(62, 50, 18, 9, '#ffffff', false, 'opacity="0.3"')
-    );
-  });
-}
 
-function pineTree(p: PondPalette): Piece {
-  const snow = p.snow
-    ? path('M65,8 L84,42 C76,48 70,40 65,46 C60,40 54,48 46,42 Z', '#ffffff', 'stroke-width="3"') +
-      path('M46,70 L84,70 L94,90 C84,96 76,86 66,94 C56,86 48,96 38,88 Z', '#ffffff', 'stroke-width="3"') +
-      path('M36,128 L94,128 L104,146 C92,152 82,142 70,150 C58,142 46,152 28,144 Z', '#ffffff', 'stroke-width="3"')
-    : '';
-  return piece(130, 220, () =>
-    path('M58,180 L72,180 L74,216 L56,216 Z', p.trunk) +
-    path('M65,8 L100,70 L84,70 L114,128 L94,128 L124,186 L6,186 L36,128 L16,128 L46,70 L30,70 Z', p.tree) +
-    flat('M65,20 L84,62 L70,58 Z', lighten(p.tree, 0.3), 'opacity="0.6"') +
-    snow,
-  );
-}
 
 /** Flat chunk of floating ice (Frozen Lake's lily pads). */
 function iceFloe(big: boolean): Piece {
@@ -334,7 +163,11 @@ function snowflake(): Piece {
 }
 
 function cloud(): Piece {
-  return piece(220, 110, () => path('M30,90 C6,90 6,58 32,56 C30,26 70,16 86,40 C100,10 150,14 152,48 C182,40 206,64 190,90 Z', '#ffffff', `stroke="${lighten(OUTLINE, 0.55)}" stroke-width="4"`) + flat('M44,80 L180,80', '#ffffff') + ellipse(80, 44, 22, 8, '#ffffff', false));
+  return piece(220, 110, (id, defs) => {
+    defs.push(linear(`${id}c`, [[0, '#ffffff'], [0.6, '#ffffff'], [1, '#dbe9fb']]));
+    const d = 'M30,90 C6,90 6,58 32,56 C30,26 70,16 86,40 C100,10 150,14 152,48 C182,40 206,64 190,90 Z';
+    return path(d, `url(#${id}c)`, `stroke="${lighten(OUTLINE, 0.62)}" stroke-width="3.5"`) + ellipse(80, 44, 22, 8, '#ffffff', false) + ellipse(140, 40, 14, 6, '#ffffff', false, 'opacity="0.8"');
+  });
 }
 
 function sun(): Piece {
@@ -349,10 +182,19 @@ function dock(p: PondPalette): Piece {
     defs.push(linear(`${id}w`, [[0, '#d39a62'], [1, '#a8703f']]));
     const wood = `url(#${id}w)`;
     const posts = [40, 150, 260]
-      .map((x) => path(`M${x},96 L${x + 26},96 L${x + 24},296 L${x + 2},296 Z`, darken('#a8703f', 0.1)) + line(`M${x + 6},140 L${x + 20},140 M${x + 6},200 L${x + 20},200`, darken('#a8703f', 0.35), 3))
+      .map((x) => path(`M${x},96 L${x + 26},96 L${x + 24},296 L${x + 2},296 Z`, darken('#a8703f', 0.1)) + flat(`M${x + 14},98 L${x + 26},98 L${x + 24},296 L${x + 14},296 Z`, '#2a1840', 'opacity="0.18"') + line(`M${x + 6},140 L${x + 20},140 M${x + 6},200 L${x + 20},200`, darken('#a8703f', 0.35), 3) + flat(`M${x + 2},150 L${x + 24},150 L${x + 24},296 L${x + 2},296 Z`, '#3a7a5a', 'opacity="0.25"'))
       .join('');
     let planks = '';
-    for (let i = 0; i < 6; i++) planks += path(`M${i * 58 + 4},70 L${i * 58 + 60},70 L${i * 58 + 60},100 L${i * 58 + 4},100 Z`, wood, 'stroke-width="3.5"');
+    for (let i = 0; i < 6; i++) {
+      const x = i * 58 + 4;
+      planks += path(`M${x},70 L${x + 56},70 L${x + 56},100 L${x},100 Z`, wood, 'stroke-width="3.5"');
+      // grain, a knot and two nails per plank
+      planks += line(`M${x + 6},${78 + (i % 2) * 4} q20,-3 44,1 M${x + 8},${90 - (i % 2) * 3} q18,3 40,-1`, darken('#a8703f', 0.25), 1.8, 'opacity="0.6"');
+      if (i % 2 === 0) planks += ellipse(x + 34, 85, 4, 2.4, darken('#a8703f', 0.3), false, 'opacity="0.7"');
+      planks += circle(x + 6, 74, 1.8, '#5b4a3a', false) + circle(x + 50, 74, 1.8, '#5b4a3a', false);
+    }
+    // rope coil on the deck
+    planks += ellipse(200, 66, 20, 7, '#d9b47a', true, 'stroke-width="3"') + ellipse(200, 64, 12, 4, 'none', false, 'stroke="#a8844a" stroke-width="2.4"') + ellipse(200, 63, 5, 2, 'none', false, 'stroke="#a8844a" stroke-width="2"');
     return (
       posts +
       path('M0,94 L356,94 L356,112 L0,112 Z', darken('#a8703f', 0.15)) +
@@ -371,9 +213,11 @@ function dock(p: PondPalette): Piece {
 }
 
 function lilyPad(flower: boolean): Piece {
-  return piece(150, 70, () =>
-    path('M75,10 C120,10 144,24 144,36 C144,50 116,60 75,60 C34,60 6,50 6,36 C6,24 30,10 75,10 Z M75,36 L110,14 L100,34 Z', '#6fcf6a', 'fill-rule="evenodd"') +
-    line('M75,36 L40,26 M75,36 L50,52 M75,36 L106,50', '#4fae55', 3) +
+  return piece(150, 70, (id, defs) =>
+    (defs.push(radial(`${id}l`, [[0, '#8fe27f'], [0.7, '#62c463'], [1, '#48a554']], 0.4, 0.35, 0.75)), '') +
+    path('M75,10 C120,10 144,24 144,36 C144,50 116,60 75,60 C34,60 6,50 6,36 C6,24 30,10 75,10 Z M75,36 L110,14 L100,34 Z', `url(#${id}l)`, 'fill-rule="evenodd"') +
+    line('M75,36 L40,26 M75,36 L50,52 M75,36 L106,50 M75,36 L28,40 M75,36 L120,40', '#4fae55', 2.6) +
+    flat('M24,28 C40,16 70,14 90,16 C64,18 40,24 28,34 Z', '#ffffff', 'opacity="0.4"') +
     (flower
       ? path('M64,30 C56,10 70,2 76,16 C82,2 96,10 88,30 C82,36 70,36 64,30 Z', '#ffc2dc', 'stroke-width="3.5"') + path('M58,30 C46,22 50,12 62,20 Z', '#ffa8cb', 'stroke-width="3"') + path('M94,30 C106,22 102,12 90,20 Z', '#ffa8cb', 'stroke-width="3"') + circle(76, 24, 5, '#ffe36e', false)
       : ''),
@@ -448,41 +292,9 @@ function surface(p: PondPalette): Piece {
   });
 }
 
-// ---------------- Cat angler ----------------
 
-/** The cat (no hat: hats are separate pieces drawn on the same 200 x 220 canvas), sitting on the dock edge. */
-function cat(blink: boolean): Piece {
-  return piece(200, 220, (id, defs) => {
-    defs.push(linear(`${id}c`, [[0, '#ffffff'], [1, '#f1e6dc']]));
-    const fur = `url(#${id}c)`;
-    return (
-      // tail
-      path('M40,190 C10,190 4,160 18,140 C24,154 34,170 54,174 Z', '#f6a35c') +
-      // body
-      path('M44,200 C40,150 60,118 100,118 C140,118 156,150 152,200 Z', fur) +
-      path('M60,200 C60,166 74,148 100,148 C124,148 136,166 136,200 Z', '#ffd9b8', 'stroke-width="0"') +
-      // raincoat collar
-      path('M58,132 C80,146 120,146 142,132 L146,150 C120,164 80,164 54,150 Z', '#ffcf3a') +
-      // legs dangling over the edge
-      path('M118,196 C120,214 140,216 142,200 Z', fur) +
-      // head
-      path('M48,84 C48,46 72,30 100,30 C128,30 152,46 152,84 C152,116 128,132 100,132 C72,132 48,116 48,84 Z', fur) +
-      // orange ear patches + ears
-      path('M58,52 L56,18 L86,36 Z', '#f6a35c') +
-      path('M142,52 L144,18 L114,36 Z', fur) +
-      flat('M64,46 L62,28 L78,38 Z', '#ffb3c4') +
-      // face
-      (blink ? happyEye(84, 86, 9) + happyEye(124, 86, 9) : eye(84, 86, 11, '#2b1d38', 0.25) + eye(124, 86, 11, '#2b1d38', 0.25)) +
-      ellipse(74, 104, 9, 5, '#ff7aa8', false, 'opacity="0.45"') +
-      ellipse(136, 104, 9, 5, '#ff7aa8', false, 'opacity="0.45"') +
-      flat('M100,98 L94,92 L106,92 Z', '#ff8fa8', `stroke="${OUTLINE}" stroke-width="2"`) +
-      line('M92,104 Q100,110 108,104', OUTLINE, 3) +
-      line('M60,98 l-20,-4 M60,104 l-20,4 M140,98 l20,-4 M140,104 l20,4', OUTLINE, 2.4, 'opacity="0.6"') +
-      // paws holding the rod (rod drawn separately)
-      ellipse(126, 150, 15, 12, fur)
-    );
-  });
-}
+
+// ---------------- Cat angler (art in catArt.ts) ----------------
 
 function rod(): Piece {
   // pivot at (20, 200): the cat's paws. Tip at (380, 12).
@@ -492,10 +304,11 @@ function rod(): Piece {
 export function sceneryPieces(pond: string): Record<string, Piece> {
   const p = PALETTES[pond];
   const pieces: Record<string, Piece> = {
-    hillsFar: p.land === 'gorge' ? gorgeFar(p) : p.land === 'peaks' ? peaksFar(p) : hills(p, false),
-    hillsNear: p.land === 'gorge' ? gorgeNear(p) : p.land === 'peaks' ? snowDrifts(p) : hills(p, true),
-    landmark: p.land === 'gorge' ? waterfall(p) : p.land === 'peaks' ? iceHut() : cottage(),
-    tree: p.mist || p.snow ? pineTree(p) : roundTree(p),
+    horizon: horizon(p),
+    hillsFar: p.land === 'gorge' ? mistyFar(p) : p.land === 'peaks' ? glacierFar(p) : meadowFar(p),
+    hillsNear: p.land === 'gorge' ? mistyNear(p) : p.land === 'peaks' ? frostBank(p) : meadowNear(p),
+    landmark: p.land === 'gorge' ? stoneBridge(p) : p.land === 'peaks' ? logCabin() : cottage(),
+    tree: p.mist ? willow(p) : p.snow ? pineTree(p) : oakTree(p),
     dock: dock(p),
     reeds: reeds(p),
     weedTall: seaweed(p, true),
@@ -578,6 +391,9 @@ export function commonPieces(): Record<string, Piece> {
     lily: lilyPad(false),
     lilyFlower: lilyPad(true),
     ray: lightRay(),
+    bird: bird(),
+    puff: puff(),
+    butterfly: butterfly(),
     fog: fogBand(),
     firefly: firefly(),
     floe: iceFloe(true),
@@ -587,8 +403,8 @@ export function commonPieces(): Record<string, Piece> {
     aurora: aurora(),
     stone: steppingStone(true),
     stoneSmall: steppingStone(false),
-    cat: cat(false),
-    catBlink: cat(true),
+    cat: { w: 200, h: 220, svg: catSvg(false) },
+    catBlink: { w: 200, h: 220, svg: catSvg(true) },
     rod: rod(),
   };
 }

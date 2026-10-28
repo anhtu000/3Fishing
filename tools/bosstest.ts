@@ -1,10 +1,15 @@
 // Boss fight difficulty: first-try win rate and fight length per player type and gear level.
 //   bun tools/bosstest.ts
+// Env: FPS (default 60; 30 fps resonates with GAME_SPEED 0.85 and makes the bot snap the line far more
+// often than at any real frame rate), N trials (300), SEED (500), ONLY=<pond index>, FIRST='{"hp":0.6}'
+// overrides the Cozy entry of BOSS_EASE, EASE='[{...},{...}]' any of them, STARS=1 / FORMS=1 as before.
 import { Rng } from '../core/rng';
-import { BOSS, Fishing } from '../src/logic/fishing';
-import { BOSS_FORMS, bossForm, type BossForm } from '../src/content/data';
+import { BOSS, BOSS_EASE, Fishing } from '../src/logic/fishing';
+import { BOSS_FORMS, bossForm, setGameSpeed, type BossForm } from '../src/content/data';
 import { fishingStats } from '../src/logic/rules';
 import { defaultSave } from '../src/logic/model';
+
+const N = Number(process.env.N ?? 300); const SEED = Number(process.env.SEED ?? 500);
 
 const players = [
   { name: 'novice', delay: 0.22, greed: 0.0, notice: 0.7 },
@@ -22,7 +27,13 @@ const STARS = process.env.STARS ? [1, 3, 5, 7, 10] : [0];
 // FORMS=1: every rematch form at each star (otherwise the form the game picks for that star).
 const FORMS: (BossForm | null)[] = process.env.FORMS ? BOSS_FORMS : [null];
 Object.assign(BOSS, over);
+// SPEED=0.75: the phone speed (GAME_SPEED_PHONE); default is the desktop speed.
+if (process.env.SPEED) setGameSpeed(Number(process.env.SPEED));
+if (process.env.FIRST) Object.assign(BOSS_EASE[0], JSON.parse(process.env.FIRST));
+if (process.env.EASE) JSON.parse(process.env.EASE).forEach((e: object, i: number) => Object.assign(BOSS_EASE[i], e));
+const ONLY = process.env.ONLY ? Number(process.env.ONLY) : -1;
 for (const [lvl, g0] of gear.entries()) {
+  if (ONLY >= 0 && lvl !== ONLY) continue;
   for (const star of STARS) {
   // Gear keeps growing after the last pond: a player on ★7-10 has a better rod and line.
   const late: Record<number, [number, number]> = { 1: [17, 14], 3: [18, 15], 5: [22, 17], 7: [26, 19], 10: [30, 20] };
@@ -32,11 +43,11 @@ for (const [lvl, g0] of gear.entries()) {
   for (const p of players) {
     let wins = 0;
     const times: number[] = [];
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < N; i++) {
       const s = defaultSave();
       s.upgrades.rod = g.rod;
       s.upgrades.line = g.line;
-      const rng = new Rng(500 + i);
+      const rng = new Rng(SEED + i);
       let outcome = '';
       const f = new Fishing(rng, () => fishingStats(s, 0, 0), { end: (o) => (outcome = o) });
       f.lineLevel = g.line;
@@ -46,7 +57,7 @@ for (const [lvl, g0] of gear.entries()) {
       let warnAt = -1;
       let heed = false;
       while (!outcome && t < 120) {
-        const dt = 1 / 30;
+        const dt = 1 / Number(process.env.FPS ?? 60);
         t += dt;
         hist.push({ t, v: f.tension });
         while (hist.length > 2 && hist[0].t < t - p.delay) hist.shift();
@@ -68,7 +79,7 @@ for (const [lvl, g0] of gear.entries()) {
       }
     }
     times.sort((a, b) => a - b);
-    console.log(`${g.pond.padEnd(7)} ★${star} ${form.padEnd(7)} ${p.name.padEnd(8)} first-try win ${((wins / 300) * 100).toFixed(0)}%  median ${times[Math.floor(times.length / 2)]?.toFixed(1) ?? '-'}s`);
+    console.log(`${g.pond.padEnd(7)} ★${star} ${form.padEnd(7)} ${p.name.padEnd(8)} first-try win ${((wins / N) * 100).toFixed(0)}%  median ${times[Math.floor(times.length / 2)]?.toFixed(1) ?? '-'}s`);
   }
 }
 }

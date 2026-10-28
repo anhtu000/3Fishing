@@ -49,6 +49,11 @@ export class Pond {
   /** Gold cup on the dock when every species of this pond has a gold medal. */
   private trophy: Phaser.GameObjects.Image | null = null;
   private hillsNear!: Phaser.GameObjects.Image;
+  /** v1.15 shore: the far pale range, and light ambient life (birds, butterflies, chimney smoke). */
+  private horizonImg!: Phaser.GameObjects.Image;
+  private birds: { img: Phaser.GameObjects.Image; x: number; y: number; v: number; wait: number; ph: number; k: number }[] = [];
+  private butterflies: { img: Phaser.GameObjects.Image; ph: number; cx: number; cy: number }[] = [];
+  private smoke: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private trees: Phaser.GameObjects.Image[] = [];
   private reeds: Phaser.GameObjects.Image[] = [];
   private weeds: Phaser.GameObjects.Image[] = [];
@@ -88,7 +93,7 @@ export class Pond {
     this.pond = pondById.get(pondId as 'cozy')!;
     const id = this.pond.id;
     this.setTrophy(false);
-    for (const o of [this.hillsFar, this.landmark, this.aurora, this.hillsNear, this.sand, this.surface, this.dock, ...this.trees, ...this.reeds, ...this.weeds, ...this.rocks, ...this.rays, ...this.lilies, ...this.fogs, ...this.flies]) o?.destroy();
+    for (const o of [this.horizonImg, ...this.birds.map((b) => b.img), ...this.butterflies.map((b) => b.img), this.smoke, this.hillsFar, this.landmark, this.aurora, this.hillsNear, this.sand, this.surface, this.dock, ...this.trees, ...this.reeds, ...this.weeds, ...this.rocks, ...this.rays, ...this.lilies, ...this.fogs, ...this.flies]) o?.destroy();
     for (const f of this.swimmers) f.img.destroy();
     this.bossShadow?.destroy();
     this.bossShadow = null;
@@ -102,7 +107,15 @@ export class Pond {
     this.flies = [];
     this.swimmers = [];
     this.aurora = null;
+    this.birds = [];
+    this.butterflies = [];
+    this.smoke = null;
+    this.horizonImg = art(s, 0, 0, `${id}:horizon`).setOrigin(0.5, 1).setDepth(1.5);
     this.hillsFar = art(s, 0, 0, `${id}:hillsFar`).setOrigin(0.5, 1).setDepth(2);
+    const landKind = PALETTES[id].land;
+    if (landKind !== 'gorge')
+      for (let i = 0; i < 3; i++) this.birds.push({ img: art(s, 0, 0, 'sc:bird', 0.5 + i * 0.12).setDepth(1.6), x: -60, y: 0, v: 40 + i * 12, wait: 2 + i * 5, ph: i * 1.7, k: 0.5 + i * 0.12 });
+    if (landKind === 'meadow') for (let i = 0; i < 2; i++) this.butterflies.push({ img: art(s, 0, 0, 'sc:butterfly', 0.7).setDepth(5.5), ph: i * 3.1, cx: 0, cy: 0 });
     const land = PALETTES[id].land;
     this.landmark = art(s, 0, 0, `${id}:landmark`, land === 'gorge' ? 0.75 : 0.62).setOrigin(0.5, 1).setDepth(4.5);
     // Sky: the evening creek has a moon, the frozen lake northern lights.
@@ -406,6 +419,10 @@ export class Pond {
     this.sky.clear();
     this.sky.fillGradientStyle(hex(pal.skyTop), hex(pal.skyTop), hex(pal.skyBottom), hex(pal.skyBottom), 1);
     this.sky.fillRect(0, 0, w, water + 4);
+    // Horizon glow: the sky gets lighter just above the far bank.
+    const glowH = Math.round(water * 0.35);
+    this.sky.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0, 0, 0.35, 0.35);
+    this.sky.fillRect(0, water - glowH, w, glowH + 4);
     this.waterG.clear();
     this.waterG.fillGradientStyle(hex(pal.waterTop), hex(pal.waterTop), hex(pal.waterDeep), hex(pal.waterDeep), 1);
     this.waterG.fillRect(0, water, w, h - water);
@@ -429,6 +446,30 @@ export class Pond {
     this.sand.setPosition(w / 2, floor).setScale((1 / TEX.get(`${this.pond.id}:sand`)!.scale) * stretch, (h - floor + 10) / 110);
     this.dock.setPosition(dockX, deckY - 70 * dockScale).setScale(dockScale / TEX.get(`${this.pond.id}:dock`)!.scale);
     this.surface.setPosition(0, water);
+    const hzTex = TEX.get(`${this.pond.id}:horizon`)!;
+    this.horizonImg.setPosition(w / 2, water + 4).setScale((1 / hzTex.scale) * stretch, (1 / hzTex.scale) * (portrait ? 0.9 : 1));
+    this.birds.forEach((b) => (b.y = water * (0.25 + Math.random() * 0.25)));
+    this.butterflies.forEach((b, i) => {
+      b.cx = w * (portrait ? 0.3 + i * 0.4 : 0.25 + i * 0.35);
+      b.cy = water - 34;
+    });
+    // Chimney smoke from the cottage (Cozy) or the hut's stove pipe (Frozen): soft rising puffs.
+    this.smoke?.destroy();
+    this.smoke = null;
+    if (pal.land !== 'gorge') {
+      const k = this.landmark.scaleX * (TEX.get(`${this.pond.id}:landmark`)?.scale ?? 1);
+      const [ox, oy] = pal.land === 'meadow' ? [(172 - 120) * k, -(200 - 26) * k] : [(196 - 130) * k, -(200 - 22) * k];
+      this.smoke = this.scene.add.particles(this.landmark.x + ox, this.landmark.y + oy, 'sc:puff', {
+        speedY: { min: -26, max: -16 },
+        speedX: { min: 2, max: 10 },
+        lifespan: 3600,
+        scale: { start: 0.25, end: 0.8 },
+        alpha: { start: 0.65, end: 0 },
+        frequency: 650,
+        advance: 4000,
+      });
+      this.smoke.setDepth(4.6);
+    }
     this.surface.width = (w + 300) * TEX.get(`${this.pond.id}:surface`)!.scale;
     this.fogs.forEach((f, i) => f.setPosition(w * (0.3 + i * 0.5), water - 20 + i * 40).setScale((w / 800) * 1.1 * (1 / 1.3), 1 / 1.3));
     this.flies.forEach((f) => f.setPosition(Math.random() * w, water * (0.3 + Math.random() * 0.6)));
@@ -479,7 +520,7 @@ export class Pond {
     const portrait = L.h > L.w;
     const n = Math.max(3, Math.min(5, this.pets.length));
     const xs = portrait
-      ? { 3: [0.62, 0.78, 0.93], 4: [0.52, 0.66, 0.8, 0.94], 5: [0.46, 0.58, 0.7, 0.82, 0.94] }[n]!
+      ? { 3: [0.62, 0.77, 0.915], 4: [0.52, 0.655, 0.79, 0.92], 5: [0.46, 0.575, 0.69, 0.805, 0.915] }[n]!
       : { 3: [0.6, 0.73, 0.88], 4: [0.5, 0.62, 0.74, 0.86], 5: [0.38, 0.5, 0.62, 0.74, 0.86] }[n]!;
     const k = portrait ? { 3: 1, 4: 0.9, 5: 0.82 }[n]! : 1;
     this.lilies.forEach((l, i) => {
@@ -506,6 +547,29 @@ export class Pond {
     if (!L) return;
     const t = this.t;
     this.surface.tilePositionX += dt * 26;
+    // Birds cross the sky now and then, flapping; butterflies flutter over the near bank.
+    for (const b of this.birds) {
+      if (b.wait > 0) {
+        b.wait -= dt;
+        b.img.setVisible(false);
+        continue;
+      }
+      b.img.setVisible(true);
+      b.x += b.v * dt;
+      b.ph += dt * 9;
+      b.img.setPosition(b.x, b.y + Math.sin(b.ph * 0.25) * 6);
+      b.img.scaleY = b.img.scaleX * (0.45 + 0.55 * Math.abs(Math.sin(b.ph)));
+      if (b.x > L.w + 60) {
+        b.x = -60;
+        b.wait = 6 + Math.random() * 10;
+      }
+    }
+    for (const bf of this.butterflies) {
+      bf.ph += dt;
+      bf.img.setPosition(bf.cx + Math.sin(bf.ph * 0.7) * 60, bf.cy + Math.sin(bf.ph * 1.9) * 14);
+      bf.img.scaleY = bf.img.scaleX * (0.35 + 0.65 * Math.abs(Math.sin(bf.ph * 12)));
+      bf.img.setFlipX(Math.cos(bf.ph * 0.7) < 0);
+    }
     this.clouds.forEach((c, i) => {
       c.x += dt * (6 + i * 3);
       if (c.x > L.w + 140) c.x = -140;

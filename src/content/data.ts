@@ -6,6 +6,11 @@ export type Rarity = 0 | 1 | 2 | 3 | 4;
 
 /** Base chance of each rarity before luck. */
 export const RARITY_WEIGHTS = [60, 25, 10, 4, 1];
+/**
+ * Egg rarity from a catch, before luck (v1.15; v1.14 used RARITY_WEIGHTS). More Common eggs, fewer
+ * Uncommon/Rare/Epic, a little more Legendary so the rarest pets stay reachable.
+ */
+export const EGG_WEIGHTS = [70, 18.5, 7.5, 2.5, 1.5];
 /** Base sell price by rarity (B in the price formula). */
 export const RARITY_PRICE = [5, 12, 30, 80, 250];
 /** Colour and label of each rarity. Shapes differ too (see ui/rarity.ts) for colour-blind players. */
@@ -109,7 +114,7 @@ export const PONDS: PondDef[] = [
       { id: 'creek_beaver', name: 'Creek Beaver', rarity: 1, perk: 'angler' },
       { id: 'firefly_fox', name: 'Firefly Fox', rarity: 2, perk: 'luck' },
       { id: 'heron_chick', name: 'Heron Chick', rarity: 3, perk: 'sharp' },
-      { id: 'mist_fawn', name: 'Mist Fawn', rarity: 4, perk: 'merchant' },
+      { id: 'mist_fawn', name: 'Mist Giraffe', rarity: 4, perk: 'merchant' },
     ],
     junk: ['boot', 'wheel', 'can'],
     boss: { id: 'fog_pike', name: 'The Fog Pike', hp: 1 },
@@ -288,6 +293,21 @@ export const challengeById = new Map(CHALLENGES.map((c) => [c.id, c]));
  */
 export const WANTED = { firstSec: 150, gapMin: 180, gapMax: 300, staySec: 75, reach: 130, priceMult: 4, bonus: 60, sizeMin: 1.25, sizeMax: 1.5 };
 
+/**
+ * Motion speed of the whole game (v1.15: 0.85 on computers, 0.75 on phones; v1.14 was 1).
+ * Scales the fishing state machine (charge, bite, fight, boss), the pond, rig and HUD animations and
+ * the scene's tweens and timers. Real-time clocks stay real: eggs, angler pets, WANTED fish, offline,
+ * daily gifts. Challenge time limits grow by 1/GAME_SPEED so a challenge is as hard as before.
+ */
+export const GAME_SPEED_DESKTOP = 0.85;
+/** Phones and tablets (29/10): the same 0.85 felt too fast on a small touch screen. */
+export const GAME_SPEED_PHONE = 0.75;
+/** The speed in use. Live binding: PlayScene sets it once at start for the device (tools keep desktop). */
+export let GAME_SPEED = GAME_SPEED_DESKTOP;
+export function setGameSpeed(v: number) {
+  GAME_SPEED = v;
+}
+
 /** Fish to catch in the pond to lure a boss back after a lost fight (by pond: Cozy, Misty, Frozen). */
 export const BOSS_LURE = [5, 8, 10];
 
@@ -368,6 +388,8 @@ export const cosmeticById = new Map(COSMETICS.map((c) => [c.id, c]));
  */
 /** Egg basket: eggs wait here when the incubator is full. Past this many they sell for coins. */
 export const BASKET_MAX = 12;
+/** Coins for a sold egg by tier (Common..Legendary), times the pond multiplier (v1.15; v1.14 was 10/20/30/40/50; Epic and Legendary are rarely sold). */
+export const EGG_SELL = [25, 70, 150, 350, 800];
 
 /** The overnight nest: one extra egg slot for special eggs that hatch over hours, so there is a reason to come back. */
 export const NEST_INDEX = 4;

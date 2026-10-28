@@ -3,11 +3,11 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { BOSS_LURE, BOSS_STARS, CHALLENGE, PERKS, PONDS, WANTED, bossForm, type BossForm, type PerkKind, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
+import { BOSS_LURE, BOSS_STARS, CHALLENGE, GAME_SPEED, GAME_SPEED_DESKTOP, GAME_SPEED_PHONE, NEST_INDEX, setGameSpeed, PERKS, PONDS, WANTED, bossForm, type BossForm, type PerkKind, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
-import { anyUpgradeAffordable, perkValue, pondGold, questsClaimable, readyEggIndex, rollSize as rollFishSize, type CatchRoll } from '../logic/rules';
+import { anyUpgradeAffordable, hatchSecLeft, perkValue, pondGold, questsClaimable, readyEggIndex, rollSize as rollFishSize, type CatchRoll } from '../logic/rules';
 import { LocalLeaderboard, formatTime, type Leaderboard } from '../logic/leaderboard';
 import { devPreset } from '../dev';
 import { bossName, duration, eggName, fishName, pondName, t } from '../i18n/t';
@@ -15,7 +15,7 @@ import { save } from '../save';
 import { loadMusic, loadSounds, musicKey } from '../sounds';
 import { Hud, drawHand } from '../ui/Hud';
 import { CButton, COLORS, CPanel, INK, art, card, fitScale, fmt, txt } from '../ui/kit';
-import { basketPanel, challengePanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
+import { basketPanel, challengePanel, eggsPanel, dailyPanel, dexPanel, wardrobePanel, incubatorPanel, mapPanel, petsPanel, questsPanel, upgradesPanel, type PanelCtx } from '../ui/panels';
 import { bigCatch, flyIcons, hatchReveal, isBigCatch, note, quickCatch, rays, say, sparkles } from '../ui/popups';
 import { Pond } from '../world/Pond';
 import { Rig } from '../world/Rig';
@@ -67,6 +67,12 @@ export class PlayScene extends BaseScene {
   }
 
   protected build() {
+    // Whole-game motion speed (tweens, delayed calls); see GAME_SPEED in content/data.ts. Phones and
+    // tablets run slower than computers. The web build takes ?speed=0.7 to try other values.
+    const speedParam = __TARGET__ === 'web' ? Number(new URLSearchParams(location.search).get('speed')) : 0;
+    setGameSpeed(speedParam > 0 && speedParam <= 2 ? speedParam : app.platform.isMobile() ? GAME_SPEED_PHONE : GAME_SPEED_DESKTOP);
+    this.tweens.timeScale = GAME_SPEED;
+    this.time.timeScale = GAME_SPEED;
     this.s = save.data;
     const s = this.s;
     this.rng = new Rng(s.rng || app.seed);
@@ -120,6 +126,7 @@ export class PlayScene extends BaseScene {
       },
       boss: () => this.startBoss(),
       egg: (i) => this.tapEgg(i),
+      eggs: () => this.tapEggHub(),
       basket: () => this.open(() => basketPanel(this, this.ctx)),
       challenges: () => this.open(() => challengePanel(this, this.ctx)),
       exitChallenge: () => this.abandonChallenge(),
@@ -385,7 +392,7 @@ export class PlayScene extends BaseScene {
         }
         // Today's fish: say where its egg went once the card is gone.
         if (res.today) {
-          note(this, res.nestEgg ? t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) }) : t('msg.todayDone'));
+          note(this, res.nestEgg ? t('msg.nestEgg', { t: duration(Math.ceil(hatchSecLeft(this.s, this.s.eggs[4] ?? { left: 0 }))) }) : t('msg.todayDone'));
           app.audio.play('reward');
         }
       };
@@ -470,6 +477,15 @@ export class PlayScene extends BaseScene {
   }
 
   // ---------- eggs ----------
+
+  /** Portrait incubator button: hatch a ready egg straight away, else show every slot. */
+  private tapEggHub() {
+    const s = this.s;
+    const order = [...Array(s.incubatorSlots).keys(), NEST_INDEX];
+    const ready = order.find((i) => s.eggs[i] && s.eggs[i]!.left <= 0);
+    if (ready !== undefined) return this.doHatch(ready);
+    this.open(() => eggsPanel(this, this.ctx, (i) => this.tapEgg(i), () => this.open(() => basketPanel(this, this.ctx))));
+  }
 
   private tapEgg(i: number) {
     const egg = this.s.eggs[i];
@@ -708,7 +724,7 @@ export class PlayScene extends BaseScene {
         if (!r) return;
         app.measure('daily', `day${this.s.daily.streak}`, 'claim');
         if (r.coins) flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
-        if (r.where === 'nest') this.time.delayedCall(500, () => note(this, t('msg.nestEgg', { t: duration(this.s.eggs[4]?.left ?? 0) })));
+        if (r.where === 'nest') this.time.delayedCall(500, () => note(this, t('msg.nestEgg', { t: duration(Math.ceil(hatchSecLeft(this.s, this.s.eggs[4] ?? { left: 0 }))) })));
         app.audio.play('reward');
         if (r.hat) {
           this.applyStyle();
@@ -781,7 +797,7 @@ export class PlayScene extends BaseScene {
     this.fishing.reset();
     this.rig.clear();
     this.fishing.auto = false;
-    this.run = { def, timeMs: def.timeSec * 1000, elapsedMs: 0, fish: 0, kinds: new Set(), over: false };
+    this.run = { def, timeMs: (def.timeSec * 1000) / GAME_SPEED, elapsedMs: 0, fish: 0, kinds: new Set(), over: false };
     this.pond.setLiveFish(pondById.get(def.pond)!.fish, CHALLENGE.liveFish, def.species);
     app.audio.play('boss');
     const vp = this.vp;
@@ -1010,6 +1026,22 @@ export class PlayScene extends BaseScene {
   }
 
   private onBossEnd(o: Outcome) {
+    // Got away = its health is full again. A mis-press heals in one step (10% or 25%), so the fight
+    // can end in the same tap, before the bar is drawn again: players saw the boss leave at 85-92%.
+    // Show the full bar for a moment first, then the result (29/10).
+    if (o === 'escape') {
+      this.hud.drawBoss(this.bossLabel(), 1, this.fishing.bossPhase, FORM_BAR[this.rematchForm]);
+      this.modal++;
+      this.time.delayedCall(700, () => {
+        this.modal--;
+        this.onBossEndNow(o);
+      });
+      return;
+    }
+    this.onBossEndNow(o);
+  }
+
+  private onBossEndNow(o: Outcome) {
     const boss = this.pond.pond.boss;
     app.measure(this.rematchStar ? 'rematch' : 'boss', this.rematchStar ? `${boss.id}-star${this.rematchStar}` : boss.id, o === 'caught' ? 'win' : 'lose');
     if (o === 'caught' && this.rematchStar) return this.onRematchWin();
@@ -1064,12 +1096,18 @@ export class PlayScene extends BaseScene {
     const progress = this.fishing.progress;
     this.rig.lose();
     app.audio.play('snap');
-    const p = new CPanel(this, { title: t('boss.gotAway', { boss: bossName(boss.id) }), w: 600, h: 860, color: COLORS.red, closable: false });
+    // Two ways to lose, two messages (29/10): the line snapped (held in the red too long, usually
+    // through a pull), or the boss got its health back and swam off. v1.14 said "got away" for both,
+    // so a snap at 86% looked like the boss leaving with health to spare.
+    const snapped = o === 'snap';
+    const p = new CPanel(this, { title: snapped ? t('boss.snapped') : t('boss.gotAway', { boss: bossName(boss.id) }), w: 600, h: 860, color: COLORS.red, closable: false });
     this.modal++;
     this.stopPlay();
     p.content.add(art(this, 0, p.top + 110, this.textures.exists(this.bossTex) ? this.bossTex : `fish:${boss.id}`, 0.8));
     p.content.add(txt(this, 0, p.top + 230, t('boss.progress', { n: Math.round(progress * 100) }), 30, { color: '#7a6a8a', stroke: false, wrap: 520 }));
-    p.content.add(txt(this, 0, p.top + 276, t('boss.tip'), 26, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 }));
+    // The tip can run to three lines (snap tip, long languages): stack the texts from the top down.
+    const tipT = txt(this, 0, p.top + 256, snapped ? t('boss.snapTip') : t('boss.tip'), 26, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 }).setOrigin(0.5, 0);
+    p.content.add(tipT);
     const done = () => {
       p.close();
     };
@@ -1101,7 +1139,7 @@ export class PlayScene extends BaseScene {
     }
     // No free retry: the boss swims off and comes back after a few more catches in this pond.
     const lureN = BOSS_LURE[Math.max(0, PONDS.indexOf(this.pond.pond))] ?? 8;
-    p.content.add(txt(this, 0, p.top + 330, t('lure.how', { n: lureN, boss: bossName(boss.id) }), 26, { color: '#c0392b', stroke: false, wrap: 520 }));
+    p.content.add(txt(this, 0, tipT.y + tipT.height + 14, t('lure.how', { n: lureN, boss: bossName(boss.id) }), 26, { color: '#c0392b', stroke: false, wrap: 520 }).setOrigin(0.5, 0));
     const ok = new CButton(this, 0, p.bottom - (revive ? 300 : 190), {
       w: 400,
       h: 96,
@@ -1264,17 +1302,25 @@ export class PlayScene extends BaseScene {
   // ---------- frame ----------
 
   update(_time: number, delta: number) {
-    const dt = Math.min(0.1, delta / 1000);
+    // Real time per frame, up to a quarter second. v1.14 cut every frame at 0.1 s, so below 10 fps
+    // (a slow laptop drawing a large canvas) the whole game ran in slow motion. The fishing machine
+    // still moves in steps of at most 1/30 s, so a long frame cannot skip a bite or a pull.
+    const dt = Math.min(0.25, delta / 1000);
+    // Animation time (Fishing scales its own clock): see GAME_SPEED.
+    const mdt = dt * GAME_SPEED;
     const s = this.s;
     const f = this.fishing;
     // Pause panel: everything stands still (cast, bite window, fight, auto fishing, egg timers).
     if (this.frozen) {
-      this.pond.update(dt);
+      this.pond.update(mdt);
       return;
     }
     if (this.modal === 0 || f.phase === 'reeling') {
-      if (f.auto && this.modal === 0) this.bot.update(dt);
-      f.update(dt);
+      const steps = Math.ceil(dt * 30 - 1e-6) || 1;
+      for (let i = 0; i < steps; i++) {
+        if (f.auto && this.modal === 0) this.bot.update(dt / steps);
+        f.update(dt / steps);
+      }
     }
     // WANTED fish: its clock runs only while you are fishing (not on the hook, in a boss fight or a challenge).
     const fishingNow = this.modal === 0 && !this.run && !f.target.boss;
@@ -1311,8 +1357,8 @@ export class PlayScene extends BaseScene {
       if (!s.tutorial.includes('hatch') && readyEggIndex(s) >= 0 && !f.busy && this.modal === 0 && this.step !== 'hatch') this.showStep('hatch');
       if (s.tutorial.includes('hatch') && !s.tutorial.includes('upgrade') && this.step === null && !f.busy && this.modal === 0 && anyUpgradeAffordable(s)) this.showStep('upgrade');
     }
-    this.pond.update(dt);
-    this.rig.update(dt, f);
+    this.pond.update(mdt);
+    this.rig.update(mdt, f);
     if (f.phase === 'reeling' && f.target.boss) this.hud.drawBoss(this.bossLabel(), 1 - f.progress, f.bossPhase, FORM_BAR[this.rematchForm]);
     // Challenge clock: runs only while playing (menus and pause stop it).
     const run = this.run;
@@ -1322,7 +1368,7 @@ export class PlayScene extends BaseScene {
       if (run.timeMs <= 0) this.finishChallenge(false);
     }
     const tutDone = s.tutorial.includes('done');
-    this.hud.update(dt, f, {
+    this.hud.update(mdt, f, {
       autoOn: f.auto,
       autoUnlocked: this.pg.autoUnlocked,
       goldenIn: this.pg.goldenIn(),
@@ -1351,7 +1397,7 @@ export class PlayScene extends BaseScene {
     });
     // Coach hand.
     if (this.step) {
-      this.stepT += dt;
+      this.stepT += mdt;
       const t = this.coachTarget();
       this.coachHand.setVisible(!!t);
       if (t) {

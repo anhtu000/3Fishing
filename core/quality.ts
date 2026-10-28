@@ -16,7 +16,7 @@ interface QualitySource {
 }
 
 /**
- * Phones only. Watches the frame time and lowers the canvas resolution while the game cannot hold
+ * Every device (game #3 since 29/10; phones only before). Watches the frame time and lowers the canvas resolution while the game cannot hold
  * about 50 fps: fewer pixels is the main lever when the GPU is the limit. A lower level is kept only
  * if it clearly helped; otherwise the previous one comes back and the governor stops, so a phone
  * limited by something else does not get a blurry picture for nothing. The level found is saved

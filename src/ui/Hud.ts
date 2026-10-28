@@ -2,11 +2,12 @@
 // cast/tension meter and the idle hint. Kept clear of the top-left corner (Poki's pill on phones).
 import Phaser from 'phaser';
 import { shapeTexture } from '@core';
-import { HATCH_SEC } from '../content/data';
+import { HATCH_SEC, NEST_INDEX } from '../content/data';
 import type { Fishing } from '../logic/fishing';
 import { RED_AT } from '../logic/fishing';
 import type { SaveData } from '../logic/model';
 import { t } from '../i18n/t';
+import { hatchSecLeft } from '../logic/rules';
 import { CButton, COLORS, INK, fitText, art, drawBar, drawChunky, fitScale, fmt, roundButton, setArt, txt } from './kit';
 
 export interface HudActions {
@@ -20,6 +21,8 @@ export interface HudActions {
   auto(): void;
   boss(): void;
   egg(i: number): void;
+  /** Portrait: the one incubator button (hatch a ready egg, else open the incubator panel). */
+  eggs(): void;
   basket(): void;
   challenges(): void;
   exitChallenge(): void;
@@ -73,12 +76,26 @@ export class Hud {
   private hDesign = 1280;
   /** Egg basket: eggs waiting for a free incubator slot (count on the button). */
   basket!: CButton;
+  /**
+   * Portrait phones: one incubator button instead of the egg column, so the column never covers
+   * the pets on the water (5 pets + 4 slots + nest + basket used to reach past the waterline).
+   * It shows the egg closest to hatching, a row of dots (one per slot) and the basket count.
+   */
+  private hub!: CButton;
+  private hubEgg!: Phaser.GameObjects.Image;
+  private hubTime!: Phaser.GameObjects.Text;
+  private hubTier = -1;
+  private hubPips!: Phaser.GameObjects.Graphics;
+  private hubPipsKey = '';
+  private compact = false;
   private basketCount!: Phaser.GameObjects.Text;
   private chipText: Phaser.GameObjects.Text;
   private meter: Phaser.GameObjects.Container;
   private meterG: Phaser.GameObjects.Graphics;
   private meterText: Phaser.GameObjects.Text;
   private meterSub: Phaser.GameObjects.Text;
+  /** "Line" label in front of the line wear segments under the tension meter. */
+  private wearLabel!: Phaser.GameObjects.Text;
   private progG: Phaser.GameObjects.Graphics;
   private progFish: Phaser.GameObjects.Image;
   private hint: Phaser.GameObjects.Container;
@@ -136,6 +153,12 @@ export class Hud {
     this.basketCount = txt(scene, 0, 32, '', 26);
     this.basket.add([bIcon, this.basketCount]);
     this.basket.setVisible(false);
+    this.hub = new CButton(scene, 0, 0, { w: 96, h: 104, color: 0xfff6e6, onClick: () => act.eggs() });
+    this.hubEgg = art(scene, 0, -10, 'egg:0', 0.42);
+    this.hubTime = txt(scene, 0, 34, '', 24);
+    this.hub.add([this.hubEgg, this.hubTime]);
+    this.hub.setVisible(false);
+    this.hubPips = scene.add.graphics().setVisible(false);
     this.chipText = txt(scene, 0, -3, '', 26);
     const chipBg = scene.add.graphics();
     this.chip = scene.add.container(0, 0, [chipBg, this.chipText]).setVisible(false);
@@ -146,7 +169,8 @@ export class Hud {
     this.progFish = art(scene, 0, 0, 'fish:pebble_minnow', 0.3);
     this.meterText = txt(scene, 0, -62, '', 38);
     this.meterSub = txt(scene, 0, 52, '', 24);
-    this.meter = scene.add.container(0, 0, [this.progG, this.progFish, this.meterG, this.meterText, this.meterSub]).setVisible(false).setDepth(120);
+    this.wearLabel = txt(scene, 0, 0, t('upg.line'), 22).setOrigin(1, 0.5).setVisible(false);
+    this.meter = scene.add.container(0, 0, [this.progG, this.progFish, this.meterG, this.meterText, this.meterSub, this.wearLabel]).setVisible(false).setDepth(120);
 
     const hand = scene.add.graphics();
     drawHand(hand);
@@ -176,7 +200,7 @@ export class Hud {
     this.goalBar = scene.add.graphics().setPosition(14, 16);
     this.goal = scene.add.container(0, 0, [goalBg, this.goalIcon, this.goalText, this.goalBar]).setVisible(false);
     this.root.add([this.wanted, this.goal]);
-    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.side.challenge, this.side.more, this.chBar, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.chip]);
+    this.root.add([this.coins.c, this.sound, ...this.bottom, this.side.quests, this.side.golden, this.side.mystery, this.side.auto, this.side.challenge, this.side.more, this.chBar, this.boss, ...this.eggs.map((e) => e.btn), this.basket, this.hub, this.hubPips, this.chip]);
     this.shownCoins = s.coins;
     this.coins.label.setText(fmt(s.coins));
   }
@@ -189,11 +213,13 @@ export class Hud {
     return this.coinTarget();
   }
   basketTarget() {
+    if (this.compact) return { x: this.hub.x, y: this.hub.y };
     if (this.basket.visible) return { x: this.basket.x, y: this.basket.y };
     return this.eggTarget();
   }
 
   eggTarget() {
+    if (this.compact) return { x: this.hub.x, y: this.hub.y };
     const e = this.eggs.find((q) => q.btn.visible) ?? this.eggs[0];
     return { x: e.btn.x, y: e.btn.y };
   }
@@ -284,6 +310,9 @@ export class Hud {
     this.chip.setPosition(w / 2, portrait ? 132 : 112);
     this.eggY0 = portrait ? 170 : 150;
     this.eggs.forEach((e, i) => e.btn.setPosition(w - 60, this.eggY0 + i * 116));
+    this.compact = portrait;
+    this.hub.setPosition(w - 60, this.eggY0);
+    this.hubPips.setPosition(w - 60, this.eggY0 + 68);
     this.meter.setPosition(w / 2, portrait ? h - 250 : h - 175);
     // Keep the hint text on screen whatever its length (translations).
     const hintText = this.hint.list[1] as Phaser.GameObjects.Text;
@@ -292,6 +321,60 @@ export class Hud {
     const hx = Phaser.Math.Clamp(w * (portrait ? 0.66 : 0.62), half + 24, w - half - 24);
     this.hint.setPosition(hx, portrait ? h * 0.62 : h * 0.6);
     this.bossBar.setPosition(w / 2, portrait ? 170 : 130);
+  }
+
+  /** Portrait incubator button: hides the egg column and basket, shows one summary button. */
+  private updateHub() {
+    const s = this.s;
+    this.eggs.forEach((e) => e.btn.setVisible(false));
+    const slots: number[] = [];
+    for (let i = 0; i < s.incubatorSlots; i++) slots.push(i);
+    if (s.eggs[NEST_INDEX]) slots.push(NEST_INDEX);
+    const show = s.stats.eggs > 0 || slots.some((i) => !!s.eggs[i]) || s.basket.length > 0;
+    this.hub.setVisible(show);
+    this.hubPips.setVisible(show);
+    if (!show) return;
+    const filled = slots.filter((i) => !!s.eggs[i]);
+    const ready = filled.filter((i) => s.eggs[i]!.left <= 0);
+    const free = slots.some((i) => i !== NEST_INDEX && !s.eggs[i]);
+    // The egg to show: a ready one first, else the one closest to hatching.
+    const pick = ready[0] ?? filled.sort((a, b) => s.eggs[a]!.left - s.eggs[b]!.left)[0];
+    const egg = pick !== undefined ? s.eggs[pick] : null;
+    if (!egg) {
+      this.hubEgg.setAlpha(0.25).setAngle(0);
+      this.hubTime.setText(s.basket.length > 0 ? '+' : '');
+    } else {
+      if (this.hubTier !== egg.tier || this.hubEgg.alpha !== 1) {
+        this.hubTier = egg.tier;
+        setArt(this.hubEgg, `egg:${egg.tier}`, 0.42);
+        this.hubEgg.setAlpha(1);
+      }
+      if (egg.left <= 0) {
+        fitText(this.hubTime.setText(t('hud.hatch')), 88);
+        this.hubEgg.setAngle(Math.sin(this.t * 14) * 10 * (Math.sin(this.t * 2) > 0 ? 1 : 0));
+      } else {
+        const sec = Math.ceil(hatchSecLeft(s, egg));
+        const label = sec >= 3600 ? `${Math.floor(sec / 3600)}${t('unit.h')}${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}` : sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`;
+        fitText(this.hubTime.setText(label), 88);
+        this.hubEgg.setAngle(Math.sin(this.t * 3) * 3 * (1 - egg.left / (egg.total || HATCH_SEC[egg.tier])));
+      }
+    }
+    this.hub.setGlow(ready.length > 0 || (free && s.basket.length > 0));
+    this.hub.setBadge(s.basket.length);
+    // One dot per slot: green ready, cream warming, grey empty; the nest dot is nest-coloured.
+    const states = slots.map((i) => (s.eggs[i] ? (s.eggs[i]!.left <= 0 ? 'r' : i === NEST_INDEX ? 'n' : 'w') : 'e'));
+    const key = states.join('');
+    if (key !== this.hubPipsKey) {
+      this.hubPipsKey = key;
+      const g = this.hubPips.clear();
+      const step = 19;
+      const x0 = -((states.length - 1) * step) / 2;
+      const col = { r: 0x6fd678, w: 0xfff6e6, e: 0x9aa0b4, n: 0xe9c98f } as Record<string, number>;
+      states.forEach((st, k) => {
+        g.fillStyle(INK, 1).fillCircle(x0 + k * step, 0, 8.5);
+        g.fillStyle(col[st], 1).fillCircle(x0 + k * step, 0, 6);
+      });
+    }
   }
 
   update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; wantedLeft: number | null; challengeOpen: boolean; challenge: { timeMs: number; fish: number; fishGoal: number; kinds: number; kindsGoal: number } | null; goal: { icon: string; text: string; progress: number } | null }) {
@@ -333,7 +416,7 @@ export class Hud {
         e.egg.setAngle(Math.sin(this.t * 14) * 10 * (Math.sin(this.t * 2) > 0 ? 1 : 0));
         e.btn.setGlow(true);
       } else {
-        const sec = Math.ceil(egg.left);
+        const sec = Math.ceil(hatchSecLeft(s, egg));
         const label = sec >= 3600 ? `${Math.floor(sec / 3600)}${t('unit.h')}${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}` : sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`;
         fitText(e.time.setText(label), 88);
         e.egg.setAngle(Math.sin(this.t * 3) * 3 * (1 - egg.left / (egg.total || HATCH_SEC[egg.tier])));
@@ -342,8 +425,9 @@ export class Hud {
     });
     // Basket: under the last egg button; beside the top one when the column is full (landscape).
     const nB = s.basket.length;
-    this.basket.setVisible(nB > 0);
-    if (nB > 0) {
+    this.basket.setVisible(nB > 0 && !this.compact);
+    if (this.compact) this.updateHub();
+    if (nB > 0 && !this.compact) {
       const shown = this.eggs.filter((e) => e.btn.visible);
       const below = (shown.length ? Math.max(...shown.map((e) => e.btn.y)) : this.eggY0 - 116) + 116;
       if (below + 60 < this.hDesign - (this.portrait ? 170 : 140)) this.basket.setPosition(this.wDesign - 60, below);
@@ -515,6 +599,37 @@ export class Hud {
     this.meterText.setColor(red ? '#ff5a5a' : f.warning ? '#ffb15a' : '#ffffff');
     this.meterText.setScale(alert ? 1 + Math.sin(this.t * 20) * 0.08 : 1);
     this.meterSub.setText(f.target.boss ? t('hud.bossSub') : '');
+    // Line wear (29/10): how much more time in the red the line can take before it snaps. Always
+    // shown in boss fights, where wear adds up over the whole fight; on normal fish only once the
+    // line is wearing. Five segments, green to red, flashing when one segment is left.
+    const wear = f.lineWear;
+    const showWear = f.target.boss || wear > 0.02;
+    this.wearLabel.setVisible(showWear);
+    this.meterSub.setY(showWear ? 84 : 52);
+    if (showWear) {
+      const left = 1 - wear;
+      const segs = 5;
+      const sw = 44;
+      const gap = 6;
+      const total = segs * sw + (segs - 1) * gap;
+      const x0 = -total / 2 + 40;
+      const y = 44;
+      this.wearLabel.setPosition(x0 - 14, y);
+      const lit = Math.ceil(left * segs - 1e-6);
+      const col = left > 0.6 ? 0x5fd38d : left > 0.3 ? 0xffd23f : 0xff5a5a;
+      const flash = lit <= 1 && Math.sin(this.t * 18) > 0;
+      g.fillStyle(INK, 0.75).fillRoundedRect(x0 - 6, y - 12, total + 12, 24, 12);
+      for (let i = 0; i < segs; i++) {
+        const x = x0 + i * (sw + gap);
+        const on = i < lit;
+        g.fillStyle(on ? (flash ? 0xffffff : col) : 0x5a4a6a, 1).fillRoundedRect(x, y - 7, sw, 14, 7);
+        // the last lit segment shows how much of it is left
+        if (on && i === lit - 1) {
+          const part = left * segs - (lit - 1);
+          if (part < 0.999) g.fillStyle(0x5a4a6a, 1).fillRoundedRect(x + sw * part, y - 7, sw * (1 - part), 14, { tl: 0, bl: 0, tr: 7, br: 7 });
+        }
+      }
+    }
     // Progress track above.
     if (!f.target.boss) {
       const pw = w;

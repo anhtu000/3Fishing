@@ -6,7 +6,7 @@ import { BOSS_FORMS, BOSS_STARS, CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS, WANTE
 import { BOSS, Fishing, FishingBot } from './fishing';
 import { PondGame } from './game';
 import { defaultSave } from './model';
-import { addEgg, addPet, fishingStats, fishPrice, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
+import { addEgg, addPet, fishingStats, fishPrice, hatchSecLeft, hatchSpeed, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
 
 test('price follows B x S x P x (1 + M)', () => {
   const pond = PONDS[1];
@@ -105,8 +105,8 @@ test('fishing machine: holding forever snaps the line, striking on a nibble scar
   f.press();
   f.update(0.5);
   f.release();
-  for (let i = 0; i < 30 && f.phase !== 'waiting'; i++) f.update(1 / 30);
-  for (let i = 0; i < 30; i++) f.update(1 / 30);
+  for (let i = 0; i < 60 && f.phase !== 'waiting'; i++) f.update(1 / 30);
+  for (let i = 0; i < 120 && f.approach <= 0.5; i++) f.update(1 / 30);
   f.press();
   assert.equal(outcome, 'early');
 });
@@ -338,6 +338,9 @@ test('boss mis-press: the first boss heals 10%, later bosses and rematches 25%',
     const f = new Fishing(new Rng(3), () => fishingStats(defaultSave(), 0, 0), { bossHeal: (h) => (healed = h) });
     f.startBoss(level, star);
     f.progress = 0.6;
+    // The fight starts with the first touch (calm start, see bossCalm).
+    f.press();
+    f.release();
     // Run until the first warning, past the reaction grace, then press.
     for (let i = 0; i < 400 && !(f.warning); i++) f.update(1 / 60);
     for (let i = 0; i < 20; i++) f.update(1 / 60);
@@ -414,4 +417,42 @@ test('rematches have more health: the same reeling moves the bar less than in th
   const first = run(0);
   const rematch = run(1);
   assert.ok(rematch > 0 && first > rematch * 1.2, `${first} vs ${rematch}`);
+});
+
+test('nurture: a turtle in the team shortens the hatch time the player sees', () => {
+  const s = defaultSave();
+  s.pets.lily_turtle = { level: 1, xp: 0 };
+  s.team = ['lily_turtle'];
+  const k = hatchSpeed(s);
+  assert.ok(Math.abs(k - (1 + perkValue('nurture', 3, 1) / 100)) < 1e-9 && k > 1.2);
+  // A 10 min Epic egg reads about 7:49 with an Epic turtle at level 1, and hatches in that real time.
+  assert.ok(Math.abs(hatchSecLeft(s, { left: 600 }) - 600 / k) < 1e-9);
+  addEgg(s, 3, 'cozy');
+  let t = 0;
+  while (s.eggs[0]!.left > 0) {
+    tickEggs(s, 1, perkValue('nurture', 3, 1));
+    t++;
+  }
+  assert.equal(t, Math.ceil(600 / k));
+});
+
+test('boss fight: a calm start, so a player who has not started reeling cannot lose at once', () => {
+  for (const level of [0, 1, 2]) {
+    const rng = new Rng(11 + level);
+    const g = new PondGame(defaultSave(), rng);
+    let outcome = '';
+    const f = new Fishing(rng, () => g.stats(), { end: (o) => (outcome = o) });
+    f.startBoss(level);
+    // Ten seconds without touching: the fight has not started, nothing is lost.
+    for (let i = 0; i < 300; i++) f.update(1 / 30);
+    assert.equal(outcome, '', 'still fighting after 10 s idle');
+    assert.ok(Math.abs(f.progress - 0.12) < 1e-9, 'no drift back before the first touch');
+    // The first touch starts the fight: no pull and no health back for a tap in the next second.
+    f.press();
+    for (let i = 0; i < 10; i++) f.update(1 / 30);
+    f.release();
+    f.press();
+    assert.ok(f.progress > 0.12, 'reeling moved the bar');
+    assert.equal(outcome, '');
+  }
 });
