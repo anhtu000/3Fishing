@@ -1,9 +1,9 @@
 // Menus: upgrades, pets, Fishdex, map, quests, incubator. All share the cream CPanel look.
 import Phaser from 'phaser';
-import { app } from '@core';
-import { BOSS_STARS, bossForm, type BossForm, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, petById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
+import { app, setShape } from '@core';
+import { BOSS_STARS, bossForm, type BossForm, CHALLENGES, COSMETICS, baitKey, HATCH_SEC, NEST_INDEX, PERKS, PET_MAX_LEVEL, PONDS, QUEST_POOL, RARITY_COLOR, RARITY_CSS, SPECIAL_PETS, STREAK, UPGRADES, UPGRADE_IDS, FIRM_HOOK, GEAR_STATS, eggKey, petById, pondById, type CosmeticDef, type PetDef, type UpgradeId } from '../content/data';
 import type { PondGame } from '../logic/game';
-import { dexCount, eggCoins, hatchSecLeft, hatchSpeed, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
+import { dexCount, eggCoins, gearPerk, hatchSecLeft, hatchSpeed, medalOf, perkValue, pondGold, questEgg, rewardMult, upgradeCost, xpForLevel } from '../logic/rules';
 import { dailyStatus } from '../../core/time';
 import { formatTime } from '../logic/leaderboard';
 import { CButton, COLORS, CPanel, CREAM_DARK, INK, art, card, drawBar, fitScale, fitText, fmt, txt } from './kit';
@@ -53,7 +53,7 @@ function upgradeEffect(id: UpgradeId, lv: number, max: boolean) {
 export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const g = ctx.game;
   const late = g.lateGame;
-  const panel = new CPanel(scene, { title: t('upg.title'), w: 640, h: late ? 880 : 760, color: COLORS.orange, onClose: () => ctx.refresh() });
+  const panel = new CPanel(scene, { title: t('upg.title'), w: 640, h: late ? 1030 : 910, color: COLORS.orange, onClose: () => ctx.refresh() });
   // Wardrobe (late game): a place to spend coins once the ponds are done.
   if (late) {
     panel.content.add(
@@ -120,6 +120,53 @@ export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     rows.push(refresh);
     panel.content.add([bg, icon, name, eff, buy]);
   });
+  // v1.16 Firm hook: 5 minutes of fewer shake-offs, priced from the coins in hand.
+  {
+    const y = panel.top + 70 + UPGRADE_IDS.length * 150;
+    const bg = card(scene, 0, y, rw, 132, 0xfff4d6, 24);
+    const icon = art(scene, -rw / 2 + 66, y - 4, 'icon:i_hook');
+    icon.setScale(fitScale('icon:i_hook', 84));
+    const name = txt(scene, -rw / 2 + 130, y - 30, t('upg.grip'), 34, { color: DARK, stroke: false }).setOrigin(0, 0.5);
+    const eff = txt(scene, -rw / 2 + 130, y + 14, '', 24, { color: DIM, stroke: false, weight: '500' }).setOrigin(0, 0.5);
+    const buy = new CButton(scene, rw / 2 - 100, y - 2, {
+      w: 180,
+      h: 86,
+      icon: 'item:coin',
+      iconSize: 40,
+      label: '',
+      fontSize: 32,
+      color: COLORS.green,
+      sound: false,
+      onClick: () => {
+        if (g.buyFirmHook()) {
+          app.audio.play('buy');
+          app.haptic(15);
+          scene.tweens.add({ targets: icon, scale: icon.scale * 1.3, duration: 90, yoyo: true });
+          note(scene, t('msg.gripOn'));
+          refreshAll();
+        } else if (!g.firmHookOn) {
+          app.audio.play('nope');
+          note(scene, t('msg.noCoins'));
+        }
+      },
+    });
+    fitText(name, rw - 340);
+    rows.push(() => {
+      const left = g.firmHookLeft;
+      if (left > 0) {
+        fitText(eff.setText(t('upg.gripOn', { t: `${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}` })).setColor('#2f86e0'), rw - 340);
+        buy.setLabel(t('upg.gripActive')).setColor(COLORS.grey).setGlow(false);
+        buy.icon?.setVisible(false);
+      } else {
+        fitText(eff.setText(t('upg.gripWhat', { m: Math.round(FIRM_HOOK.sec / 60) })).setColor(DIM), rw - 340);
+        const c = g.firmHookPrice();
+        buy.setLabel(fmt(c));
+        buy.icon?.setVisible(true);
+        buy.setColor(g.s.coins >= c ? COLORS.green : COLORS.grey).setGlow(false);
+      }
+    });
+    panel.content.add([bg, icon, name, eff, buy]);
+  }
   const coinsLine = txt(scene, 0, panel.bottom - (late ? 160 : 60), '', 30, { color: DARK, stroke: false });
   panel.content.add(coinsLine);
   const refreshAll = () => {
@@ -128,6 +175,9 @@ export function upgradesPanel(scene: Phaser.Scene, ctx: PanelCtx) {
     ctx.refresh();
   };
   refreshAll();
+  // The Firm hook clock and its price (30% of the coins) move while the panel is open.
+  const ticker = scene.time.addEvent({ delay: 500, loop: true, callback: () => rows[rows.length - 1]() });
+  panel.once(Phaser.GameObjects.Events.DESTROY, () => ticker.remove());
   return panel;
 }
 
@@ -148,11 +198,14 @@ export function petsPanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const teamLine = txt(scene, 0, panel.top + 30, '', 30, { color: DARK, stroke: false });
   panel.content.add(teamLine);
   // One row per pond, then the special pets (login streak).
-  const rowsDef = [...PONDS.map((p) => ({ label: pondName(p.id), pets: p.pets })), { label: t('pets.special'), pets: SPECIAL_PETS }];
+  const rowsDef = [...PONDS.map((p) => ({ label: pondName(p.id), pets: p.pets, pond: p.id as string })), { label: t('pets.special'), pets: SPECIAL_PETS, pond: '' }];
   rowsDef.forEach((rowDef, row) => {
     const y0 = panel.top + 80 + row * ROW_H;
-    const label = txt(scene, -pw / 2 + 40, y0 - 8, rowDef.label, 24, { color: DIM, stroke: false }).setOrigin(0, 0.5);
-    panel.content.add(label);
+    // The pond mark, as on the eggs of that pond (v1.16).
+    const mark = rowDef.pond ? art(scene, -pw / 2 + 52, y0 - 8, `icon:pond_${rowDef.pond}`) : null;
+    mark?.setScale(fitScale(`icon:pond_${rowDef.pond}`, 30));
+    const label = txt(scene, -pw / 2 + (mark ? 74 : 40), y0 - 8, rowDef.label, 24, { color: DIM, stroke: false }).setOrigin(0, 0.5);
+    panel.content.add(mark ? [mark, label] : label);
     rowDef.pets.forEach((p, i) => {
       const x = (i - (rowDef.pets.length > 1 ? 2 : 0)) * (tw + 10);
       const y = y0 + 96;
@@ -308,13 +361,15 @@ export function dexPanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.game.s
       const entry = s.dex[f.id];
       const bg = card(scene, x, y, cw, chh, 0xfffdf6, 22);
       const frame = scene.add.graphics().lineStyle(5, RARITY_COLOR[f.rarity], 1).strokeRoundedRect(x - cw / 2 + 7, y - chh / 2 + 6, cw - 14, chh - 20, 16);
-      const img = art(scene, x, y - 42, `fish:${f.id}`);
+      const img = art(scene, x, y - 46, `fish:${f.id}`);
       img.setScale(Math.min(fitScale(`fish:${f.id}`, cw - 36), fitScale(`fish:${f.id}`, 120)));
-      const name = fitText(txt(scene, x, y + 16, entry ? fishName(f.id) : t('dex.unknown'), 22, { color: DARK, stroke: false }), cw - 20);
-      const rar = fitText(txt(scene, x, y + 42, rarityName(f.rarity), 18, { color: RARITY_CSS[f.rarity], stroke: false }), cw - 20);
-      const info = fitText(txt(scene, x, y + 66, entry ? `${t('dex.best', { n: entry.best.toFixed(1) })}  ·  ×${entry.n}` : '', 16, { color: DIM, stroke: false, weight: '500' }), cw - 20);
+      const name = fitText(txt(scene, x, y + 8, entry ? fishName(f.id) : t('dex.unknown'), 22, { color: DARK, stroke: false }), cw - 20);
+      const rar = fitText(txt(scene, x, y + 32, rarityName(f.rarity), 18, { color: RARITY_CSS[f.rarity], stroke: false }), cw - 20);
+      // v1.16: where it bites (cast distance), once caught; uncaught species show it by where their shadows swim.
+      const likes = fitText(txt(scene, x, y + 54, entry ? t('dex.likes', { z: t(`dex.zone${f.zone}`) }) : '', 16, { color: '#2f86e0', stroke: false }), cw - 20);
+      const info = fitText(txt(scene, x, y + 74, entry ? `${t('dex.best', { n: entry.best.toFixed(1) })}  ·  ×${entry.n}` : '', 16, { color: DIM, stroke: false, weight: '500' }), cw - 20);
       if (!entry) img.setTint(0x3b2a4d).setTintMode(Phaser.TintModes.FILL).setAlpha(0.35);
-      page.add([bg, frame, img, name, rar, info]);
+      page.add([bg, frame, img, name, rar, likes, info]);
       // Medals (late game): bronze, silver, gold (silver plus a giant).
       const m = g.lateGame ? medalOf(s, f) : 0;
       if (m > 0) {
@@ -595,9 +650,10 @@ export function incubatorPanel(scene: Phaser.Scene, ctx: PanelCtx, index: number
   const nest = index === NEST_INDEX;
   const panel = new CPanel(scene, { title: t(nest ? 'incubator.nestTitle' : 'incubator.title'), w: 600, h: 860, color: nest ? COLORS.orange : COLORS.purple, onClose: () => ctx.refresh() });
   if (egg) {
-    const img = art(scene, 0, panel.top + 120, `egg:${egg.tier}`, 1.0);
+    const img = art(scene, 0, panel.top + 120, eggKey(egg.tier, egg.pond), 1.0);
     scene.tweens.add({ targets: img, angle: { from: -4, to: 4 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-    const name = txt(scene, 0, panel.top + 240, eggName(egg.tier).toLocaleUpperCase(), 36, { color: RARITY_CSS[egg.tier] === '#7d8b99' ? DARK : RARITY_CSS[egg.tier], stroke: false });
+    const eggLabel = `${eggName(egg.tier).toLocaleUpperCase()}${pondById.has(egg.pond as 'cozy') ? `  ·  ${pondName(egg.pond)}` : ''}`;
+    const name = fitText(txt(scene, 0, panel.top + 240, eggLabel, 36, { color: RARITY_CSS[egg.tier] === '#7d8b99' ? DARK : RARITY_CSS[egg.tier], stroke: false }), 540);
     const left = txt(scene, 0, panel.top + 286, '', 28, { color: DIM, stroke: false });
     const bar = scene.add.graphics().setPosition(0, panel.top + 330);
     const tip = txt(scene, 0, panel.top + 374, t(nest ? 'incubator.nestTip' : 'incubator.tip'), 24, { color: DIM, stroke: false, weight: '500', wrap: 520 });
@@ -690,7 +746,7 @@ export function eggsPanel(scene: Phaser.Scene, ctx: PanelCtx, onSlot: (i: number
     const time = txt(scene, 0, 84, '', 24, { color: DIM, stroke: false });
     c.add([img, name, time]);
     panel.content.add(c);
-    let tier = -1;
+    let key = '';
     const tick = () => {
       const e = s.eggs[i];
       if (!e) {
@@ -700,9 +756,10 @@ export function eggsPanel(scene: Phaser.Scene, ctx: PanelCtx, onSlot: (i: number
         c.setGlow(s.basket.length > 0);
         return;
       }
-      if (tier !== e.tier) {
-        tier = e.tier;
-        img.setTexture(`egg:${e.tier}`).setScale(fitScale(`egg:${e.tier}`, 110)).setAlpha(1);
+      const k = eggKey(e.tier, e.pond);
+      if (key !== k) {
+        key = k;
+        img.setTexture(k).setScale(fitScale(k, 110)).setAlpha(1);
         fitText(name.setText(nest ? t('incubator.nestTitle') : eggName(e.tier)).setColor(RARITY_CSS[e.tier] === '#7d8b99' ? DARK : RARITY_CSS[e.tier]), cw - 20);
       }
       const sec = Math.ceil(hatchSecLeft(s, e));
@@ -773,14 +830,14 @@ export function basketPanel(scene: Phaser.Scene, ctx: PanelCtx, slot = -1) {
         onClick: () => {
           if (!g.incubate(i, slot >= 0 && !s.eggs[slot] ? slot : -1)) return note(scene, t('basket.full'));
           app.audio.play('plop');
-          flyIcons(scene, `egg:${b.tier}`, panel.toScene(x, y), ctx.eggTo(), 1);
+          flyIcons(scene, eggKey(b.tier, b.pond), panel.toScene(x, y), ctx.eggTo(), 1);
           ctx.refresh();
           if (!free() || s.basket.length === 0) panel.close();
           else draw();
         },
       });
-      const egg = art(scene, 0, -26, `egg:${b.tier}`);
-      egg.setScale(fitScale(`egg:${b.tier}`, 82));
+      const egg = art(scene, 0, -26, eggKey(b.tier, b.pond));
+      egg.setScale(fitScale(eggKey(b.tier, b.pond), 82));
       const name = fitText(txt(scene, 0, 40, eggName(b.tier), 20, { color: RARITY_CSS[b.tier] === '#7d8b99' ? DARK : RARITY_CSS[b.tier], stroke: false }), cw - 14);
       const time = txt(scene, 0, 66, duration(Math.ceil(HATCH_SEC[b.tier] / hatchSpeed(s))), 20, { color: DIM, stroke: false, weight: '500' });
       c.add([egg, name, time]);
@@ -823,90 +880,380 @@ export function wardrobePanel(scene: Phaser.Scene, ctx: PanelCtx) {
   const s = g.s;
   const panel = new CPanel(scene, { title: t('wardrobe.title'), w: 660, h: 1290, color: COLORS.purple, onClose: () => ctx.refresh() });
   const pw = panel.pw;
-  const tw = Math.min(112, (pw - 70) / 5 - 8);
-  const coinsLine = txt(scene, 0, panel.bottom - 44, '', 28, { color: DARK, stroke: false });
-  panel.content.add(coinsLine);
-  const tiles: (() => void)[] = [];
-  const section = (kind: CosmeticDef['kind'], title: string, y0: number) => {
-    panel.content.add(txt(scene, -pw / 2 + 40, y0, title, 26, { color: DIM, stroke: false }).setOrigin(0, 0.5));
+  // v1.16 layout: 4 roomy tiles a row, a list that scrolls (drag, mouse wheel, or the keyboard focus),
+  // so more items can be added later. The footer (bonuses, coins) stays put.
+  const cols = 4;
+  const gap = 12;
+  const tw = Math.floor((pw - 64 - (cols - 1) * gap) / cols);
+  const th = 204;
+  const view = { x: -pw / 2 + 16, y: panel.top + 4, w: pw - 32, h: panel.bottom - 132 - (panel.top + 4) };
+  const clip = scene.add.container(0, 0);
+  const inner = scene.add.container(0, 0);
+  clip.add(inner);
+  panel.content.add(clip);
+  // Clip the list to its window by cropping each image and text (a Mask filter would need
+  // maxTextures > 1, which the game keeps at 1). Everything in the list is an Image or a Text.
+  const clipTo = () => {
+    const top = view.y;
+    const bottom = view.y + view.h;
+    const walk = (c: Phaser.GameObjects.Container, oy: number) => {
+      for (const o of c.list) {
+        if (o instanceof Phaser.GameObjects.Container) {
+          walk(o, oy + o.y);
+          continue;
+        }
+        if (!(o instanceof Phaser.GameObjects.Image) && !(o instanceof Phaser.GameObjects.Text)) continue;
+        const im = o as Phaser.GameObjects.Image;
+        if (im.getData('hidden')) continue;
+        const sy = Math.abs(im.scaleY) || 1;
+        const fh = im.frame.height;
+        const y0 = oy + im.y - im.originY * fh * sy;
+        const y1 = y0 + fh * sy;
+        if (y1 <= top || y0 >= bottom) {
+          im.setVisible(false);
+          continue;
+        }
+        im.setVisible(true);
+        if (y0 >= top && y1 <= bottom) {
+          if (im.isCropped) im.setCrop();
+          continue;
+        }
+        const cy0 = Math.max(0, (top - y0) / sy);
+        const cy1 = Math.min(fh, (bottom - y0) / sy);
+        im.setCrop(0, cy0, im.frame.width, cy1 - cy0);
+      }
+    };
+    walk(inner, inner.y);
+  };
+
+  const gearLine = txt(scene, 0, panel.bottom - 100, '', 24, { color: '#2f86e0', stroke: false, weight: '500' });
+  const coinsLine = txt(scene, 0, panel.bottom - 50, '', 28, { color: DARK, stroke: false });
+  const divider = scene.add.graphics().fillStyle(0xe6dcc8, 1).fillRoundedRect(-pw / 2 + 40, panel.bottom - 128, pw - 80, 4, 2);
+  panel.content.add([divider, gearLine, coinsLine]);
+
+  const tiles: { btn: CButton; refresh: () => void }[] = [];
+  const heads: (() => void)[] = [];
+  let y = view.y + 10;
+  let dragged = false;
+  const section = (kind: CosmeticDef['kind'], title: string) => {
     const list = COSMETICS.filter((c) => c.kind === kind);
+    const head = txt(scene, -pw / 2 + 36, y + 22, title, 28, { color: DARK, stroke: false }).setOrigin(0, 0.5);
+    const count = txt(scene, pw / 2 - 36, y + 22, '', 22, { color: DIM, stroke: false, weight: '500' }).setOrigin(1, 0.5);
+    inner.add([head, count]);
+    heads.push(() => count.setText(`${list.filter((c) => g.owns(c.id)).length}/${list.length}`));
+    y += 50;
     list.forEach((c, i) => {
-      const col = i % 5;
-      const row = Math.floor(i / 5);
-      const x = (col - 2) * (tw + 10);
-      const y = y0 + 96 + row * 172;
-      const tile = new CButton(scene, x, y, {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = -((cols - 1) * (tw + gap)) / 2 + col * (tw + gap);
+      const ty = y + th / 2 + row * (th + gap);
+      const tile = new CButton(scene, x, ty, {
         w: tw,
-        h: 156,
+        h: th,
         color: 0xfffdf6,
         onClick: () => {
-          const r = g.wear(c.id);
-          if (r === 'noCoins') return note(scene, t('msg.needCoins', { n: fmt(c.price) }));
-          if (r === 'locked') return note(scene, c.source === 'daily3' ? t('wardrobe.fromDaily3') : t('wardrobe.fromStars15', { n: g.starsTotal }));
-          app.audio.play(r === 'bought' ? 'buy' : 'ui-tap');
+          // A drag that scrolled the list, or a tile under the header/footer, is not a tap.
+          if (dragged || !inView(tile)) return;
+          // v1.16: an item not owned yet opens its card (big preview, Buy to confirm); owned ones are worn at once.
+          if (!g.owns(c.id)) return openCard(c);
+          g.wear(c.id);
           ctx.refresh();
           refreshAll();
         },
       });
-      // Preview: the cat with the hat, a bit of rod, or the bobber.
+      // v1.16: magnifier in the corner, a bigger look at any item.
+      const zoom = new CButton(scene, tw / 2 - 26, -th / 2 + 26, {
+        w: 44,
+        h: 44,
+        icon: 'icon:i_zoom',
+        iconSize: 30,
+        color: COLORS.blue,
+        onClick: () => {
+          if (dragged || !inView(tile)) return;
+          openCard(c);
+        },
+      });
+      // Preview in the top half: the cat with the hat, the rod, the bobber or the bait.
+      const py = -48;
       if (kind === 'hat') {
-        const cat = art(scene, 0, -10, 'sc:cat');
-        cat.setScale(fitScale('sc:cat', 96));
-        const hat = art(scene, 0, -10, c.id).setScale(cat.scale);
+        const cat = art(scene, 0, py, 'sc:cat');
+        cat.setScale(fitScale('sc:cat', 92));
+        const hat = art(scene, 0, py, c.id).setScale(cat.scale);
         tile.add([cat, hat]);
       } else if (kind === 'rod') {
-        const gr = scene.add.graphics();
+        // Baked into a texture (an image can be cropped when the list scrolls; a Graphics cannot).
         const [shaft, handle] = c.colors!;
-        gr.lineStyle(12, INK, 1).lineBetween(-34, 30, 34, -50);
-        gr.lineStyle(7, shaft, 1).lineBetween(-34, 30, 34, -50);
-        gr.lineStyle(8, handle, 1).lineBetween(-34, 30, -16, 9);
-        gr.fillStyle(INK, 1).fillCircle(-24, 18, 10).fillStyle(0x5b6178, 1).fillCircle(-24, 18, 7);
-        tile.add(gr);
+        const rod = setShape(scene.add.image(0, py, '__DEFAULT'), `rod|${c.id}`, 84, 92, (gr) => {
+          gr.lineStyle(12, INK, 1).lineBetween(-34, 36, 34, -40);
+          gr.lineStyle(7, shaft, 1).lineBetween(-34, 36, 34, -40);
+          gr.lineStyle(8, handle, 1).lineBetween(-34, 36, -16, 16);
+          gr.fillStyle(INK, 1).fillCircle(-24, 25, 10).fillStyle(0x5b6178, 1).fillCircle(-24, 25, 7);
+        });
+        tile.add(rod);
       } else if (kind === 'bait') {
-        const b = art(scene, 0, -12, baitKey(c.id));
+        const b = art(scene, 0, py, baitKey(c.id));
         b.setScale(fitScale(baitKey(c.id), 70));
         tile.add(b);
       } else {
         const key = c.id === 'bobber:classic' ? 'item:bobber' : `item:${c.id}`;
-        const b = art(scene, 0, -12, key);
-        b.setScale(fitScale(key, 80));
+        const b = art(scene, 0, py, key);
+        b.setScale(fitScale(key, 76));
         tile.add(b);
       }
-      const label = txt(scene, 0, 52, '', 20, { color: DARK, stroke: false });
-      const coin = art(scene, 0, 52, 'item:coin');
-      coin.setScale(fitScale('item:coin', 22));
+      // Bonuses on a pale band, one line each (v1.16).
+      const bonus = Object.entries(c.stats ?? {}).slice(0, 2);
+      const band = setShape(scene.add.image(0, 30, '__DEFAULT'), `gearband|${tw - 20}`, tw - 20, 48, (gr) => gr.fillStyle(0xeaf3ff, 1).fillRoundedRect(-(tw - 20) / 2, -24, tw - 20, 48, 12));
+      tile.add(band);
+      if (bonus.length === 0) {
+        tile.add(fitText(txt(scene, 0, 30, '—', 18, { color: '#9aa9b8', stroke: false }), tw - 30));
+      }
+      bonus.forEach(([k, v], j) => {
+        const line = txt(scene, 0, bonus.length === 1 ? 30 : 19 + j * 22, `${t(`gear.${k}`)} +${v}%`, 18, { color: '#2f86e0', stroke: false });
+        tile.add(fitText(line, tw - 28));
+      });
+      const label = txt(scene, 0, 78, '', 22, { color: DARK, stroke: false });
+      const coin = art(scene, 0, 78, 'item:coin');
+      coin.setScale(fitScale('item:coin', 24));
       tile.add([label, coin]);
-      const frame = scene.add.graphics();
-      tile.add(frame);
-      tiles.push(() => {
+      // Green outline on the worn item (a baked image, so it can be cropped too).
+      const frame = setShape(scene.add.image(0, 0, '__DEFAULT'), `wornframe|${tw}|${th}`, tw - 8, th - 8, (gr) => gr.lineStyle(6, 0x5fd38d, 1).strokeRoundedRect(-(tw - 8) / 2, -(th - 8) / 2, tw - 8, th - 8, 18));
+      tile.add([frame, zoom]);
+      const refresh = () => {
         const owned = g.owns(c.id);
         const worn = (s.style[kind] ?? 'bait:worm') === c.id;
-        frame.clear();
-        if (worn) frame.lineStyle(6, 0x5fd38d, 1).strokeRoundedRect(-tw / 2 + 4, -74, tw - 8, 148, 18);
-        coin.setVisible(!owned && !c.source);
+        frame.setData('hidden', !worn).setVisible(worn);
+        coin.setData('hidden', owned || !!c.source).setVisible(!owned && !c.source);
         if (worn) label.setText(t('wardrobe.worn')).setColor('#3a9e55');
         else if (owned) label.setText(t('wardrobe.wear')).setColor(DARK);
         else if (c.source) label.setText(c.source === 'daily3' ? t('wardrobe.day3') : t('wardrobe.starsNeed', { n: Math.min(15, g.starsTotal), max: 15 })).setColor('#c2557a');
         else label.setText(fmt(c.price)).setColor(s.coins >= c.price ? DARK : '#c0392b');
-        fitText(label, tw - (coin.visible ? 34 : 10));
-        if (coin.visible) {
+        fitText(label, tw - (!coin.getData('hidden') ? 40 : 14));
+        if (!coin.getData('hidden')) {
           const w = label.width * label.scaleX;
           coin.setX(-w / 2 - 6);
           label.setX(12);
         } else label.setX(0);
-      });
-      panel.content.add(tile);
+      };
+      tiles.push({ btn: tile, refresh });
+      inner.add(tile);
     });
+    y += Math.ceil(list.length / cols) * (th + gap) + 18;
   };
-  section('hat', t('wardrobe.hats'), panel.top + 40);
-  section('rod', t('wardrobe.rods'), panel.top + 440);
-  section('bobber', t('wardrobe.bobbers'), panel.top + 670);
-  section('bait', t('wardrobe.baits'), panel.top + 900);
+  section('hat', t('wardrobe.hats'));
+  section('rod', t('wardrobe.rods'));
+  section('bobber', t('wardrobe.bobbers'));
+  section('bait', t('wardrobe.baits'));
+  const contentH = y - view.y;
+  const maxScroll = Math.max(0, contentH - view.h);
+
+  // Scroll bar on the right edge (only when the list is longer than its window).
+  const bar = scene.add.graphics();
+  panel.content.add(bar);
+  let scroll = 0;
+  const apply = () => {
+    scroll = Phaser.Math.Clamp(scroll, 0, maxScroll);
+    inner.y = -scroll;
+    clipTo();
+    bar.clear();
+    if (maxScroll <= 0) return;
+    const x = pw / 2 - 12;
+    const thumbH = Math.max(60, (view.h * view.h) / contentH);
+    const ty = view.y + (scroll / maxScroll) * (view.h - thumbH);
+    bar.fillStyle(0x3b2a4d, 0.12).fillRoundedRect(x - 3, view.y, 6, view.h, 3);
+    bar.fillStyle(0x9356e6, 0.75).fillRoundedRect(x - 4, ty, 8, thumbH, 4);
+  };
+  const inView = (b: CButton) => {
+    const cy = b.y - scroll;
+    return cy > view.y + th * 0.25 && cy < view.y + view.h - th * 0.25;
+  };
+  // Keyboard focus on a tile out of view: bring it in. The ring hides while its button is scrolled away.
+  const tileOf = (b: CButton) => tiles.find((tl) => tl.btn === b || tl.btn === b.parentContainer)?.btn;
+  panel.nav.canShow = (b) => {
+    const tb = tileOf(b);
+    if (!tb) return true;
+    const cy = tb.y - scroll;
+    return cy - th / 2 >= view.y - 2 && cy + th / 2 <= view.y + view.h + 2;
+  };
+  panel.nav.onFocus = (fb) => {
+    const b = tileOf(fb);
+    if (!b) return;
+    const top = b.y - th / 2 - 12;
+    const bottom = b.y + th / 2 + 12;
+    if (top - scroll < view.y) scroll = top - view.y;
+    else if (bottom - scroll > view.y + view.h) scroll = bottom - view.y - view.h;
+    apply();
+  };
+
+  // Drag to scroll (touch or mouse), with a little glide; the mouse wheel scrolls too.
+  const local = (p: Phaser.Input.Pointer) => {
+    const m = clip.getWorldTransformMatrix();
+    return m.applyInverse(p.worldX, p.worldY);
+  };
+  const inside = (p: Phaser.Input.Pointer) => {
+    const l = local(p);
+    return l.x >= view.x && l.x <= view.x + view.w && l.y >= view.y && l.y <= view.y + view.h;
+  };
+  let downY: number | null = null;
+  let startScroll = 0;
+  let lastY = 0;
+  let lastT = 0;
+  let vel = 0;
+  // Buttons stop their pointerdown from reaching the scene, so a drag starts from the first move.
+  const onMove = (p: Phaser.Input.Pointer) => {
+    if (!p.isDown) return;
+    if (downY === null) {
+      const d = clip.getWorldTransformMatrix().applyInverse(p.downX, p.downY);
+      if (d.x < view.x || d.x > view.x + view.w || d.y < view.y || d.y > view.y + view.h) return;
+      downY = lastY = d.y;
+      lastT = scene.time.now;
+      startScroll = scroll;
+      vel = 0;
+      dragged = false;
+    }
+    const ly = local(p).y;
+    const from = downY ?? ly;
+    if (!dragged && Math.abs(ly - from) > 10) {
+      dragged = true;
+      panel.nav.hideRing();
+      for (const tl of tiles) {
+        tl.btn.unpress();
+        for (const o of tl.btn.list) if (o instanceof CButton) o.unpress();
+      }
+    }
+    if (!dragged) return;
+    const now = scene.time.now;
+    if (now > lastT) vel = (lastY - ly) / ((now - lastT) / 1000);
+    lastY = ly;
+    lastT = now;
+    scroll = startScroll + (from - ly);
+    apply();
+  };
+  const onUp = () => {
+    if (downY === null) return;
+    downY = null;
+    // Keep `dragged` until the tile's own pointerup has run, then clear it.
+    scene.time.delayedCall(0, () => (dragged = false));
+  };
+  const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+    if (!inside(p) || maxScroll <= 0) return;
+    panel.nav.hideRing();
+    scroll += dy * 0.8;
+    vel = 0;
+    apply();
+  };
+  const onTick = (_t: number, dtMs: number) => {
+    if (downY !== null && !scene.input.activePointer.isDown) onUp();
+    if (downY !== null || Math.abs(vel) < 20) return;
+    scroll += vel * (dtMs / 1000);
+    vel *= Math.pow(0.04, dtMs / 1000);
+    if (scroll <= 0 || scroll >= maxScroll) vel = 0;
+    apply();
+  };
+  scene.input.on('pointermove', onMove);
+  scene.input.on('pointerup', onUp);
+  scene.input.on('wheel', onWheel);
+  scene.events.on(Phaser.Scenes.Events.UPDATE, onTick);
+  panel.once(Phaser.GameObjects.Events.DESTROY, () => {
+    scene.input.off('pointermove', onMove);
+    scene.input.off('pointerup', onUp);
+    scene.input.off('wheel', onWheel);
+    scene.events.off(Phaser.Scenes.Events.UPDATE, onTick);
+  });
+
   const refreshAll = () => {
-    tiles.forEach((r) => r());
+    tiles.forEach((tl) => tl.refresh());
+    heads.forEach((h) => h());
+    clipTo();
     coinsLine.setText(t('upg.have', { n: fmt(s.coins) }));
+    const parts = GEAR_STATS.map((k) => [k, gearPerk(s, k)] as const)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `${t(`gear.${k}`)} +${v}%`);
+    fitText(gearLine.setText(parts.length ? t('gear.total', { list: parts.join('  ·  ') }) : t('gear.none')), pw - 60);
   };
+  /** Item card (v1.16): a big look at the item, its bonuses, and Buy to confirm (or Wear). */
+  const openCard = (c: (typeof COSMETICS)[number]) => {
+    const card2 = new CPanel(scene, { title: t(`gearName.${c.id.replace(':', '_')}`), w: 560, h: 820, color: COLORS.purple });
+    const top = card2.top;
+    // The look, large: the cat wearing the hat, or the item itself.
+    const bg = setShape(scene.add.image(0, top + 190, '__DEFAULT'), 'gearcardbg', 420, 320, (gr) => gr.fillStyle(0xcfeaf2, 1).fillRoundedRect(-210, -160, 420, 320, 28));
+    card2.content.add(bg);
+    if (c.kind === 'hat') {
+      const cat = art(scene, 0, top + 200, 'sc:cat');
+      cat.setScale(fitScale('sc:cat', 290));
+      card2.content.add([cat, art(scene, 0, top + 200, c.id).setScale(cat.scale)]);
+    } else if (c.kind === 'rod') {
+      const [shaft, handle] = c.colors!;
+      const rod = setShape(scene.add.image(0, top + 190, '__DEFAULT'), `rodbig|${c.id}`, 260, 280, (gr) => {
+        gr.lineStyle(26, INK, 1).lineBetween(-100, 110, 100, -120);
+        gr.lineStyle(16, shaft, 1).lineBetween(-100, 110, 100, -120);
+        gr.lineStyle(18, handle, 1).lineBetween(-100, 110, -48, 50);
+        gr.fillStyle(INK, 1).fillCircle(-72, 80, 26).fillStyle(0x5b6178, 1).fillCircle(-72, 80, 18);
+        gr.lineStyle(3, 0xffffff, 0.9).lineBetween(100, -120, 112, 40);
+      });
+      card2.content.add(rod);
+    } else {
+      const key = c.kind === 'bait' ? baitKey(c.id) : c.id === 'bobber:classic' ? 'item:bobber' : `item:${c.id}`;
+      const im = art(scene, 0, top + 190, key);
+      im.setScale(fitScale(key, c.kind === 'bait' ? 200 : 230));
+      card2.content.add(im);
+    }
+    // Bonuses.
+    const bonus = Object.entries(c.stats ?? {});
+    card2.content.add(txt(scene, 0, top + 392, bonus.length ? t('wardrobe.bonus') : t('wardrobe.noBonus'), 26, { color: DIM, stroke: false, weight: '500' }));
+    bonus.forEach(([k, v], j) => card2.content.add(txt(scene, 0, top + 440 + j * 44, `${t(`gear.${k}`)} +${v}%`, 36, { color: '#2f86e0', stroke: false })));
+    // Buttons: Buy (confirm) and Cancel, or Wear, or how to get it.
+    const by = card2.bottom - 90;
+    const owned = g.owns(c.id);
+    const worn = (s.style[c.kind] ?? 'bait:worm') === c.id;
+    if (!owned && c.source) {
+      card2.content.add(txt(scene, 0, by, c.source === 'daily3' ? t('wardrobe.fromDaily3') : t('wardrobe.fromStars15', { n: g.starsTotal }), 24, { color: '#c2557a', stroke: false, wrap: 480 }));
+      return;
+    }
+    if (owned) {
+      const wear = new CButton(scene, 0, by, {
+        w: 300,
+        h: 92,
+        label: worn ? t('wardrobe.worn') : t('wardrobe.wear'),
+        fontSize: 36,
+        color: worn ? COLORS.grey : COLORS.green,
+        onClick: () => {
+          g.wear(c.id);
+          ctx.refresh();
+          refreshAll();
+          card2.close();
+        },
+      }).setEnabled(!worn);
+      card2.content.add(wear);
+      card2.nav.primary = worn ? null : wear;
+      return;
+    }
+    const ok = s.coins >= c.price;
+    // Cancel sits beside Buy and is just as big (no tapping into a purchase by mistake).
+    const cancel = new CButton(scene, -125, by, { w: 230, h: 92, label: t('wardrobe.cancel'), fontSize: 32, color: COLORS.grey, onClick: () => card2.close() });
+    const buy = new CButton(scene, 125, by, {
+      w: 230,
+      h: 92,
+      icon: 'item:coin',
+      iconSize: 40,
+      label: fmt(c.price),
+      fontSize: 32,
+      color: ok ? COLORS.green : COLORS.grey,
+      onClick: () => {
+        const r = g.wear(c.id);
+        if (r === 'noCoins') return note(scene, t('msg.needCoins', { n: fmt(c.price) }));
+        app.audio.play('buy');
+        note(scene, t('wardrobe.bought'));
+        ctx.refresh();
+        refreshAll();
+        card2.close();
+      },
+    });
+    card2.content.add([cancel, buy, txt(scene, 0, by - 74, t('wardrobe.buy'), 26, { color: DARK, stroke: false })]);
+    card2.nav.primary = cancel;
+  };
+
   refreshAll();
+  apply();
   return panel;
 }
 
@@ -934,13 +1281,19 @@ export function challengePanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.
     page.removeAll(true);
     tabs.forEach((b, i) => b.setColor(PONDS[i].id === id ? COLORS.purple : COLORS.grey));
     const list = CHALLENGES.filter((c) => c.pond === id);
+    // v1.16: a pond's challenges open after its boss is caught once; say so above the locked tiles.
+    const bossLock = s.unlocked.includes(id) && !g.challengeBossDone(id);
+    const dy = bossLock ? 40 : 0;
+    if (bossLock) {
+      page.add(fitText(txt(scene, 0, panel.top + 108, t('challenge.bossLocked', { boss: bossName(pondById.get(id as "cozy")!.boss.id) }), 24, { color: '#c0392b', stroke: false }), pw - 60));
+    }
     const cw = (pw - 60) / 2 - 10;
     const chh = 196;
     list.forEach((c, i) => {
       const col = i % 2;
       const row = Math.floor(i / 2);
       const x = (col - 0.5) * (cw + 14);
-      const y = panel.top + 190 + row * (chh + 14);
+      const y = panel.top + 190 + dy + row * (chh + 14);
       const open = g.challengeUnlocked(c);
       const cleared = s.challenge.cleared.includes(c.id);
       const best = s.challenge.best[c.id];
@@ -950,6 +1303,7 @@ export function challengePanel(scene: Phaser.Scene, ctx: PanelCtx, pondId = ctx.
         color: open ? 0xfffdf6 : CREAM_DARK,
         onClick: () => {
           if (!s.unlocked.includes(c.pond)) return note(scene, t('challenge.pondLocked', { pond: pondName(c.pond) }));
+          if (!g.challengeBossDone(c.pond)) return note(scene, t('challenge.bossLocked', { boss: bossName(pondById.get(c.pond)!.boss.id) }));
           if (!open) return note(scene, t('challenge.locked', { n: c.n - 1 }));
           panel.close();
           ctx.startChallenge(c.id);

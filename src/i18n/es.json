@@ -9,6 +9,7 @@
     "collectDouble": "Recoger x{n}"
   },
   "hud": {
+    "gripChip": "Anzuelo firme  {t}",
     "upgrade": "Mejorar",
     "pets": "Mascotas",
     "fishdex": "Pezdex",
@@ -31,6 +32,7 @@
     "phase": "Fase {n}"
   },
   "msg": {
+    "gripOn": "¡Anzuelo firme! Se sueltan menos peces durante 5 minutos.",
     "goldenOn": "¡Cebo dorado! Suerte x2 durante 5 minutos",
     "incubatorFull": "La incubadora está llena. ¡Primero haz eclosionar un huevo!",
     "autoOn": "Pesca automática activada: más lenta, falla algunas picadas.",
@@ -105,6 +107,10 @@
   "upg": {
     "title": "Mejoras",
     "rod": "Caña",
+    "grip": "Anzuelo firme",
+    "gripWhat": "Se sueltan 20 % » 10 %  ·  {m} min",
+    "gripOn": "Activo: quedan {t}",
+    "gripActive": "ON",
     "line": "Sedal",
     "bait": "Cebo",
     "float": "Flotador",
@@ -137,12 +143,18 @@
     "sharp": "Ojo de lince",
     "angler": "Pescador",
     "nurture": "Cuidador",
+    "finder": "Buscahuevos",
+    "treasure": "Olfato de tesoro",
+    "big": "Gran captura",
     "luckWhat": "{v} de suerte",
     "merchantWhat": "{v} al precio del pescado",
     "strongWhat": "{v} de fuerza",
     "sharpWhat": "{v} de tiempo de picada",
     "anglerWhat": "{v} peces pescados por ti",
     "nurtureWhat": "{v} de velocidad de eclosión",
+    "finderWhat": "{v} de huevos",
+    "treasureWhat": "{v} de cofres",
+    "bigWhat": "{v} de tamaño del pez",
     "perMin": "{n}/min"
   },
   "dex": {
@@ -154,7 +166,11 @@
     "best": "Récord {n} cm",
     "caught": "Pescado x{n}",
     "fight": "¡Luchar contra el jefe!",
-    "unknown": "???"
+    "unknown": "???",
+    "likes": "Pica: {z}",
+    "zone0": "Cerca",
+    "zone1": "Lejos",
+    "zone2": "Superlejos"
   },
   "map": {
     "title": "Mapa",
@@ -319,6 +335,10 @@
     "travel": "¡{pond} está abierto! » Mapa",
     "all": "Pezdex {n}/{max}"
   },
+  "legend": {
+    "appear": "¡Un pez LEGENDARIO! ¡Lanza justo a su lado!",
+    "gone": "El pez legendario se ha ido nadando..."
+  },
   "wanted": {
     "label": "SE BUSCA",
     "reward": "monedas x4",
@@ -336,7 +356,50 @@
     "full": "La incubadora está llena. ¡Abre un huevo o añade un hueco!",
     "sell": "Vender {n}"
   },
+  "gear": {
+    "merchant": "Precio",
+    "luck": "Suerte",
+    "big": "Tamaño",
+    "strong": "Fuerza",
+    "finder": "Huevos",
+    "nurture": "Eclosión",
+    "treasure": "Cofres",
+    "total": "Equipado: {list}",
+    "none": "Lo que llevas da pequeñas ventajas"
+  },
+  "gearName": {
+    "hat_rain": "Gorro de lluvia",
+    "hat_straw": "Sombrero de paja",
+    "hat_beanie": "Gorro de lana",
+    "hat_flower": "Corona de flores",
+    "hat_pirate": "Sombrero pirata",
+    "hat_wizard": "Sombrero de mago",
+    "hat_tophat": "Chistera",
+    "hat_crown": "Corona real",
+    "hat_clover": "Gorra de trébol",
+    "hat_captain": "Gorra de capitán",
+    "rod_classic": "Caña clásica",
+    "rod_ocean": "Caña océano",
+    "rod_cherry": "Caña cereza",
+    "rod_bamboo": "Caña de bambú",
+    "rod_gold": "Caña dorada",
+    "bobber_classic": "Flotador clásico",
+    "bobber_sky": "Flotador cielo",
+    "bobber_mint": "Flotador menta",
+    "bobber_gold": "Flotador dorado",
+    "bait_worm": "Gusano",
+    "bait_shrimp": "Gamba",
+    "bait_fly": "Mosca",
+    "bait_cricket": "Grillo",
+    "bait_goldworm": "Gusano dorado"
+  },
   "wardrobe": {
+    "buy": "Comprar",
+    "cancel": "Cancelar",
+    "bonus": "Puesto:",
+    "noBonus": "Sin bonus (objeto inicial gratis)",
+    "preview": "Vista previa",
+    "bought": "¡Comprado! El gato ya lo lleva puesto.",
     "title": "Armario",
     "hats": "Sombreros",
     "rods": "Cañas",
@@ -382,12 +445,15 @@
     "best": "Récord {t}",
     "locked": "Supera antes el nivel {n}",
     "pondLocked": "Desbloquea antes {pond}",
+    "bossLocked": "Atrapa a {boss} una vez para abrir estos desafíos",
     "start": "¡Pesca {fish} peces de {species} especies en {t}!",
     "cleared": "¡Desafío superado!",
     "timeUp": "¡Se acabó el tiempo!",
     "record": "¡Nuevo récord!",
     "firstReward": "Primera vez: recompensa completa",
     "replayReward": "Repetición: 10 % de la recompensa",
+    "replayRecordReward": "Repetición: 10 % de la recompensa + 20 % por el nuevo récord",
+    "recordOnlyReward": "Nuevo récord: 20 % de la recompensa (hoy no quedan recompensas por repetir)",
     "noReward": "Hoy no quedan recompensas por repetir",
     "next": "Siguiente",
     "retry": "Reintentar",

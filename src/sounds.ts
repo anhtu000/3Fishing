@@ -3,7 +3,7 @@ import { app } from '@core';
 
 /** Sound effects and music (public/audio, made by tools/make_audio.py). */
 export const SOUNDS = [
-  'ui-tap', 'open', 'buy', 'nope', 'reward', 'coin', 'gem', 'catch', 'junk', 'new', 'rare', 'chest', 'wobble', 'hatch',
+  'ui-tap', 'open', 'buy', 'nope', 'reward', 'coin', 'gem', 'catch', 'junk', 'new', 'rare', 'chest', 'wobble', 'crack', 'hatch',
   'cast', 'plop', 'nibble', 'bite', 'hook', 'perfect', 'splash', 'snap', 'miss', 'boss', 'win', 'unlock', 'charge', 'pop',
 ];
 

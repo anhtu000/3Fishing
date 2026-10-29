@@ -9,6 +9,7 @@
     "collectDouble": "Raccogli x{n}"
   },
   "hud": {
+    "gripChip": "Amo saldo  {t}",
     "upgrade": "Migliora",
     "pets": "Amici",
     "fishdex": "Pescedex",
@@ -31,6 +32,7 @@
     "phase": "Fase {n}"
   },
   "msg": {
+    "gripOn": "Amo saldo! Meno pesci si sganciano per 5 minuti.",
     "goldenOn": "Esca d'oro! Fortuna x2 per 5 minuti",
     "incubatorFull": "L'incubatrice è piena. Prima schiudi un uovo!",
     "autoOn": "Pesca automatica attiva: più lenta, perde qualche abboccata.",
@@ -105,6 +107,10 @@
   "upg": {
     "title": "Potenziamenti",
     "rod": "Canna",
+    "grip": "Amo saldo",
+    "gripWhat": "Sganci 20% » 10%  ·  {m} min",
+    "gripOn": "Attivo: ancora {t}",
+    "gripActive": "ON",
     "line": "Lenza",
     "bait": "Esca",
     "float": "Galleggiante",
@@ -137,12 +143,18 @@
     "sharp": "Occhio di falco",
     "angler": "Pescatore",
     "nurture": "Covatore",
+    "finder": "Cercauova",
+    "treasure": "Fiuta-tesori",
+    "big": "Pesca grossa",
     "luckWhat": "{v} di fortuna",
     "merchantWhat": "{v} sul prezzo dei pesci",
     "strongWhat": "{v} di forza",
     "sharpWhat": "{v} di tempo d'abboccata",
     "anglerWhat": "{v} pesci pescati per te",
     "nurtureWhat": "{v} di velocità di schiusa",
+    "finderWhat": "{v} di uova",
+    "treasureWhat": "{v} di forzieri",
+    "bigWhat": "{v} di taglia dei pesci",
     "perMin": "{n}/min"
   },
   "dex": {
@@ -154,7 +166,11 @@
     "best": "Record {n} cm",
     "caught": "Pescato x{n}",
     "fight": "Sfida il boss!",
-    "unknown": "???"
+    "unknown": "???",
+    "likes": "Abbocca: {z}",
+    "zone0": "Vicino",
+    "zone1": "Lontano",
+    "zone2": "Lontanissimo"
   },
   "map": {
     "title": "Mappa",
@@ -319,6 +335,10 @@
     "travel": "{pond} è aperto! » Mappa",
     "all": "Pescedex {n}/{max}"
   },
+  "legend": {
+    "appear": "Un pesce LEGGENDARIO! Lancia proprio lì accanto!",
+    "gone": "Il pesce leggendario è scappato..."
+  },
   "wanted": {
     "label": "RICERCATO",
     "reward": "monete x4",
@@ -336,7 +356,50 @@
     "full": "L'incubatrice è piena. Schiudi un uovo o aggiungi un posto!",
     "sell": "Vendi {n}"
   },
+  "gear": {
+    "merchant": "Prezzo",
+    "luck": "Fortuna",
+    "big": "Taglia",
+    "strong": "Forza",
+    "finder": "Uova",
+    "nurture": "Schiusa",
+    "treasure": "Forzieri",
+    "total": "Indossati: {list}",
+    "none": "Gli oggetti indossati danno piccoli bonus"
+  },
+  "gearName": {
+    "hat_rain": "Cappello da pioggia",
+    "hat_straw": "Cappello di paglia",
+    "hat_beanie": "Berretto",
+    "hat_flower": "Corona di fiori",
+    "hat_pirate": "Cappello da pirata",
+    "hat_wizard": "Cappello da mago",
+    "hat_tophat": "Cilindro",
+    "hat_crown": "Corona reale",
+    "hat_clover": "Berretto quadrifoglio",
+    "hat_captain": "Berretto da capitano",
+    "rod_classic": "Canna classica",
+    "rod_ocean": "Canna oceano",
+    "rod_cherry": "Canna ciliegia",
+    "rod_bamboo": "Canna di bambù",
+    "rod_gold": "Canna dorata",
+    "bobber_classic": "Galleggiante classico",
+    "bobber_sky": "Galleggiante cielo",
+    "bobber_mint": "Galleggiante menta",
+    "bobber_gold": "Galleggiante dorato",
+    "bait_worm": "Verme",
+    "bait_shrimp": "Gamberetto",
+    "bait_fly": "Mosca",
+    "bait_cricket": "Grillo",
+    "bait_goldworm": "Verme dorato"
+  },
   "wardrobe": {
+    "buy": "Compra",
+    "cancel": "Annulla",
+    "bonus": "Indossato:",
+    "noBonus": "Nessun bonus (oggetto iniziale gratis)",
+    "preview": "Anteprima",
+    "bought": "Comprato! Il gatto lo indossa ora.",
     "title": "Guardaroba",
     "hats": "Cappelli",
     "rods": "Canne",
@@ -382,12 +445,15 @@
     "best": "Record {t}",
     "locked": "Prima supera il livello {n}",
     "pondLocked": "Prima sblocca {pond}",
+    "bossLocked": "Cattura {boss} una volta per aprire queste sfide",
     "start": "Pesca {fish} pesci di {species} specie in {t}!",
     "cleared": "Sfida superata!",
     "timeUp": "Tempo scaduto!",
     "record": "Nuovo record!",
     "firstReward": "Prima vittoria: ricompensa piena",
     "replayReward": "Rigiocata: 10% della ricompensa",
+    "replayRecordReward": "Rigiocata: 10% della ricompensa + 20% per il nuovo record",
+    "recordOnlyReward": "Nuovo record: 20% della ricompensa (oggi niente più ricompense per rigiocare)",
     "noReward": "Oggi niente più ricompense per rigiocare",
     "next": "Avanti",
     "retry": "Riprova",

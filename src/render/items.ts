@@ -11,7 +11,34 @@ const RARITY_EGG: { base: string; spot: string; kind: 'spots' | 'stripes' | 'zig
   { base: '#fff1a8', spot: '#ffb000', kind: 'swirl' },
 ];
 
-function eggArt(tier: number): Art {
+/**
+ * v1.16 pond marks in a 52 x 52 box: lily pad (Cozy Pond), mist drop (Misty Creek), snowflake
+ * (Frozen Lake). On a white disc, so they read on any egg colour and next to pond names.
+ */
+function pondMark(pond: string) {
+  let mark = '';
+  if (pond === 'cozy') {
+    // Lily pad with a narrow notch, two veins and a pink flower.
+    mark =
+      path('M26,28 L29.9,13.5 A15,15 0 1,1 22.1,13.5 Z', '#6cc86a', 'stroke-width="3.2"') +
+      line('M26,28 L14,22 M26,28 L18,39 M26,28 L36,38', '#a4e08f', 2.2) +
+      circle(35, 27, 4.2, '#ff8fb8', false) + circle(31.5, 31, 4.2, '#ff8fb8', false) + circle(38.5, 31, 4.2, '#ff8fb8', false) + circle(35, 30, 2.4, '#ffe066', false);
+  } else if (pond === 'misty') {
+    mark = path('M26,9 C30,16 38,24 38,32 A12,12 0 0,1 14,32 C14,24 22,16 26,9 Z', '#8fd6e8', 'stroke-width="3.2"') + ellipse(21, 31, 3, 5, '#ffffff', false, 'opacity="0.8"');
+  } else {
+    const arms = [0, 60, 120].map((a) => `<g transform="rotate(${a} 26 26)">${line('M26,11 L26,41 M21,14 L26,19 L31,14 M21,38 L26,33 L31,38', '#3f8fe0', 3.4)}</g>`);
+    mark = arms.join('');
+  }
+  return circle(26, 26, 22, '#ffffff', true, 'stroke-width="3.2"') + mark;
+}
+
+/** The pond mark at (cx, cy), `size` units across. */
+function pondBadge(pond: string, cx: number, cy: number, size: number) {
+  const k = size / 52;
+  return `<g transform="translate(${f(cx - 26 * k)},${f(cy - 26 * k)}) scale(${f(k)})">${pondMark(pond)}</g>`;
+}
+
+function eggArt(tier: number, pond?: string): Art {
   return {
     w: 140,
     h: 170,
@@ -38,7 +65,8 @@ function eggArt(tier: number): Art {
         pat.push(circle(36, 50, 6, '#ffffff', false, 'opacity="0.8"'));
       }
       pat.push(ellipse(48, 52, 14, 22, '#ffffff', false, 'opacity="0.55" transform="rotate(20 48 52)"'));
-      return path(egg, `url(#${g})`) + `<g clip-path="url(#${clip})">${pat.join('')}</g>` + path(egg, 'none');
+      const badge = pond ? pondBadge(pond, 104, 134, 56) : '';
+      return path(egg, `url(#${g})`) + `<g clip-path="url(#${clip})">${pat.join('')}</g>` + path(egg, 'none') + badge;
     },
   };
 }
@@ -222,6 +250,24 @@ const ICONS: Record<string, Art> = {
   i_line: { w: 96, h: 96, body: () => circle(48, 48, 34, '#7fd3e6') + circle(48, 48, 22, '#e8f7fb', false) + circle(48, 48, 9, '#5b6178') + line('M48,14 Q70,30 82,10', '#ffffff', 3) },
   i_bait: { w: 96, h: 96, body: () => line('M18,52 C18,26 46,26 46,52 C46,76 74,76 74,52', '#ff8fa8', 16) + line('M18,52 C18,26 46,26 46,52 C46,76 74,76 74,52', '#ffc2cf', 6) + circle(76, 48, 3, OUTLINE, false) },
   i_float: { w: 96, h: 96, body: () => line('M48,8 L48,24', OUTLINE, 5) + path('M48,22 C68,22 74,40 74,52 L22,52 C22,40 28,22 48,22 Z', '#ff4d5e') + path('M22,52 L74,52 C74,72 62,86 48,86 C34,86 22,72 22,52 Z', '#ffffff') },
+  // v1.16: magnifier (wardrobe preview).
+  i_zoom: {
+    w: 96,
+    h: 96,
+    body: () => line('M60,60 L82,82', OUTLINE, 18) + line('M60,60 L82,82', '#c98a4b', 10) + circle(40, 40, 28, '#e8f7fb', true, 'stroke-width="8"') + flat('M26,30 Q32,20 44,18 L44,24 Q34,26 30,34 Z', '#ffffff') ,
+  },
+  // v1.16 Firm hook: a gold hook with a glint.
+  i_hook: {
+    w: 96,
+    h: 96,
+    body: () =>
+      circle(54, 16, 8, 'none', true, 'stroke-width="6"') +
+      line('M54,24 L54,60 C54,84 22,84 22,62 L22,54', OUTLINE, 14) +
+      line('M54,24 L54,60 C54,84 22,84 22,62 L22,54', '#ffc83d', 8) +
+      path('M22,46 L12,62 L30,60 Z', '#ffc83d') +
+      line('M60,30 L60,52', '#fff1b8', 3) +
+      path('M78,20 L81,28 L89,31 L81,34 L78,42 L75,34 L67,31 L75,28 Z', '#ffffff'),
+  },
   i_book: { w: 96, h: 96, body: () => path('M14,18 L46,24 L46,86 L14,80 Z', '#7fd3e6') + path('M82,18 L50,24 L50,86 L82,80 Z', '#9be3f1') + line('M22,38 l16,3 M22,50 l16,3 M58,41 l16,-3 M58,53 l16,-3', '#ffffff', 3) },
   i_paw: { w: 96, h: 96, body: () => ellipse(48, 62, 22, 18, '#ffb3cf') + circle(24, 38, 9, '#ffb3cf') + circle(40, 24, 9, '#ffb3cf') + circle(58, 24, 9, '#ffb3cf') + circle(74, 38, 9, '#ffb3cf') },
   i_map: { w: 96, h: 96, body: () => path('M10,22 L34,14 L62,22 L86,14 L86,76 L62,84 L34,76 L10,84 Z', '#ffe9b0') + line('M34,14 L34,76 M62,22 L62,84', '#d9b878', 3) + line('M20,62 Q36,40 52,54 T78,30', '#ff6b6b', 4, 'stroke-dasharray="6 6"') + flat('M74,24 l8,8 M82,24 l-8,8', '#ff6b6b', `stroke="#ff6b6b" stroke-width="4"`) },
@@ -331,14 +377,20 @@ export function bobberSvg(top: number, bottom: number) {
   });
 }
 
-export function eggSvg(tier: number) {
-  return render(eggArt(tier));
+export function eggSvg(tier: number, pond?: string) {
+  return render(eggArt(tier, pond));
+}
+export const POND_MARK_SIZE = { w: 52, h: 52 };
+export function pondMarkSvg(pond: string) {
+  return render({ w: 52, h: 52, body: () => pondMark(pond) });
 }
 export const EGG_SIZE = { w: 140, h: 170 };
 
 export function previewItems() {
   return [
     ...[0, 1, 2, 3, 4].map((t) => ({ name: `egg_${t}`, svg: eggSvg(t), ...EGG_SIZE })),
+    ...['cozy', 'misty', 'frozen'].flatMap((p) => [0, 4].map((t) => ({ name: `egg_${t}_${p}`, svg: eggSvg(t, p), ...EGG_SIZE }))),
+    ...['cozy', 'misty', 'frozen'].map((p) => ({ name: `pond_${p}`, svg: pondMarkSvg(p), ...POND_MARK_SIZE })),
     ...ITEM_KEYS.filter((k) => !['ripple', 'drop', 'leaf', 'sparkle', 'bubble'].includes(k)).map((k) => ({ name: k, svg: itemSvg(k), ...itemSize(k) })),
     ...ICON_KEYS.map((k) => ({ name: k, svg: itemSvg(k), ...itemSize(k) })),
   ];

@@ -139,7 +139,19 @@ function runOne(p: Profile, seed: number) {
   game.refreshDay();
   let roll: ReturnType<PondGame['rollForCast']> | null = null;
   let wantedCast = false;
+  // v1.16: a Legendary in sight; the bot aims at it as often as at a WANTED fish (aimWanted).
+  let legendCast = false;
+  let legendSeen = 0;
+  let legendCaught = 0;
   const f = new Fishing(rng, () => game.stats(), {}, () => {
+    const lg = game.legendHere;
+    legendCast = !!lg && rng.next() < p.aimWanted;
+    if (lg && legendCast) {
+      wantedCast = false;
+      const target = { rarity: 4, fights: true };
+      roll = { roll: game.hookLegend()!, target } as unknown as ReturnType<PondGame['rollForCast']>;
+      return target;
+    }
     const w = game.wanted;
     wantedCast = !!w && rng.next() < p.aimWanted;
     if (w && wantedCast) {
@@ -147,7 +159,9 @@ function runOne(p: Profile, seed: number) {
       roll = { roll: { kind: 'fish', fish: w.fish, size: w.size }, target } as unknown as ReturnType<PondGame['rollForCast']>;
       return target;
     }
+    const before = game.legendHere;
     roll = game.rollForCast(f.zone, false);
+    if (!before && game.legendHere) legendSeen++;
     return roll.target;
   });
   f.assist = true;
@@ -192,6 +206,7 @@ function runOne(p: Profile, seed: number) {
       const w = game.tickWanted(DT);
       if (w === 'spawn') (at('wantedSpawn'), first('wantedSpawn'));
     }
+    if (!bossFight && (pause <= 0 || idling) && !(legendCast && f.busy) && f.phase !== 'bite' && f.phase !== 'reeling' && f.phase !== 'done') game.tickLegend(DT);
     if (pause > 0) {
       pause -= DT;
       continue;
@@ -227,6 +242,7 @@ function runOne(p: Profile, seed: number) {
         pause = 6;
       } else if (roll) {
         const r = game.applyCatch(roll.roll, f.perfect, wantedCast);
+        if (legendCast) (game.legendCaught(), legendCaught++);
         at('catch');
         first('catch');
         if (r.isNew) at('newSpecies');
@@ -342,6 +358,8 @@ function runOne(p: Profile, seed: number) {
       wantedCaught: ev.filter((e) => e.kind === 'wanted').length,
       wantedTries,
       wantedLanded,
+      legendSeen,
+      legendCaught,
     },
     pendingAt: [3, 5, 10].map(() => 0),
     events: ev,
@@ -401,6 +419,7 @@ for (const p of PROFILES) {
       float: m((r) => r.end.upgrades.float),
       bossFails: m((r) => r.end.bossFails),
     },
+    legend: { seen60: m((r) => r.end.legendSeen), caught60: m((r) => r.end.legendCaught) },
     wanted: {
       spawns60: m((r) => r.end.wantedSpawns),
       caught60: m((r) => r.end.wantedCaught),

@@ -9,6 +9,7 @@
     "collectDouble": "Collect x{n}"
   },
   "hud": {
+    "gripChip": "Firm hook  {t}",
     "upgrade": "Upgrade",
     "pets": "Pets",
     "fishdex": "Fishdex",
@@ -31,6 +32,7 @@
     "phase": "Phase {n}"
   },
   "msg": {
+    "gripOn": "Firm hook! Fewer fish shake off for 5 minutes.",
     "goldenOn": "Golden bait! Luck x2 for 5 minutes",
     "incubatorFull": "The incubator is full. Hatch an egg first!",
     "autoOn": "Auto fishing on: slower, misses some bites.",
@@ -105,6 +107,10 @@
   "upg": {
     "title": "Upgrades",
     "rod": "Rod",
+    "grip": "Firm hook",
+    "gripWhat": "Shake-offs 20% » 10%  ·  {m} min",
+    "gripOn": "Active: {t} left",
+    "gripActive": "ON",
     "line": "Line",
     "bait": "Bait",
     "float": "Float",
@@ -137,12 +143,18 @@
     "sharp": "Sharp eye",
     "angler": "Angler",
     "nurture": "Nurture",
+    "finder": "Egg finder",
+    "treasure": "Treasure nose",
+    "big": "Big catch",
     "luckWhat": "{v} luck",
     "merchantWhat": "{v} fish price",
     "strongWhat": "{v} reel power",
     "sharpWhat": "{v} bite time",
     "anglerWhat": "{v} fish caught for you",
     "nurtureWhat": "{v} hatch speed",
+    "finderWhat": "{v} eggs",
+    "treasureWhat": "{v} chests",
+    "bigWhat": "{v} fish size",
     "perMin": "{n}/min"
   },
   "dex": {
@@ -154,7 +166,11 @@
     "best": "Best {n} cm",
     "caught": "Caught x{n}",
     "fight": "Fight boss!",
-    "unknown": "???"
+    "unknown": "???",
+    "likes": "Bites: {z}",
+    "zone0": "Near",
+    "zone1": "Far",
+    "zone2": "Super far"
   },
   "map": {
     "title": "Map",
@@ -319,6 +335,10 @@
     "travel": "{pond} is open! » Map",
     "all": "Fishdex {n}/{max}"
   },
+  "legend": {
+    "appear": "A LEGENDARY fish! Cast right next to it!",
+    "gone": "The Legendary fish swam away..."
+  },
   "wanted": {
     "label": "WANTED",
     "reward": "x4 coins",
@@ -336,7 +356,50 @@
     "full": "The incubator is full. Hatch an egg or add a slot!",
     "sell": "Sell {n}"
   },
+  "gear": {
+    "merchant": "Price",
+    "luck": "Luck",
+    "big": "Size",
+    "strong": "Reel",
+    "finder": "Eggs",
+    "nurture": "Hatch",
+    "treasure": "Chests",
+    "total": "Worn: {list}",
+    "none": "Worn items give small bonuses"
+  },
+  "gearName": {
+    "hat_rain": "Rain hat",
+    "hat_straw": "Straw hat",
+    "hat_beanie": "Beanie",
+    "hat_flower": "Flower crown",
+    "hat_pirate": "Pirate hat",
+    "hat_wizard": "Wizard hat",
+    "hat_tophat": "Top hat",
+    "hat_crown": "Royal crown",
+    "hat_clover": "Clover cap",
+    "hat_captain": "Captain's hat",
+    "rod_classic": "Classic rod",
+    "rod_ocean": "Ocean rod",
+    "rod_cherry": "Cherry rod",
+    "rod_bamboo": "Bamboo rod",
+    "rod_gold": "Golden rod",
+    "bobber_classic": "Classic bobber",
+    "bobber_sky": "Sky bobber",
+    "bobber_mint": "Mint bobber",
+    "bobber_gold": "Golden bobber",
+    "bait_worm": "Worm",
+    "bait_shrimp": "Shrimp",
+    "bait_fly": "Fly",
+    "bait_cricket": "Cricket",
+    "bait_goldworm": "Golden worm"
+  },
   "wardrobe": {
+    "buy": "Buy",
+    "cancel": "Cancel",
+    "bonus": "While worn:",
+    "noBonus": "No bonus (a free starter item)",
+    "preview": "Preview",
+    "bought": "Bought! The cat is wearing it now.",
     "title": "Wardrobe",
     "hats": "Hats",
     "rods": "Rods",
@@ -382,12 +445,15 @@
     "best": "Best {t}",
     "locked": "Clear level {n} first",
     "pondLocked": "Open {pond} first",
+    "bossLocked": "Catch {boss} once to open these challenges",
     "start": "Catch {fish} fish of {species} kinds in {t}!",
     "cleared": "Challenge cleared!",
     "timeUp": "Time's up!",
     "record": "New record!",
     "firstReward": "First clear: full reward",
     "replayReward": "Replay: 10% reward",
+    "replayRecordReward": "Replay: 10% reward + 20% for the new record",
+    "recordOnlyReward": "New record: 20% reward (no replay rewards left today)",
     "noReward": "No replay rewards left today",
     "next": "Next",
     "retry": "Retry",

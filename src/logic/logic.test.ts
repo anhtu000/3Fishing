@@ -2,11 +2,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Rng } from '../../core/rng';
-import { BOSS_FORMS, BOSS_STARS, CHALLENGES, PERKS, PONDS, RARITY_WEIGHTS, WANTED, bossForm } from '../content/data';
+import { BOSS_FORMS, BOSS_STARS, CHALLENGES, COSMETICS, HABITAT_MULT, LEGEND, PERKS, PONDS, RARITY_WEIGHTS, WANTED, bossForm, type PerkKind } from '../content/data';
 import { BOSS, Fishing, FishingBot } from './fishing';
 import { PondGame } from './game';
 import { defaultSave } from './model';
-import { addEgg, addPet, fishingStats, fishPrice, hatchSecLeft, hatchSpeed, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
+import { addEgg, addPet, catchWeights, eggPond, firmHookPrice, fishWeights, gearPerk, fishingStats, fishPrice, hatchSecLeft, hatchSpeed, luckOf, perkValue, questsForDay, rarityWeights, readyEggIndex, tickEggs, upgradeCost } from './rules';
 
 test('price follows B x S x P x (1 + M)', () => {
   const pond = PONDS[1];
@@ -51,13 +51,60 @@ test('duplicate pets level up, max level pays coins', () => {
   assert.equal(addPet(s, 'puddle_frog', false, 3).kind, 'maxed');
 });
 
-test('pet perks: level 20 is about 15% above the old level-5 cap, early levels feel the same', () => {
-  const base = PERKS.merchant.values[0];
-  const old5 = base * 1.8;
-  const top = perkValue('merchant', 0, 20);
-  assert.ok(top / old5 >= 1.1 && top / old5 <= 1.2, `top ${top} vs old ${old5}`);
-  assert.ok(Math.abs(perkValue('merchant', 0, 2) - base * 1.2) / base < 0.06, 'level 2 close to before');
-  for (let l = 2; l <= 20; l++) assert.ok(perkValue('merchant', 0, l) > perkValue('merchant', 0, l - 1));
+test('pet perks (v1.16): early pets stay useful, a maxed Legendary is still the best', () => {
+  for (const perk of Object.keys(PERKS) as PerkKind[]) {
+    const v = (r: number, l: number) => perkValue(perk, r, l);
+    for (let r = 0; r <= 4; r++) {
+      for (let l = 2; l <= 20; l++) assert.ok(v(r, l) > v(r, l - 1), `${perk} r${r} l${l}`);
+      if (r > 0) assert.ok(v(r, 1) > v(r - 1, 1) && v(r, 20) > v(r - 1, 20), `${perk} r${r} above r${r - 1}`);
+    }
+    // Legendary at level 1 is 3-3.4x Common (v1.15: 5-8x).
+    assert.ok(v(4, 1) / v(0, 1) >= 3 && v(4, 1) / v(0, 1) <= 3.4, `${perk} spread ${v(4, 1) / v(0, 1)}`);
+    // A Common at level 6 matches a fresh Rare (5% slack for rounded values), at level 13 a fresh Epic.
+    assert.ok(v(0, 6) >= v(2, 1) * 0.95, `${perk} common 6 vs rare 1`);
+    assert.ok(v(0, 13) >= v(3, 1) * 0.95, `${perk} common 13 vs epic 1`);
+    // A fresh Legendary still beats a maxed Common.
+    assert.ok(v(4, 1) > v(0, 20), `${perk} legendary 1 vs common 20`);
+  }
+});
+
+test('pet perks (v1.16): the 5 pets of a pond all differ, no perk on more than 2 pond pets', () => {
+  const uses = new Map<string, number>();
+  for (const pond of PONDS) {
+    assert.equal(new Set(pond.pets.map((p) => p.perk)).size, pond.pets.length, pond.id);
+    for (const p of pond.pets) uses.set(p.perk, (uses.get(p.perk) ?? 0) + 1);
+  }
+  for (const [perk, n] of uses) assert.ok(n <= 2, `${perk} x${n}`);
+  for (const perk of Object.keys(PERKS)) assert.ok(uses.has(perk), `${perk} unused`);
+});
+
+test('hook perks: Egg finder and Treasure nose raise their weights, Big catch grows fish', () => {
+  const base = catchWeights(0);
+  const w = catchWeights(0, { finder: 20, treasure: 50, big: 0 });
+  assert.ok(Math.abs(w.egg - base.egg * 1.2) < 1e-9 && Math.abs(w.chest - base.chest * 1.5) < 1e-9);
+  assert.equal(w.fish, base.fish);
+  assert.equal(w.junk, base.junk);
+  // Same rng seed with and without a Big catch pet: the fish is the same, only bigger.
+  const run = (team: string[]) => {
+    const s = defaultSave();
+    s.stats.catches = 5;
+    s.stats.eggs = 1;
+    s.stats.chests = 1;
+    for (const id of team) s.pets[id] = { level: 1, xp: 0 };
+    s.team = team;
+    const g = new PondGame(s, new Rng(7));
+    const sizes: number[] = [];
+    for (let i = 0; i < 200; i++) {
+      const r = g.rollForCast(0, false).roll;
+      if (r.kind === 'fish') sizes.push(r.size);
+    }
+    return sizes;
+  };
+  const plain = run([]);
+  const big = run(['heron_chick']);
+  const k = 1 + perkValue('big', 3, 1) / 100;
+  assert.equal(plain.length, big.length);
+  for (let i = 0; i < plain.length; i++) assert.ok(Math.abs(big[i] - plain[i] * k) < 0.011, `${big[i]} vs ${plain[i]}`);
 });
 
 test('daily quests: three, different kinds, same for the same day', () => {
@@ -269,7 +316,11 @@ test('challenges: 24, open with the second pond in order, first clear pays, repl
   const c1 = CHALLENGES[0];
   assert.equal(g.challengeUnlocked(c1), false, 'closed before Misty Creek');
   s.unlocked = ['cozy', 'misty'];
+  s.bosses = [];
+  assert.equal(g.challengeUnlocked(c1), false, 'v1.16: the pond boss first');
+  s.bosses = ['old_whiskers'];
   assert.equal(g.challengeUnlocked(c1), true);
+  assert.equal(g.challengeUnlocked(CHALLENGES[8]), false, 'Misty challenges wait for its boss');
   assert.equal(g.challengeUnlocked(CHALLENGES[1]), false, 'in order');
   const a = g.finishChallenge(c1, 50000);
   assert.equal(a.coins, c1.reward);
@@ -455,4 +506,162 @@ test('boss fight: a calm start, so a player who has not started reeling cannot l
     assert.ok(f.progress > 0.12, 'reeling moved the bar');
     assert.equal(outcome, '');
   }
+});
+
+test('eggs (v1.16): later ponds sometimes hold earlier pets, a maxed pet is skipped', () => {
+  const count = (pond: string, s = defaultSave()) => {
+    const rng = new Rng(11);
+    const n: Record<string, number> = {};
+    for (let i = 0; i < 20000; i++) {
+      const p = eggPond(rng, s, pond, 0);
+      n[p] = (n[p] ?? 0) + 1;
+    }
+    return n;
+  };
+  assert.deepEqual(Object.keys(count('cozy')), ['cozy']);
+  const m = count('misty');
+  assert.ok(Math.abs(m.cozy / 20000 - 0.3) < 0.015 && Math.abs(m.misty / 20000 - 0.7) < 0.015, JSON.stringify(m));
+  const f = count('frozen');
+  assert.ok(Math.abs(f.cozy / 20000 - 0.1) < 0.01 && Math.abs(f.misty / 20000 - 0.2) < 0.012, JSON.stringify(f));
+  // Puddle Frog (Cozy, Common) at the top level: Common eggs of Frozen never hold it.
+  const s = defaultSave();
+  s.pets.puddle_frog = { level: 20, xp: 0 };
+  const g = count('frozen', s);
+  assert.ok(!g.cozy && Math.abs(g.frozen / 20000 - 0.8) < 0.012, JSON.stringify(g));
+});
+
+test('eggs (v1.16): the caught egg goes to the incubator with the pond picked at the cast', () => {
+  const s = defaultSave();
+  s.stats.catches = 5;
+  s.stats.eggs = 1;
+  s.stats.chests = 1;
+  s.unlocked = ['cozy', 'misty', 'frozen'];
+  s.pond = 'frozen';
+  const g = new PondGame(s, new Rng(3));
+  const ponds = new Set<string>();
+  for (let i = 0; i < 400 && ponds.size < 3; i++) {
+    const r = g.rollForCast(0, false).roll;
+    if (r.kind !== 'egg') continue;
+    assert.ok(r.pond);
+    s.eggs = [null, null, null, null];
+    g.applyCatch(r, false);
+    assert.equal(s.eggs[0]?.pond, r.pond);
+    ponds.add(r.pond!);
+  }
+  assert.equal(ponds.size, 3);
+});
+
+test('habitat (v1.16): a fish bites more in its zone, rarity shares stay as before', () => {
+  for (const pond of PONDS) {
+    for (const z of [0, 1, 2] as const) assert.ok(pond.fish.some((f) => f.zone === z), `${pond.id} zone ${z}`);
+    for (let t = 0; t <= 4; t++) {
+      const tier = pond.fish.filter((f) => f.rarity === t);
+      if (tier.length > 1) assert.ok(new Set(tier.map((f) => f.zone)).size > 1, `${pond.id} rarity ${t} in one zone`);
+    }
+    const rw = rarityWeights(20);
+    const rt = rw.reduce((a, b) => a + b, 0);
+    for (const z of [0, 1, 2] as const) {
+      const w = fishWeights(pond, 20, z);
+      const tot = w.reduce((a, b) => a + b, 0);
+      for (let t = 0; t <= 3; t++) {
+        const share = pond.fish.reduce((a, f, i) => a + (f.rarity === t ? w[i] : 0), 0) / tot;
+        if (pond.fish.filter((f) => f.rarity === t).length > 1) assert.ok(Math.abs(share - rw[t] / rt) < 0.004, `${pond.id} z${z} r${t} ${share}`);
+      }
+      // In its zone a fish beats a same-rarity fish of another zone by HABITAT_MULT.
+      const a = pond.fish.findIndex((f) => f.rarity === 0 && f.zone === z);
+      const b = pond.fish.findIndex((f) => f.rarity === 0 && f.zone !== z);
+      if (a >= 0 && b >= 0) assert.ok(Math.abs(w[a] / w[b] - HABITAT_MULT) < 1e-9);
+    }
+  }
+});
+
+test('legendary (v1.16): never bites at random, shows itself for 15 s, hooked only by casting at it', () => {
+  const s = defaultSave();
+  s.stats.catches = 5;
+  s.stats.eggs = 1;
+  s.stats.chests = 1;
+  const g = new PondGame(s, new Rng(5));
+  let shown = 0;
+  for (let i = 0; i < 3000; i++) {
+    const r = g.rollForCast(2, true).roll;
+    assert.ok(r.kind !== 'fish' || r.fish.rarity < 4, 'a Legendary bit at random');
+    if (g.legendHere) {
+      shown++;
+      assert.equal(g.legendHere.fish.rarity, 4);
+      const hooked = g.hookLegend();
+      assert.ok(hooked && hooked.kind === 'fish' && hooked.fish.id === g.legendHere.fish.id);
+      assert.equal(g.tickLegend(LEGEND.staySec - 0.5), null);
+      assert.equal(g.tickLegend(1), 'gone');
+      assert.equal(g.legendHere, null);
+    }
+  }
+  assert.ok(shown > 5, `shown ${shown}`);
+});
+
+test('challenges (v1.16): levels 1-2 as before, from level 3 one more species and a school of one Common', () => {
+  for (const c of CHALLENGES) {
+    const pi = PONDS.findIndex((p) => p.id === c.pond);
+    const k = c.n - 1;
+    const old = Math.min(6, 2 + Math.floor(k / 2) + (pi > 0 && k >= 6 ? 1 : 0));
+    assert.equal(c.timeSec, 60 + k * 10 + pi * 10);
+    if (c.n <= 2) {
+      assert.equal(c.species, old);
+      assert.equal(c.decoys, 0);
+      assert.equal(c.decoy, null);
+    } else {
+      assert.equal(c.species, Math.min(7, old + 1));
+      assert.equal(c.decoys, [7, 9, 10, 12, 13, 15][c.n - 3]);
+      const d = PONDS[pi].fish.find((f) => f.id === c.decoy);
+      assert.ok(d && d.rarity === 0, c.id);
+      assert.ok(c.fish >= c.species);
+    }
+  }
+});
+
+test('wardrobe bonuses (v1.16): 1-3 each, pricier items give more, worn items add to perks', () => {
+  for (const c of COSMETICS) {
+    const vals = Object.values(c.stats ?? {});
+    if (c.price === 0 && !c.source) assert.equal(vals.length, 0, c.id);
+    for (const v of vals) assert.ok(v >= 1 && v <= 3, c.id);
+  }
+  for (const kind of ['hat', 'rod', 'bobber', 'bait'] as const) {
+    const bought = COSMETICS.filter((c) => c.kind === kind && c.price > 0).sort((a, b) => a.price - b.price);
+    const sum = (c: (typeof COSMETICS)[number]) => Object.values(c.stats ?? {}).reduce((a, b) => a + b, 0);
+    for (let i = 1; i < bought.length; i++) assert.ok(sum(bought[i]) >= sum(bought[i - 1]), `${bought[i].id} >= ${bought[i - 1].id}`);
+  }
+  const s = defaultSave();
+  const g = new PondGame(s, new Rng(1));
+  assert.equal(g.perk('merchant'), 0);
+  s.style.hat = 'hat:crown';
+  s.style.rod = 'rod:gold';
+  assert.equal(gearPerk(s, 'merchant'), 6);
+  assert.equal(g.perk('merchant'), 6);
+  assert.equal(g.perk('luck'), 3);
+});
+
+test('firm hook (v1.16): 30% of coins with a floor by pond, 5 minutes of 10% shake-offs', () => {
+  let now = 1_000_000;
+  const s = defaultSave();
+  const g = new PondGame(s, new Rng(1), () => now);
+  s.coins = 50;
+  assert.equal(firmHookPrice(s), 100);
+  assert.equal(g.buyFirmHook(), false);
+  s.coins = 1000;
+  assert.equal(firmHookPrice(s), 300);
+  s.unlocked = ['cozy', 'misty'];
+  assert.equal(firmHookPrice(s), 500);
+  s.unlocked = ['cozy', 'misty', 'frozen'];
+  s.coins = 10000;
+  assert.equal(firmHookPrice(s), 3000);
+  s.coins = 5000;
+  assert.equal(firmHookPrice(s), 2000);
+  assert.equal(g.stats().slip, 0.2);
+  assert.equal(g.buyFirmHook(), true);
+  assert.equal(s.coins, 3000);
+  assert.equal(g.stats().slip, 0.1);
+  assert.equal(g.buyFirmHook(), false, 'no stacking');
+  now += 299_000;
+  assert.equal(g.stats().slip, 0.1);
+  now += 2_000;
+  assert.equal(g.stats().slip, 0.2);
 });

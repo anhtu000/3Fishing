@@ -9,6 +9,7 @@
     "collectDouble": "Récupérer x{n}"
   },
   "hud": {
+    "gripChip": "Hameçon solide  {t}",
     "upgrade": "Améliorer",
     "pets": "Animaux",
     "fishdex": "Poissodex",
@@ -31,6 +32,7 @@
     "phase": "Phase {n}"
   },
   "msg": {
+    "gripOn": "Hameçon solide ! Moins de poissons se décrochent pendant 5 minutes.",
     "goldenOn": "Appât doré ! Chance x2 pendant 5 minutes",
     "incubatorFull": "L'incubateur est plein. Fais d'abord éclore un œuf !",
     "autoOn": "Pêche auto activée : plus lente, rate des touches.",
@@ -105,6 +107,10 @@
   "upg": {
     "title": "Améliorations",
     "rod": "Canne",
+    "grip": "Hameçon solide",
+    "gripWhat": "Décrochages 20 % » 10 %  ·  {m} min",
+    "gripOn": "Actif : encore {t}",
+    "gripActive": "ON",
     "line": "Ligne",
     "bait": "Appât",
     "float": "Flotteur",
@@ -137,12 +143,18 @@
     "sharp": "Œil vif",
     "angler": "Pêcheur",
     "nurture": "Couveur",
+    "finder": "Chercheur d'œufs",
+    "treasure": "Nez à trésors",
+    "big": "Grosse prise",
     "luckWhat": "{v} de chance",
     "merchantWhat": "{v} sur le prix des poissons",
     "strongWhat": "{v} de force",
     "sharpWhat": "{v} de temps de touche",
     "anglerWhat": "{v} poissons pêchés pour toi",
     "nurtureWhat": "{v} de vitesse d'éclosion",
+    "finderWhat": "{v} d'œufs",
+    "treasureWhat": "{v} de coffres",
+    "bigWhat": "{v} de taille des poissons",
     "perMin": "{n}/min"
   },
   "dex": {
@@ -154,7 +166,11 @@
     "best": "Record {n} cm",
     "caught": "Pêché x{n}",
     "fight": "Affronter le boss !",
-    "unknown": "???"
+    "unknown": "???",
+    "likes": "Mord : {z}",
+    "zone0": "Près",
+    "zone1": "Loin",
+    "zone2": "Super loin"
   },
   "map": {
     "title": "Carte",
@@ -319,6 +335,10 @@
     "travel": "{pond} est ouvert ! » Carte",
     "all": "Poissodex {n}/{max}"
   },
+  "legend": {
+    "appear": "Un poisson LÉGENDAIRE ! Lance juste à côté !",
+    "gone": "Le poisson légendaire est parti..."
+  },
   "wanted": {
     "label": "RECHERCHÉ",
     "reward": "pièces x4",
@@ -336,7 +356,50 @@
     "full": "L'incubateur est plein. Fais éclore un œuf ou ajoute une place !",
     "sell": "Vendre {n}"
   },
+  "gear": {
+    "merchant": "Prix",
+    "luck": "Chance",
+    "big": "Taille",
+    "strong": "Force",
+    "finder": "Œufs",
+    "nurture": "Éclosion",
+    "treasure": "Coffres",
+    "total": "Porté : {list}",
+    "none": "Ce que tu portes donne de petits bonus"
+  },
+  "gearName": {
+    "hat_rain": "Chapeau de pluie",
+    "hat_straw": "Chapeau de paille",
+    "hat_beanie": "Bonnet",
+    "hat_flower": "Couronne de fleurs",
+    "hat_pirate": "Chapeau de pirate",
+    "hat_wizard": "Chapeau de sorcier",
+    "hat_tophat": "Haut-de-forme",
+    "hat_crown": "Couronne royale",
+    "hat_clover": "Casquette trèfle",
+    "hat_captain": "Casquette de capitaine",
+    "rod_classic": "Canne classique",
+    "rod_ocean": "Canne océan",
+    "rod_cherry": "Canne cerise",
+    "rod_bamboo": "Canne en bambou",
+    "rod_gold": "Canne dorée",
+    "bobber_classic": "Flotteur classique",
+    "bobber_sky": "Flotteur ciel",
+    "bobber_mint": "Flotteur menthe",
+    "bobber_gold": "Flotteur doré",
+    "bait_worm": "Ver",
+    "bait_shrimp": "Crevette",
+    "bait_fly": "Mouche",
+    "bait_cricket": "Grillon",
+    "bait_goldworm": "Ver doré"
+  },
   "wardrobe": {
+    "buy": "Acheter",
+    "cancel": "Annuler",
+    "bonus": "Porté :",
+    "noBonus": "Aucun bonus (objet de départ gratuit)",
+    "preview": "Aperçu",
+    "bought": "Acheté ! Le chat le porte maintenant.",
     "title": "Garde-robe",
     "hats": "Chapeaux",
     "rods": "Cannes",
@@ -382,12 +445,15 @@
     "best": "Record {t}",
     "locked": "Termine d'abord le niveau {n}",
     "pondLocked": "Débloque d'abord {pond}",
+    "bossLocked": "Attrape {boss} une fois pour ouvrir ces défis",
     "start": "Attrape {fish} poissons de {species} espèces en {t} !",
     "cleared": "Défi réussi !",
     "timeUp": "Temps écoulé !",
     "record": "Nouveau record !",
     "firstReward": "Première victoire : récompense complète",
     "replayReward": "Rejouer : 10 % de la récompense",
+    "replayRecordReward": "Rejouer : 10 % de la récompense + 20 % pour le nouveau record",
+    "recordOnlyReward": "Nouveau record : 20 % de la récompense (plus de récompenses de rejeu aujourd'hui)",
     "noReward": "Plus de récompenses de rejeu aujourd'hui",
     "next": "Suivant",
     "retry": "Réessayer",

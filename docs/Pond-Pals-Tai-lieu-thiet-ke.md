@@ -37,6 +37,7 @@ Một lần câu gồm ba nhịp, tổng cộng 5–12 giây, cả ba đều ch�
 
 1. **Thả câu (giữ rồi nhả).** Thanh lực chạy lên xuống; nhả càng cao thì mồi rơi càng xa.
     - Gần: luck ×1 · Giữa: luck ×1,5 · Xa: luck ×2,5.
+    - Chỗ ở của cá (v1.16, 29/10): mỗi loài thích một vùng (Gần, Xa hoặc Siêu xa; `FishDef.zone`). Ném đúng vùng thì loài đó cắn nhiều gấp 2,5 lần các loài cùng độ hiếm (`HABITAT_MULT`); tỉ lệ từng độ hiếm giữ nguyên nên xu không đổi. Cá hôm nay ra ×1,5 trong vùng của nó, ×0,75 ở vùng khác. Cá Huyền thoại không bao giờ cắn ngẫu nhiên (v1.16, 29/10, theo yêu cầu người dùng): khi lần ném lẽ ra ra Huyền thoại, lần đó ra cá khác, còn con Huyền thoại hiện lên trong vùng của nó 15 giây (có đồng hồ đếm; đồng hồ dừng khi đang có cá trên dây và khi mở menu). Ném lưỡi câu cách nó trong 120 đơn vị thì nó cắn; tuột thì nó quay lại nước trong thời gian còn lại; hết giờ thì bơi đi (`LEGEND`, `legendHere` / `tickLegend` trong `src/logic/game.ts`). Luck vẫn quyết định bao lâu nó xuất hiện (mô phỏng: khoảng 5–6 lần mỗi giờ, người mới bắt 3, người giỏi 6). Mỗi độ hiếm có cá ở nhiều vùng. Cá và bóng cá chưa bắt bơi trong vùng của chúng; Sổ cá ghi "Bites: Near / Far / Super far" sau khi bắt được. Không thêm nút hay bước chọn: dùng độ xa của cú ném có sẵn.
 2. **Cắn câu (chạm đúng lúc).** Phao nhấp giả 1–3 lần, lần thật thì chìm hẳn.
     - Cửa sổ chạm 0,6 giây, nâng tối đa 0,9 giây nhờ cần câu và thú cưng.
     - Chạm sớm hoặc trễ: cá thoát, không mất gì, thả lại ngay.
@@ -84,24 +85,29 @@ Trứng biến sự may rủi của mỗi lần câu thành mục tiêu dài hơ
 - Thời gian ấp: Thường 30 giây · Khá 2 phút · Hiếm 5 phút · Sử thi 10 phút · Huyền thoại 20 phút.
 - Mỗi con cá câu được rút 5 giây cho mọi trứng đang ấp, nên câu tay vẫn là cách nở nhanh nhất.
 - Xem quảng cáo có thưởng: nở ngay một trứng.
-- Độ hiếm của thú bằng độ hiếm của trứng. Trứng từ hồ nào nở ra thú của hồ đó.
+- Độ hiếm của thú bằng độ hiếm của trứng. Trứng hồ 1 nở thú hồ 1. Từ v1.16 (29/10): trứng câu ở hồ 2 có 30% chứa thú hồ 1; trứng câu ở hồ 3 có 10% chứa thú hồ 1 và 20% thú hồ 2, để thú hồ cũ vẫn lên cấp và thú hiếm đã lỡ vẫn kiếm được. Hồ của trứng quyết định lúc câu được (`EGG_POND_MIX`, `eggPond` trong `src/logic/rules.ts`); thú hồ cũ đã cấp 20 thì trứng chứa thú của hồ đang câu. Trứng có dấu hồ ở góc (lá súng / giọt sương / bông tuyết), dấu này cũng đứng cạnh tên hồ trong bảng Pets. Trứng từ nhiệm vụ, quà ngày, cá hôm nay, boss và quảng cáo vẫn là thú của hồ đang câu.
 - 1% cơ hội nở bản "lấp lánh" (đổi màu, không tăng chỉ số) để người chơi khoe.
 
 **Thú cưng mang theo**
 
 - 3 ô lúc đầu; ô thứ 4 mở ở hồ thứ 3, ô thứ 5 mua bằng đá quý.
-- Mỗi thú có một perk; giá trị tăng theo độ hiếm.
+- Mỗi thú có một perk; giá trị tăng theo độ hiếm. Từ v1.16 khoảng cách giữa các độ hiếm hẹp lại để thú ấp sớm không bị bỏ quá nhanh.
 - Thú trùng không merge (ngách merge đã bão hòa) mà thành "thức ăn": lên cấp tối đa 5, mỗi cấp +20% perk.
 - Thú mang theo bơi hoặc chạy quanh hồ, phản ứng khi có cá cắn: đây là khoảnh khắc dễ thương người chơi hay chụp màn hình.
 
 | Perk | Tác dụng | Thường | Huyền thoại |
 | --- | --- | --- | --- |
-| May mắn | Tăng luck | +2% | +15% |
-| Thương nhân | Tăng giá bán cá | +5% | +40% |
-| Lực sĩ | Kéo dây nhanh hơn | +5% | +35% |
-| Tinh mắt | Cửa sổ chạm dài hơn | +0,05 giây | +0,3 giây |
-| Thợ câu | Câu hộ, kể cả khi offline | 1 cá / 60 giây | 1 cá / 12 giây |
-| Ấp ủ | Ấp trứng nhanh hơn | +5% | +40% |
+| May mắn | Tăng luck | +3% | +10% |
+| Thương nhân | Tăng giá bán cá | +11% | +36% |
+| Lực sĩ | Kéo dây nhanh hơn | +10% | +32% |
+| Tinh mắt | Cửa sổ chạm dài hơn | +0,08 giây | +0,27 giây |
+| Thợ câu | Câu hộ, kể cả khi offline | 1,4 cá / phút | 4,6 cá / phút |
+| Ấp ủ | Ấp trứng nhanh hơn | +11% | +36% |
+| Tìm trứng (v1.16) | Trứng cắn câu nhiều hơn (trọng số trứng ×(1 + v)) | +6% | +19% |
+| Mũi săn kho báu (v1.16) | Rương cắn câu nhiều hơn (trọng số rương ×(1 + v)) | +15% | +48% |
+| Cá to (v1.16) | Cá to hơn (kích cỡ ×(1 + v)): thêm xu, kỷ lục, cá khổng lồ | +3% | +9,5% |
+
+Giá trị ở cấp 1, theo `PERKS` trong `src/content/data.ts` (v1.16, 29/10). Huyền thoại khoảng 3,2 lần Thường (trước 6–8 lần). Hệ số cấp 20 theo độ hiếm: Thường ×2,8, Khá ×2,6, Hiếm ×2,4, Sử thi ×2,2, Huyền thoại ×2,0 (trước ×2,07 cho mọi độ hiếm). Thường cấp 6 ngang Hiếm cấp 1, cấp 14 ngang Sử thi cấp 1; Huyền thoại cấp 1 vẫn hơn Thường cấp 20. Mỗi hồ 5 thú 5 perk khác nhau, mỗi perk có ở tối đa 2 thú.
 
 ## Kinh tế và công thức
 
@@ -284,3 +290,11 @@ MVP gồm 2 hồ, bắt đầu sau khi nộp game #2. Game đi đường A (Poki
 - [CrazyGames — All Tags](https://www.crazygames.com/tags) (số game theo tag)
 - [Poki — What it takes to build web games in 2026](https://poki.com/blog/building-web-browser-games-2026) (màn dọc, Unity)
 - [CrazyGames Developer Guide 2026](https://app.cinevva.com/guides/publish-game-crazygames) (giới hạn 50 MB)
+| Thử thách từ màn 3 (v1.16, 29/10) | Màn 1–2 giữ nguyên để làm quen. Từ màn 3: cần thêm 1 loài (tối đa 7), thời gian giữ nguyên, và có một đàn của một loài Thường bơi khắp hồ: màn 3–8 lần lượt 7, 9, 10, 12, 13, 15 con (tăng 29/10 từ 3–5 con vì quá ít; mô phỏng thô: màn 3 qua ~92–96%, màn 8 ~61–68% với người ngắm khá) (`decoys`, `decoy` trong `CHALLENGES`). Con gần lưỡi câu nhất cắn, nên ném ẩu dễ ra cá trùng loài; phải ngắm giữa đàn. Bắt một con trong đàn thì con khác của đàn bơi vào thay |
+| Thử thách mở theo boss (v1.16, 29/10) | Thử thách của mỗi hồ chỉ mở khi đã bắt được boss của hồ đó lần đầu (`challengeBossDone`), trước đây mở ngay khi mở khóa hồ. Bảng thử thách ghi dòng đỏ "Catch {boss} once to open these challenges" ở tab hồ chưa bắt boss |
+| Ô theo dõi loài trong thử thách (v1.16, 29/10) | Ô to hơn (bán kính 31), nền kem viền xanh khi đã bắt; ảnh cá dùng texture nhỏ riêng `fishs:<id>` vẽ đúng cỡ biểu tượng cho nét (thu nhỏ ảnh cá lớn bị mờ/răng cưa) |
+| Tầng nước theo vùng ném trên điện thoại dọc (v1.16, 29/10) | Màn hình dọc hẹp nên Gần/Xa/Rất xa gần như trùng chỗ. Ở màn dọc, mỗi vùng còn là một tầng nước: lưỡi câu chìm tới 14%/37%/60% độ sâu, cá ưa vùng nào bơi trong tầng đó (±9%); cá Huyền thoại hiện ở giữa tầng. Màn ngang giữ như cũ (lưỡi 28/48/68%, cá bơi mọi độ sâu). Khi giữ để ném, vùng sẽ rơi vào sáng lên mờ (`Pond.setAim`) ở cả hai hướng màn hình |
+| Tiếng trứng nứt (v1.16, 29/10) | Lúc nở: trứng lắc 7 nhịp, nứt 3 lần (vết nứt dài dần, tiếng `crack` mới), rồi vỡ bằng tiếng `hatch` làm lại (tiếng gõ trầm, tiếng tách giòn, chuỗi vỏ vụn, mảnh vỏ, rồi chuông). Hai tiếng làm bằng `make_audio.py eggs`, dùng dòng ngẫu nhiên riêng nên các tiếng khác không đổi |
+| Theo dõi loài trong Thử thách (v1.16, 29/10) | Dưới thanh thử thách có một hàng ô, mỗi ô một loài cần bắt; loài bắt được hiện hình trong ô. Cá thuộc loài đã bắt bơi mờ đi trong hồ, để loài còn thiếu nổi bật |
+| Chỉ số đồ trong tủ đồ (v1.16, 29/10, `stats` trong `COSMETICS`) | Mỗi món mua được hoặc độc quyền cộng 1–2 chỉ số, mỗi chỉ số 1–3% (luck tính bằng điểm), cộng vào perk của đội: Price (giá cá), Luck, Size (cỡ cá), Reel (lực kéo), Eggs (ra trứng), Hatch (ấp nhanh), Chests (rương). Món càng đắt càng cộng nhiều và cộng chỉ số mạnh hơn (giá cá, luck). Đồ mặc định không cộng. Mặc đủ 4 món đắt nhất: Price +10%, Luck +6%, Reel +3%, Size +3%. Thẻ đồ ghi chỉ số; cuối bảng ghi tổng đang mặc |
+| Lưỡi câu chắc (Firm hook, v1.16, 29/10, `FIRM_HOOK`) | Dòng thứ 5 trong bảng Nâng cấp. Trong 5 phút (giờ thật), cá tuột khỏi lưỡi 10% thay vì 20%. Giá = 30% số xu đang có, tối thiểu 100 (chỉ có hồ 1), 500 (đã mở hồ 2), 2.000 (đã mở hồ 3). Đang bật thì không mua chồng; HUD hiện đồng hồ đếm ngược |

@@ -76,6 +76,7 @@ Form mới: build phải chơi được không cần đăng nhập, không bắt
 | daily | day1, day2, … | claim | Nhận quà đăng nhập (số ngày liên tiếp) |
 | challenge | `cozy-1` … `frozen-8` | clear / fail | Kết thúc một màn thử thách |
 | wanted | cozy, misty, frozen | spawn / catch / gone | Cá truy nã xuất hiện, bị bắt, hoặc bơi đi (mới ở v1.14) |
+| legend | cozy, misty, frozen | spawn / catch / gone | Cá Huyền thoại hiện lên 15 giây, bị bắt, hoặc bơi đi (mới ở v1.16) |
 
 ## 5. Đọc kết quả Player Fit Test
 

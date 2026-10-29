@@ -9,6 +9,7 @@
     "collectDouble": "Einsammeln x{n}"
   },
   "hud": {
+    "gripChip": "Fester Haken  {t}",
     "upgrade": "Verbessern",
     "pets": "Tiere",
     "fishdex": "Fischdex",
@@ -31,6 +32,7 @@
     "phase": "Phase {n}"
   },
   "msg": {
+    "gripOn": "Fester Haken! 5 Minuten lang schütteln sich weniger Fische ab.",
     "goldenOn": "Goldköder! Glück x2 für 5 Minuten",
     "incubatorFull": "Der Brutkasten ist voll. Lass zuerst ein Ei schlüpfen!",
     "autoOn": "Auto-Angeln an: langsamer, verpasst manche Bisse.",
@@ -105,6 +107,10 @@
   "upg": {
     "title": "Verbesserungen",
     "rod": "Angel",
+    "grip": "Fester Haken",
+    "gripWhat": "Abschütteln 20 % » 10 %  ·  {m} Min.",
+    "gripOn": "Aktiv: noch {t}",
+    "gripActive": "AN",
     "line": "Schnur",
     "bait": "Köder",
     "float": "Pose",
@@ -137,12 +143,18 @@
     "sharp": "Adlerauge",
     "angler": "Angler",
     "nurture": "Brüter",
+    "finder": "Eiersucher",
+    "treasure": "Schatzschnüffler",
+    "big": "Großfang",
     "luckWhat": "{v} Glück",
     "merchantWhat": "{v} Fischpreis",
     "strongWhat": "{v} Zugkraft",
     "sharpWhat": "{v} Bisszeit",
     "anglerWhat": "{v} Fische für dich gefangen",
     "nurtureWhat": "{v} Brutgeschwindigkeit",
+    "finderWhat": "{v} Eier",
+    "treasureWhat": "{v} Schatzkisten",
+    "bigWhat": "{v} Fischgröße",
     "perMin": "{n}/Min."
   },
   "dex": {
@@ -154,7 +166,11 @@
     "best": "Rekord {n} cm",
     "caught": "Gefangen x{n}",
     "fight": "Boss bekämpfen!",
-    "unknown": "???"
+    "unknown": "???",
+    "likes": "Beißt: {z}",
+    "zone0": "Nah",
+    "zone1": "Weit",
+    "zone2": "Superweit"
   },
   "map": {
     "title": "Karte",
@@ -319,6 +335,10 @@
     "travel": "{pond} ist offen! » Karte",
     "all": "Fischdex {n}/{max}"
   },
+  "legend": {
+    "appear": "Ein LEGENDÄRER Fisch! Wirf direkt daneben aus!",
+    "gone": "Der legendäre Fisch ist weggeschwommen..."
+  },
   "wanted": {
     "label": "GESUCHT",
     "reward": "Münzen x4",
@@ -336,7 +356,50 @@
     "full": "Der Brutkasten ist voll. Lass ein Ei schlüpfen oder kaufe einen Platz!",
     "sell": "Verkaufen {n}"
   },
+  "gear": {
+    "merchant": "Preis",
+    "luck": "Glück",
+    "big": "Größe",
+    "strong": "Zug",
+    "finder": "Eier",
+    "nurture": "Brüten",
+    "treasure": "Kisten",
+    "total": "Getragen: {list}",
+    "none": "Getragene Sachen geben kleine Boni"
+  },
+  "gearName": {
+    "hat_rain": "Regenhut",
+    "hat_straw": "Strohhut",
+    "hat_beanie": "Mütze",
+    "hat_flower": "Blumenkranz",
+    "hat_pirate": "Piratenhut",
+    "hat_wizard": "Zauberhut",
+    "hat_tophat": "Zylinder",
+    "hat_crown": "Königskrone",
+    "hat_clover": "Kleeblattmütze",
+    "hat_captain": "Kapitänsmütze",
+    "rod_classic": "Klassische Angel",
+    "rod_ocean": "Ozean-Angel",
+    "rod_cherry": "Kirsch-Angel",
+    "rod_bamboo": "Bambusangel",
+    "rod_gold": "Goldene Angel",
+    "bobber_classic": "Klassischer Schwimmer",
+    "bobber_sky": "Himmelsschwimmer",
+    "bobber_mint": "Minzschwimmer",
+    "bobber_gold": "Goldener Schwimmer",
+    "bait_worm": "Wurm",
+    "bait_shrimp": "Garnele",
+    "bait_fly": "Fliege",
+    "bait_cricket": "Grille",
+    "bait_goldworm": "Goldwurm"
+  },
   "wardrobe": {
+    "buy": "Kaufen",
+    "cancel": "Abbrechen",
+    "bonus": "Wenn getragen:",
+    "noBonus": "Kein Bonus (kostenloses Startteil)",
+    "preview": "Vorschau",
+    "bought": "Gekauft! Die Katze trägt es jetzt.",
     "title": "Kleiderschrank",
     "hats": "Hüte",
     "rods": "Ruten",
@@ -382,12 +445,15 @@
     "best": "Bestzeit {t}",
     "locked": "Schaffe zuerst Level {n}",
     "pondLocked": "Schalte zuerst {pond} frei",
+    "bossLocked": "Fange zuerst {boss}, dann öffnen sich diese Herausforderungen",
     "start": "Fange {fish} Fische von {species} Arten in {t}!",
     "cleared": "Geschafft!",
     "timeUp": "Zeit ist um!",
     "record": "Neuer Rekord!",
     "firstReward": "Erster Sieg: volle Belohnung",
     "replayReward": "Wiederholung: 10 % Belohnung",
+    "replayRecordReward": "Wiederholung: 10 % Belohnung + 20 % für den neuen Rekord",
+    "recordOnlyReward": "Neuer Rekord: 20 % Belohnung (heute keine Wiederholungsbelohnung mehr)",
     "noReward": "Heute keine Belohnung mehr für Wiederholungen",
     "next": "Weiter",
     "retry": "Nochmal",

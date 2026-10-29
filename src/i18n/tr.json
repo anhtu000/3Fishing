@@ -9,6 +9,7 @@
     "collectDouble": "Topla x{n}"
   },
   "hud": {
+    "gripChip": "Sağlam kanca  {t}",
     "upgrade": "Geliştir",
     "pets": "Dostlar",
     "fishdex": "Balıkdex",
@@ -31,6 +32,7 @@
     "phase": "Aşama {n}"
   },
   "msg": {
+    "gripOn": "Sağlam kanca! 5 dakika boyunca daha az balık kurtulur.",
     "goldenOn": "Altın yem! 5 dakika boyunca şans x2",
     "incubatorFull": "Kuluçka makinesi dolu. Önce bir yumurtayı çatlat!",
     "autoOn": "Otomatik avlanma açık: daha yavaş, bazı vuruşları kaçırır.",
@@ -105,6 +107,10 @@
   "upg": {
     "title": "Geliştirmeler",
     "rod": "Olta",
+    "grip": "Sağlam kanca",
+    "gripWhat": "Kurtulma %20 » %10  ·  {m} dk",
+    "gripOn": "Aktif: {t} kaldı",
+    "gripActive": "AÇIK",
     "line": "Misina",
     "bait": "Yem",
     "float": "Şamandıra",
@@ -137,12 +143,18 @@
     "sharp": "Keskin göz",
     "angler": "Balıkçı",
     "nurture": "Kuluçkacı",
+    "finder": "Yumurta avcısı",
+    "treasure": "Hazine burnu",
+    "big": "Büyük av",
     "luckWhat": "{v} şans",
     "merchantWhat": "{v} balık fiyatı",
     "strongWhat": "{v} çekme gücü",
     "sharpWhat": "{v} vurma süresi",
     "anglerWhat": "senin için {v} balık",
     "nurtureWhat": "{v} çatlama hızı",
+    "finderWhat": "{v} yumurta",
+    "treasureWhat": "{v} sandık",
+    "bigWhat": "{v} balık boyu",
     "perMin": "{n}/dk"
   },
   "dex": {
@@ -154,7 +166,11 @@
     "best": "Rekor {n} cm",
     "caught": "Yakalanan x{n}",
     "fight": "Patronla savaş!",
-    "unknown": "???"
+    "unknown": "???",
+    "likes": "Vurur: {z}",
+    "zone0": "Yakın",
+    "zone1": "Uzak",
+    "zone2": "Çok uzak"
   },
   "map": {
     "title": "Harita",
@@ -319,6 +335,10 @@
     "travel": "{pond} açıldı! » Harita",
     "all": "Balıkdex {n}/{max}"
   },
+  "legend": {
+    "appear": "EFSANEVİ bir balık! Tam yanına at!",
+    "gone": "Efsanevi balık yüzüp gitti..."
+  },
   "wanted": {
     "label": "ARANIYOR",
     "reward": "altın x4",
@@ -336,7 +356,50 @@
     "full": "Kuluçka dolu. Bir yumurtayı çatlat ya da yer ekle!",
     "sell": "Sat {n}"
   },
+  "gear": {
+    "merchant": "Fiyat",
+    "luck": "Şans",
+    "big": "Boy",
+    "strong": "Çekiş",
+    "finder": "Yumurta",
+    "nurture": "Kuluçka",
+    "treasure": "Sandık",
+    "total": "Giyilen: {list}",
+    "none": "Giyilen eşyalar küçük bonuslar verir"
+  },
+  "gearName": {
+    "hat_rain": "Yağmur şapkası",
+    "hat_straw": "Hasır şapka",
+    "hat_beanie": "Bere",
+    "hat_flower": "Çiçek tacı",
+    "hat_pirate": "Korsan şapkası",
+    "hat_wizard": "Büyücü şapkası",
+    "hat_tophat": "Silindir şapka",
+    "hat_crown": "Kraliyet tacı",
+    "hat_clover": "Yonca şapka",
+    "hat_captain": "Kaptan şapkası",
+    "rod_classic": "Klasik olta",
+    "rod_ocean": "Okyanus oltası",
+    "rod_cherry": "Kiraz oltası",
+    "rod_bamboo": "Bambu olta",
+    "rod_gold": "Altın olta",
+    "bobber_classic": "Klasik şamandıra",
+    "bobber_sky": "Gök şamandıra",
+    "bobber_mint": "Nane şamandıra",
+    "bobber_gold": "Altın şamandıra",
+    "bait_worm": "Solucan",
+    "bait_shrimp": "Karides",
+    "bait_fly": "Sinek",
+    "bait_cricket": "Cırcır böceği",
+    "bait_goldworm": "Altın solucan"
+  },
   "wardrobe": {
+    "buy": "Satın al",
+    "cancel": "Vazgeç",
+    "bonus": "Giyilince:",
+    "noBonus": "Bonus yok (ücretsiz başlangıç eşyası)",
+    "preview": "Önizleme",
+    "bought": "Satın alındı! Kedi şimdi onu giyiyor.",
     "title": "Gardırop",
     "hats": "Şapkalar",
     "rods": "Oltalar",
@@ -382,12 +445,15 @@
     "best": "En iyi {t}",
     "locked": "Önce {n}. seviyeyi geç",
     "pondLocked": "Önce {pond} açılmalı",
+    "bossLocked": "Bu meydan okumalar {boss} yakalanınca açılır",
     "start": "{t} içinde {species} türden {fish} balık yakala!",
     "cleared": "Başardın!",
     "timeUp": "Süre doldu!",
     "record": "Yeni rekor!",
     "firstReward": "İlk kez: tam ödül",
     "replayReward": "Tekrar: ödülün %10'u",
+    "replayRecordReward": "Tekrar: ödülün %10'u + yeni rekor için %20",
+    "recordOnlyReward": "Yeni rekor: ödülün %20'si (bugün tekrar ödülü kalmadı)",
     "noReward": "Bugün tekrar ödülü kalmadı",
     "next": "Sonraki",
     "retry": "Tekrar dene",

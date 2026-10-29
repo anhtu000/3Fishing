@@ -5,7 +5,7 @@ import type Phaser from 'phaser';
 import type { BossForm } from '../content/data';
 import { ALL_PETS, COSMETICS, PONDS } from '../content/data';
 import { FISH_ART, bossFormArt, fishSize, fishSvg } from './fish';
-import { EGG_SIZE, ICON_KEYS, ITEM_KEYS, bobberSvg, eggSvg, itemSize, itemSvg } from './items';
+import { EGG_SIZE, ICON_KEYS, ITEM_KEYS, POND_MARK_SIZE, bobberSvg, eggSvg, itemSize, itemSvg, pondMarkSvg } from './items';
 import { PET_H, PET_W, petSvg } from './pets';
 import { commonPieces, hatPieces, sceneryPieces } from './scenery';
 
@@ -59,9 +59,16 @@ function allJobs(): Job[] {
   for (const [id, a] of Object.entries(FISH_ART)) {
     const { w, h } = fishSize(a);
     jobs.push({ key: `fish:${id}`, svg: () => fishSvg(a), w, h, scale: 1.5 });
+    // v1.16: a small copy drawn at icon size for the challenge tracker (shrinking the big one blurs).
+    jobs.push({ key: `fishs:${id}`, svg: () => fishSvg(a), w, h, scale: 140 / Math.max(w, h) });
   }
   for (const p of ALL_PETS) jobs.push({ key: `pet:${p.id}`, svg: () => petSvg(p.id), w: PET_W, h: PET_H, scale: 1.4 });
   for (let t = 0; t < 5; t++) jobs.push({ key: `egg:${t}`, svg: () => eggSvg(t), w: EGG_SIZE.w, h: EGG_SIZE.h, scale: 1.5 });
+  // v1.16: eggs with the mark of the pond whose pet is inside, and the marks alone (pond names).
+  for (const p of PONDS) {
+    for (let t = 0; t < 5; t++) jobs.push({ key: `egg:${t}:${p.id}`, svg: () => eggSvg(t, p.id), w: EGG_SIZE.w, h: EGG_SIZE.h, scale: 1.5 });
+    jobs.push({ key: `icon:pond_${p.id}`, svg: () => pondMarkSvg(p.id), w: POND_MARK_SIZE.w, h: POND_MARK_SIZE.h, scale: 1.5 });
+  }
   for (const k of ITEM_KEYS) {
     const { w, h } = itemSize(k);
     jobs.push({ key: `item:${k}`, svg: () => itemSvg(k), w, h, scale: 1.5 });
@@ -90,7 +97,9 @@ function allJobs(): Job[] {
 function needsFirst(key: string, f: FirstScreen) {
   const [kind, id] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
   const unlocked = PONDS.filter((p) => f.unlocked.includes(p.id));
+  if (kind === 'fishs') return false;
   if (kind === 'fish') return unlocked.some((p) => p.boss.id === id || p.fish.some((x) => x.id === id));
+  if (kind === 'egg' && id.includes(':')) return f.unlocked.includes(id.slice(id.indexOf(':') + 1));
   if (kind === 'pet') return f.team.includes(id) || unlocked.some((p) => p.pets.some((x) => x.id === id));
   if (PONDS.some((p) => p.id === kind)) return kind === f.pond;
   if (kind === 'hat') return key === f.hat || key === 'hat:rain';

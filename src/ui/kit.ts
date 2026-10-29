@@ -200,7 +200,8 @@ export class CButton extends Phaser.GameObjects.Container {
     this.opts.onClick();
   }
 
-  private unpress() {
+  /** Lets go without firing (a scroll started on the button, v1.16). */
+  unpress() {
     if (!this.pressed) return;
     this.pressed = false;
     this.face.y = 0;
@@ -335,7 +336,11 @@ export class CPanel extends Phaser.GameObjects.Container {
   readonly box: Phaser.GameObjects.Container;
   private closed = false;
   private offResize: () => void;
-  private onEsc = () => this.close();
+  /** Open panels, newest last: ESC closes only the top one (a popup over a panel, v1.16). */
+  private static open: CPanel[] = [];
+  private onEsc = () => {
+    if (CPanel.open[CPanel.open.length - 1] === this) this.close();
+  };
   /** Keyboard control; set `nav.primary` for the button Space/Enter should press right away. */
   readonly nav: KeyNav;
   constructor(
@@ -375,7 +380,10 @@ export class CPanel extends Phaser.GameObjects.Container {
     this.nav = new KeyNav(scene, this.box);
     this.place();
     this.offResize = app.viewport.on('change', () => this.place());
+    CPanel.open.push(this);
     this.once(Phaser.GameObjects.Events.DESTROY, () => {
+      const i = CPanel.open.indexOf(this);
+      if (i >= 0) CPanel.open.splice(i, 1);
       this.offResize();
       scene.input.keyboard?.off('keydown-ESC', this.onEsc);
     });

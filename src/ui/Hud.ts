@@ -2,7 +2,7 @@
 // cast/tension meter and the idle hint. Kept clear of the top-left corner (Poki's pill on phones).
 import Phaser from 'phaser';
 import { shapeTexture } from '@core';
-import { HATCH_SEC, NEST_INDEX } from '../content/data';
+import { HATCH_SEC, NEST_INDEX, eggKey } from '../content/data';
 import type { Fishing } from '../logic/fishing';
 import { RED_AT } from '../logic/fishing';
 import type { SaveData } from '../logic/model';
@@ -53,9 +53,13 @@ export class Hud {
   private chTime!: Phaser.GameObjects.Text;
   private chFish!: Phaser.GameObjects.Text;
   private chKinds!: Phaser.GameObjects.Text;
+  /** v1.16: one slot per species the challenge needs, filled with the species caught so far. */
+  private chSlots!: Phaser.GameObjects.Graphics;
+  private chIcons: Phaser.GameObjects.Image[] = [];
+  private chShown = '';
   private chExit!: CButton;
   boss: CButton;
-  eggs: { btn: CButton; egg: Phaser.GameObjects.Image; time: Phaser.GameObjects.Text; tier: number }[] = [];
+  eggs: { btn: CButton; egg: Phaser.GameObjects.Image; time: Phaser.GameObjects.Text; key: string }[] = [];
   private chip: Phaser.GameObjects.Container;
   /** WANTED poster and next-goal tracker, the row under the status chip. */
   private wanted: Phaser.GameObjects.Container;
@@ -84,7 +88,7 @@ export class Hud {
   private hub!: CButton;
   private hubEgg!: Phaser.GameObjects.Image;
   private hubTime!: Phaser.GameObjects.Text;
-  private hubTier = -1;
+  private hubKey = '';
   private hubPips!: Phaser.GameObjects.Graphics;
   private hubPipsKey = '';
   private compact = false;
@@ -136,7 +140,9 @@ export class Hud {
     this.chFish = txt(scene, 10, 0, '', 28);
     this.chKinds = txt(scene, 150, 0, '', 28);
     this.chExit = new CButton(scene, 268, 0, { w: 64, h: 64, label: 'X', fontSize: 30, color: COLORS.red, onClick: act.exitChallenge });
-    this.chBar = scene.add.container(0, 0, [chBg, this.chTime, this.chFish, this.chKinds, this.chExit]).setVisible(false);
+    this.chSlots = scene.add.graphics();
+    for (let i = 0; i < 9; i++) this.chIcons.push(scene.add.image(0, 0, '__DEFAULT').setVisible(false));
+    this.chBar = scene.add.container(0, 0, [chBg, this.chTime, this.chFish, this.chKinds, this.chExit, this.chSlots, ...this.chIcons]).setVisible(false);
     this.boss = new CButton(scene, 0, 0, { w: 260, h: 92, icon: 'icon:i_crown', label: t('hud.boss'), fontSize: 40, color: COLORS.red, onClick: act.boss });
     this.boss.setGlow(true).setVisible(false);
     // Four incubator slots, then the overnight nest (index 4, a nest-coloured button).
@@ -145,7 +151,7 @@ export class Hud {
       const egg = art(scene, 0, -10, 'egg:0', 0.42);
       const time = txt(scene, 0, 34, '', 24);
       btn.add([egg, time]);
-      this.eggs.push({ btn, egg, time, tier: 0 });
+      this.eggs.push({ btn, egg, time, key: '' });
     }
     this.basket = new CButton(scene, 0, 0, { w: 96, h: 96, color: 0xf3dfb8, onClick: () => act.basket() });
     const bIcon = art(scene, 0, -8, 'icon:i_basket');
@@ -240,6 +246,8 @@ export class Hud {
   private sideX = 60;
   private sideY = 250;
   private sideStep = 104;
+  /** Size of the left column buttons (smaller on phones, v1.16). */
+  private sideScale = 1;
 
   /** Left column: the visible buttons stacked without gaps; the grouped modes open to the right of "more". */
   private placeSide() {
@@ -263,8 +271,8 @@ export class Hud {
     this.moreOpen = true;
     this.side.more.setColor(COLORS.blue);
     for (const b of [this.side.auto, this.side.challenge]) {
-      b.setVisible(true).setScale(0.4).setAlpha(0);
-      this.scene.tweens.add({ targets: b, scale: 1, alpha: 1, duration: 180, ease: 'Back.Out' });
+      b.setVisible(true).setScale(0.4 * this.sideScale).setAlpha(0);
+      this.scene.tweens.add({ targets: b, scale: this.sideScale, alpha: 1, duration: 180, ease: 'Back.Out' });
     }
     this.placeSide();
     // Folds back by itself after a while, so it never stays over the pond.
@@ -295,10 +303,18 @@ export class Hud {
     } else {
       this.bottom.forEach((b, i) => b.setPosition(w / 2 + (i - 1.5) * 176, h - 66));
     }
-    this.sideX = portrait ? 60 : 62;
-    // Below Poki's pill (top-left on phones, 62 px tall at a 24 px offset).
-    this.sideY = portrait ? 250 : 150;
-    this.sideStep = portrait ? 104 : 96;
+    // v1.16, phones: smaller buttons, moved up into the sky so the column ends above the dock and the
+    // water (was 84 px from y 250, the third button sat on the dock). The first one still starts below
+    // Poki's pill (top-left on phones, 62 px tall at a 24 px offset = 86 CSS px: 172 design units on a
+    // 360 px wide phone, where 720 units span the width); its top edge is at 214 - 36 = 178.
+    this.sideScale = portrait ? 0.86 : 1;
+    for (const b of Object.values(this.side)) b.setScale(this.sideScale);
+    this.sideX = portrait ? 54 : 62;
+    // Landscape phones and tablets also have Poki's pill top-left (86 CSS px = 172 units on a 360 px tall
+    // screen, where 720 units span the height); desktop has none, so its column starts higher.
+    const touch = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+    this.sideY = portrait || touch ? 214 : 150;
+    this.sideStep = portrait ? 90 : 96;
     this.placeSide();
     this.chBar.setPosition(w / 2 - (portrait ? 20 : 0), portrait ? 206 : 178);
     this.chBar.setScale(portrait ? Math.min(1, (w - 230) / 600) : 1);
@@ -344,9 +360,10 @@ export class Hud {
       this.hubEgg.setAlpha(0.25).setAngle(0);
       this.hubTime.setText(s.basket.length > 0 ? '+' : '');
     } else {
-      if (this.hubTier !== egg.tier || this.hubEgg.alpha !== 1) {
-        this.hubTier = egg.tier;
-        setArt(this.hubEgg, `egg:${egg.tier}`, 0.42);
+      const key = eggKey(egg.tier, egg.pond);
+      if (this.hubKey !== key || this.hubEgg.alpha !== 1) {
+        this.hubKey = key;
+        setArt(this.hubEgg, key, 0.42);
         this.hubEgg.setAlpha(1);
       }
       if (egg.left <= 0) {
@@ -377,7 +394,33 @@ export class Hud {
     }
   }
 
-  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; wantedLeft: number | null; challengeOpen: boolean; challenge: { timeMs: number; fish: number; fishGoal: number; kinds: number; kindsGoal: number } | null; goal: { icon: string; text: string; progress: number } | null }) {
+  /** Challenge: the species caught so far, one per slot (empty slots for those still needed). */
+  private drawKinds(ids: string[], goal: number) {
+    // Small icon-size textures (sharp); the big fish art until they are drawn.
+    const texOf = (id: string) => (this.scene.textures.exists(`fishs:${id}`) ? `fishs:${id}` : `fish:${id}`);
+    const key = `${goal}|${ids.map(texOf).join(',')}`;
+    if (key === this.chShown) return;
+    this.chShown = key;
+    const n = Math.min(this.chIcons.length, Math.max(goal, ids.length));
+    const step = 74;
+    const x0 = -((n - 1) * step) / 2;
+    const y = 84;
+    const g = this.chSlots.clear();
+    g.fillStyle(INK, 0.5).fillRoundedRect(x0 - 44, y - 37, (n - 1) * step + 88, 74, 26);
+    for (let i = 0; i < n; i++) {
+      const done = i < ids.length;
+      g.fillStyle(done ? 0xfffdf6 : 0xffffff, done ? 1 : 0.18).fillCircle(x0 + i * step, y, 31);
+      g.lineStyle(4, done ? 0x2fae63 : 0xffffff, done ? 1 : 0.45).strokeCircle(x0 + i * step, y, 31);
+    }
+    this.chIcons.forEach((img, i) => {
+      const id = ids[i];
+      if (!id || i >= n) return void img.setVisible(false);
+      const tex = texOf(id);
+      img.setTexture(tex).setScale(fitScale(tex, 56)).setPosition(x0 + i * step, y).setVisible(true);
+    });
+  }
+
+  update(dt: number, f: Fishing, extra: { autoOn: boolean; autoUnlocked: boolean; goldenIn: number; goldenLeft: number; mysteryIn: number; lucky: boolean; questBadge: number; canUpgrade: boolean; petBadge: boolean; dexBadge: boolean; mapBadge: boolean; bossReady: boolean; showHint: boolean; adsOk: boolean; wanted: string | null; wantedKnown: boolean; wantedToday: boolean; wantedLeft: number | null; challengeOpen: boolean; challenge: { timeMs: number; fish: number; fishGoal: number; kinds: number; kindsGoal: number; kindIds: string[] } | null; gripLeft: number; goal: { icon: string; text: string; progress: number } | null }) {
     this.t += dt;
     const s = this.s;
     // Count-up numbers.
@@ -406,9 +449,10 @@ export class Hud {
         e.btn.setGlow(pick);
         return;
       }
-      if (e.tier !== egg.tier || e.egg.alpha !== 1) {
-        e.tier = egg.tier;
-        setArt(e.egg, `egg:${egg.tier}`, 0.42);
+      const key = eggKey(egg.tier, egg.pond);
+      if (e.key !== key || e.egg.alpha !== 1) {
+        e.key = key;
+        setArt(e.egg, key, 0.42);
         e.egg.setAlpha(1);
       }
       if (egg.left <= 0) {
@@ -462,6 +506,7 @@ export class Hud {
       this.chKinds.setText(t('challenge.kindsShort', { n: ch.kinds, max: ch.kindsGoal })).setColor(ch.kinds >= ch.kindsGoal ? '#7dffb0' : '#ffffff');
       fitText(this.chFish, 150);
       fitText(this.chKinds, 140);
+      this.drawKinds(ch.kindIds, ch.kindsGoal);
     }
     this.boss.setVisible(extra.bossReady && !f.busy);
     this.bottom[0].setGlow(extra.canUpgrade && !f.busy).setBadge(extra.canUpgrade ? -1 : 0);
@@ -470,7 +515,9 @@ export class Hud {
     this.bottom[3].setBadge(extra.mapBadge ? -1 : 0).setGlow(extra.mapBadge && !f.busy);
     // Status chip: golden bait / lucky cast.
     let chip = '';
-    if (extra.goldenLeft > 0) chip = t('hud.goldenChip', { t: `${Math.floor(extra.goldenLeft / 60)}:${String(Math.floor(extra.goldenLeft % 60)).padStart(2, '0')}` });
+    const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+    if (extra.goldenLeft > 0) chip = t('hud.goldenChip', { t: mmss(extra.goldenLeft) });
+    else if (extra.gripLeft > 0) chip = t('hud.gripChip', { t: mmss(extra.gripLeft) });
     else if (extra.lucky) chip = t('hud.luckyChip');
     if (extra.autoOn) chip = chip ? chip : t('hud.autoChip');
     if (f.target.boss && f.busy) chip = '';

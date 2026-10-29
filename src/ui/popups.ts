@@ -3,7 +3,7 @@
 import Phaser from 'phaser';
 import { KeyNav } from './keynav';
 import { app, shapeTexture } from '@core';
-import { PERKS, RARITY_COLOR, RARITY_CSS, petById, type PetDef } from '../content/data';
+import { PERKS, RARITY_COLOR, RARITY_CSS, eggKey, petById, pondOfPet, type PetDef } from '../content/data';
 import { eggName, fishName, junkName, perkText, petName, rarityName, t } from '../i18n/t';
 import type { CatchResult } from '../logic/game';
 import { perkValue, type HatchResult } from '../logic/rules';
@@ -77,7 +77,7 @@ function catchInfo(r: CatchResult) {
     case 'fish':
       return { key: `fish:${roll.fish.id}`, name: fishName(roll.fish.id), rarity: roll.fish.rarity, line: `${r.cm.toFixed(1)} cm`, size: 360 };
     case 'egg':
-      return { key: `egg:${roll.tier}`, name: eggName(roll.tier), rarity: roll.tier, line: r.eggWhere === 'basket' ? t('catch.intoBasket') : r.eggStored ? t('catch.intoIncubator') : t('catch.sold'), size: 200 };
+      return { key: eggKey(roll.tier, roll.pond), name: eggName(roll.tier), rarity: roll.tier, line: r.eggWhere === 'basket' ? t('catch.intoBasket') : r.eggStored ? t('catch.intoIncubator') : t('catch.sold'), size: 200 };
     case 'junk':
       return { key: `item:${roll.item}`, name: junkName(roll.item), rarity: -1, line: t(`catch.junk${Math.floor(Math.random() * 5)}`), size: 170 };
     case 'chest':
@@ -233,16 +233,37 @@ export function hatchReveal(scene: Phaser.Scene, tier: number, petId: string, re
     const layer = scene.add.container(0, 0).setDepth(DEPTH + 20);
     const dim = scene.add.rectangle(0, 0, vp.width, vp.height, 0x1a1030, 0.72).setOrigin(0).setInteractive();
     layer.add(dim);
-    const egg = art(scene, cx, cy, `egg:${tier}`, 1.3 * k);
+    // v1.16: the egg wobbles and cracks three times (a crack line grows across the shell), then bursts.
+    const eggImg = art(scene, 0, 0, eggKey(tier, pondOfPet(petId)?.id), 1.3 * k);
+    const cracks = scene.add.graphics();
+    const egg = scene.add.container(cx, cy, [eggImg, cracks]);
     layer.add(egg);
+    const ew = eggImg.displayWidth;
+    const eh = eggImg.displayHeight;
+    // A zigzag across the middle of the shell, in three growing pieces, plus a small branch.
+    const zig = [-0.41, -0.27, -0.14, 0, 0.13, 0.27, 0.41].map((u, i) => ({ x: u * ew, y: eh * (0.04 + (i % 2 ? -0.07 : 0.05)) }));
+    const crack = (step: number) => {
+      const n = [3, 5, 7][step];
+      cracks.clear().lineStyle(Math.max(3, 6 * k), INK, 0.9);
+      cracks.beginPath().moveTo(zig[0].x, zig[0].y);
+      for (let i = 1; i < n; i++) cracks.lineTo(zig[i].x, zig[i].y);
+      cracks.strokePath();
+      if (step === 2) cracks.lineBetween(zig[3].x, zig[3].y, zig[3].x + ew * 0.06, zig[3].y - eh * 0.16);
+      app.audio.play('crack', { volume: [0.6, 0.8, 1][step], pitchJitter: 120 });
+    };
     app.audio.play('wobble');
+    let wobbles = 0;
     scene.tweens.add({
       targets: egg,
       angle: { from: -12, to: 12 },
       duration: 110,
       yoyo: true,
       repeat: 6,
-      onRepeat: () => app.audio.play('wobble', { volume: 0.4, pitchJitter: 200 }),
+      onRepeat: () => {
+        wobbles += 1;
+        if (wobbles % 2 === 0) crack(wobbles / 2 - 1);
+        else app.audio.play('wobble', { volume: 0.4, pitchJitter: 200 });
+      },
       onComplete: () => {
         egg.destroy();
         app.audio.play('hatch');

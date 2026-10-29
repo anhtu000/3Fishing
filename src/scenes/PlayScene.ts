@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { BaseScene, app, secondsAway, type ViewportInfo } from '@core';
 import { Rng } from '../../core/rng';
 import { dayKey } from '../../core/time';
-import { BOSS_LURE, BOSS_STARS, CHALLENGE, GAME_SPEED, GAME_SPEED_DESKTOP, GAME_SPEED_PHONE, NEST_INDEX, setGameSpeed, PERKS, PONDS, WANTED, bossForm, type BossForm, type PerkKind, baitKey, challengeById, cosmeticById, fishById, type ChallengeDef, petById, pondById } from '../content/data';
+import { BOSS_LURE, BOSS_STARS, CHALLENGE, LEGEND, GAME_SPEED, GAME_SPEED_DESKTOP, GAME_SPEED_PHONE, NEST_INDEX, setGameSpeed, PERKS, PONDS, WANTED, bossForm, type BossForm, type PerkKind, baitKey, challengeById, cosmeticById, eggKey, fishById, type ChallengeDef, petById, pondById } from '../content/data';
 import { Fishing, FishingBot, type Outcome } from '../logic/fishing';
 import { PondGame } from '../logic/game';
 import type { SaveData } from '../logic/model';
@@ -52,6 +52,7 @@ export class PlayScene extends BaseScene {
   private coachText!: Phaser.GameObjects.Text;
   private coachBg!: Phaser.GameObjects.Graphics;
   private coachHand!: Phaser.GameObjects.Graphics;
+  private coachH = 70;
   private step: Step | null = null;
   private stepT = 0;
   private coinSfxAt = 0;
@@ -176,6 +177,17 @@ export class PlayScene extends BaseScene {
       },
       () => {
         if (this.run) return this.pickChallengeFish();
+        // The hook landed next to the Legendary in sight (v1.16): it bites.
+        if (this.pg.legendHere && this.pond.legendNear(this.rig.landX, LEGEND.reach)) {
+          const roll = this.pg.hookLegend()!;
+          this.pond.hideLegend(true);
+          this.rollLegend = true;
+          this.rollWanted = false;
+          this.roll = roll;
+          this.rig.setTarget(rollKey(roll), rollSize(roll));
+          return { rarity: 4, fights: true };
+        }
+        this.rollLegend = false;
         // The hook landed next to the WANTED fish: it bites, and fights harder than its kind.
         const w = this.pg.wanted;
         if (w && this.pond.wantedNear(this.rig.landX, WANTED.reach)) {
@@ -190,6 +202,7 @@ export class PlayScene extends BaseScene {
         const r = this.pg.rollForCast(this.fishing.zone, this.lucky);
         this.roll = r.roll;
         this.rig.setTarget(rollKey(r.roll), rollSize(r.roll));
+        this.showLegendIfNew();
         return r.target;
       },
     );
@@ -331,6 +344,12 @@ export class PlayScene extends BaseScene {
     if (o === 'caught' && this.roll && this.run) return this.onChallengeCatch();
     if (o === 'caught' && this.roll) {
       const res = this.pg.applyCatch(this.roll, f.perfect, this.rollWanted);
+      if (this.rollLegend) {
+        this.rollLegend = false;
+        this.pg.legendCaught();
+        this.pond.clearLegend(true);
+        app.measure('legend', this.s.pond, 'catch');
+      }
       if (this.rollWanted) {
         this.rollWanted = false;
         if (res.bounty) {
@@ -352,11 +371,11 @@ export class PlayScene extends BaseScene {
       this.time.delayedCall(450, () => {
         const order: PerkKind[] =
           roll.kind === 'fish'
-            ? [...(roll.fish.rarity >= 1 ? (['luck'] as const) : []), ...(roll.fish.rarity >= 2 ? (['strong'] as const) : []), 'merchant']
+            ? [...(roll.fish.rarity >= 1 ? (['luck'] as const) : []), ...(roll.fish.rarity >= 2 ? (['strong'] as const) : []), ...(roll.size >= 1.3 ? (['big'] as const) : []), 'merchant', 'big']
             : roll.kind === 'egg'
-              ? [...(roll.tier >= 1 ? (['luck'] as const) : []), 'nurture']
+              ? [...(roll.tier >= 1 ? (['luck'] as const) : []), 'finder', 'nurture']
               : roll.kind === 'chest'
-                ? ['luck']
+                ? ['treasure', 'luck']
                 : [];
         for (const perk of order) if (this.petHelp(perk)) break;
       });
@@ -417,6 +436,11 @@ export class PlayScene extends BaseScene {
     if (this.rollWanted) {
       this.rollWanted = false;
       this.pond.hideWanted(false);
+    }
+    // So did the Legendary: back in its zone for the seconds it had left.
+    if (this.rollLegend) {
+      this.rollLegend = false;
+      if (this.pg.legendHere) this.pond.hideLegend(false);
     }
     const msg: Record<string, string> = { early: t('msg.early'), missed: t('msg.missed'), snap: t('msg.snap'), escape: t(this.slipped ? 'msg.slip' : 'msg.escape') };
     this.slipped = false;
@@ -764,6 +788,7 @@ export class PlayScene extends BaseScene {
     this.cameras.main.fadeOut(300, 255, 255, 255);
     this.time.delayedCall(320, () => {
       this.pond.clearWanted(true);
+      this.pond.clearLegend(true);
       this.pond.setPond(id);
       this.pond.setPets(this.s.team);
       this.layout(this.vp);
@@ -798,7 +823,8 @@ export class PlayScene extends BaseScene {
     this.rig.clear();
     this.fishing.auto = false;
     this.run = { def, timeMs: (def.timeSec * 1000) / GAME_SPEED, elapsedMs: 0, fish: 0, kinds: new Set(), over: false };
-    this.pond.setLiveFish(pondById.get(def.pond)!.fish, CHALLENGE.liveFish, def.species);
+    const decoy = def.decoy ? fishById.get(def.decoy) : undefined;
+    this.pond.setLiveFish(pondById.get(def.pond)!.fish, Math.max(CHALLENGE.liveFish, def.decoys + def.species + 2), def.species, decoy ? { fish: decoy, n: def.decoys } : null);
     app.audio.play('boss');
     const vp = this.vp;
     const banner = txt(this, vp.width / 2, vp.height * 0.26, `${t('challenge.level', { n: def.n })}\n${t('challenge.start', { fish: def.fish, species: def.species, t: formatTime(def.timeSec * 1000).replace(/\.0$/, '') })}`, 44, { color: '#ffe066', wrap: Math.min(640, vp.width - 60) }).setDepth(1500).setScale(0.4);
@@ -827,6 +853,7 @@ export class PlayScene extends BaseScene {
     const from = this.rig.landed();
     run.fish += 1;
     run.kinds.add(roll.fish.id);
+    this.pond.setCaughtKinds(run.kinds);
     const img = art(this, from.x, from.y, `fish:${roll.fish.id}`, 0.45).setDepth(1300);
     this.tweens.add({ targets: img, y: from.y - 190, angle: 360, duration: 450, ease: 'Quad.Out' });
     this.tweens.add({ targets: img, alpha: 0, scale: img.scale * 0.6, delay: 650, duration: 300, onComplete: () => img.destroy() });
@@ -874,7 +901,7 @@ export class PlayScene extends BaseScene {
       p.content.add(txt(this, 0, p.top + 215, r.record ? t('challenge.record') : t('challenge.best', { t: formatTime(r.best) }), 30, { color: r.record ? '#e39b00' : '#7a6a8a', stroke: false }));
       const coin = art(this, -70, p.top + 290, 'item:coin', 0.5);
       const amt = txt(this, 10, p.top + 290, `+${fmt(r.coins)}`, 40, { color: '#e39b00', stroke: false });
-      const why = txt(this, 0, p.top + 340, t(r.kind === 'first' ? 'challenge.firstReward' : r.kind === 'replay' ? 'challenge.replayReward' : 'challenge.noReward'), 24, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 });
+      const why = txt(this, 0, p.top + 340, t(r.kind === 'first' ? 'challenge.firstReward' : r.kind === 'replay' ? (r.record ? 'challenge.replayRecordReward' : 'challenge.replayReward') : r.record ? 'challenge.recordOnlyReward' : 'challenge.noReward'), 24, { color: '#7a6a8a', stroke: false, weight: '500', wrap: 520 });
       p.content.add([coin, amt, why]);
       if (r.coins > 0) flyIcons(this, 'item:coin', { x: this.vp.width / 2, y: this.vp.height / 2 }, this.hud.coinTarget(), 8, () => this.coinArrive());
     } else {
@@ -905,6 +932,18 @@ export class PlayScene extends BaseScene {
 
   /** The fish on the hook is the WANTED fish. */
   private rollWanted = false;
+  /** The fish on the hook is the Legendary in sight (v1.16). */
+  private rollLegend = false;
+
+  /** A Legendary just showed itself (the last roll would have been one): draw it and say so. */
+  private showLegendIfNew() {
+    const l = this.pg.legendHere;
+    if (!l || this.pond.legendShown) return;
+    this.pond.showLegend(l.fish, l.left);
+    note(this, t('legend.appear'), 2600);
+    app.audio.play('rare');
+    app.measure('legend', this.s.pond, 'spawn');
+  }
   /** Star of the rematch in progress (0: the first fight with the pond's boss). */
   private rematchStar = 0;
   /** Form of the boss in the fight in progress (rematches have forms; see bossForm). */
@@ -1208,9 +1247,12 @@ export class PlayScene extends BaseScene {
     const g = this.coachBg;
     g.clear();
     g.fillStyle(INK, 1).fillRoundedRect(-w / 2 - 5, -h / 2 - 5, w + 10, h + 10, 26);
-    g.fillTriangle(-60, h / 2, -20, h / 2, -70, h / 2 + 40);
+    // v1.16: the BOSS tip sits under the button (above it would cover its label), so its tail points up.
+    const up = step === 'boss' ? -1 : 1;
+    this.coachH = h;
+    g.fillTriangle(-60, (up * h) / 2, -20, (up * h) / 2, -70, up * (h / 2 + 40));
     g.fillStyle(0xfffdf6, 1).fillRoundedRect(-w / 2, -h / 2, w, h, 22);
-    g.fillTriangle(-56, h / 2 - 2, -26, h / 2 - 2, -64, h / 2 + 30);
+    g.fillTriangle(-56, up * (h / 2 - 2), -26, up * (h / 2 - 2), -64, up * (h / 2 + 30));
     this.coach.setVisible(true).setScale(0.6).setAlpha(0);
     this.tweens.add({ targets: this.coach, scale: 1, alpha: 1, duration: 260, ease: 'Back.Out' });
     app.audio.play('pop', { volume: 0.6 });
@@ -1243,6 +1285,12 @@ export class PlayScene extends BaseScene {
     const cat = this.rig?.cat;
     if (!cat) return;
     const portrait = vp.height > vp.width;
+    if (this.step === 'boss') {
+      // Under the BOSS button and the tapping hand, tail pointing up at them.
+      const b = this.hud.boss;
+      this.coach.setPosition(Phaser.Math.Clamp(b.x + 170, 260, vp.width - 260), b.y + 125 + this.coachH / 2);
+      return;
+    }
     const x = Phaser.Math.Clamp(cat.x + (portrait ? 230 : 420), 260, vp.width - 260);
     const y = portrait ? cat.y - 250 : 200;
     this.coach.setPosition(x, Math.max(portrait ? 300 : 200, y));
@@ -1263,7 +1311,8 @@ export class PlayScene extends BaseScene {
       case 'upgrade':
         return { x: this.hud.bottom[0].x, y: this.hud.bottom[0].y };
       case 'boss':
-        return { x: this.hud.boss.x, y: this.hud.boss.y };
+        // Bottom-right corner of the button, so the finger does not hide the BOSS label.
+        return { x: this.hud.boss.x + 100, y: this.hud.boss.y + 22 };
       default:
         return null;
     }
@@ -1339,6 +1388,17 @@ export class PlayScene extends BaseScene {
         app.measure('wanted', this.s.pond, 'gone');
       }
     }
+    // The Legendary in sight: its clock runs while you fish, not while a fish is on the hook (v1.16).
+    this.pond.setLegendShown(!f.target.boss && !this.run);
+    if (fishingNow && !this.rollLegend && f.phase !== 'bite' && f.phase !== 'reeling' && f.phase !== 'done') {
+      if (this.pg.tickLegend(dt) === 'gone') {
+        this.pond.clearLegend();
+        note(this, t('legend.gone'));
+        app.measure('legend', this.s.pond, 'gone');
+      }
+    }
+    const lg = this.pg.legendHere;
+    if (lg) this.pond.setLegendLeft(lg.left);
     // Economy tick: eggs and angler pets.
     this.ticker += dt;
     if (this.ticker >= 0.25) {
@@ -1368,6 +1428,8 @@ export class PlayScene extends BaseScene {
       if (run.timeMs <= 0) this.finishChallenge(false);
     }
     const tutDone = s.tutorial.includes('done');
+    // v1.16: the zone the cast would land in glows while charging.
+    this.pond.setAim(f.phase === 'charging' ? (f.power < 0.4 ? 0 : f.power < 0.8 ? 1 : 2) : null);
     this.hud.update(mdt, f, {
       autoOn: f.auto,
       autoUnlocked: this.pg.autoUnlocked,
@@ -1384,7 +1446,8 @@ export class PlayScene extends BaseScene {
       mapBadge: PONDS.some((p) => !s.unlocked.includes(p.id) && this.pg.canUnlock(p) && s.coins >= p.unlockCost) || (!!this.pg.today && !this.pg.todayFish),
       bossReady: this.pg.bossReady && !this.run,
       challengeOpen: this.pg.challengeOpen,
-      challenge: this.run ? { timeMs: this.run.timeMs, fish: this.run.fish, fishGoal: this.run.def.fish, kinds: this.run.kinds.size, kindsGoal: this.run.def.species } : null,
+      challenge: this.run ? { timeMs: this.run.timeMs, fish: this.run.fish, fishGoal: this.run.def.fish, kinds: this.run.kinds.size, kindsGoal: this.run.def.species, kindIds: [...this.run.kinds] } : null,
+      gripLeft: this.pg.firmHookLeft,
       showHint: tutDone && !f.auto && this.modal === 0,
       adsOk: app.ads.rewardedAvailable && !app.clean,
       ...(() => {
@@ -1414,7 +1477,7 @@ function rollKey(r: CatchRoll) {
     case 'fish':
       return `fish:${r.fish.id}`;
     case 'egg':
-      return `egg:${r.tier}`;
+      return eggKey(r.tier, r.pond);
     case 'junk':
       return `item:${r.item}`;
     case 'chest':

@@ -5,7 +5,7 @@ import { app } from '@core';
 import { pondById, petById, type FishDef, type PondDef } from '../content/data';
 import { PALETTES } from '../render/scenery';
 import { TEX } from '../render/textures';
-import { art, fitScale, setArt } from '../ui/kit';
+import { art, fitScale, setArt, txt } from '../ui/kit';
 
 export interface PondLayout {
   w: number;
@@ -30,6 +30,8 @@ interface Swimmer {
   phase: number;
   size: number;
   id: string;
+  /** Cast zone the species lives in (FishDef.zone): it swims in that band of the pond (v1.16). */
+  zone: number;
 }
 
 function hex(c: string) {
@@ -84,6 +86,7 @@ export class Pond {
     this.sun = art(scene, 0, 0, 'sc:sun').setDepth(1);
     for (let i = 0; i < 3; i++) this.clouds.push(art(scene, 0, 0, 'sc:cloud', 0.6 + i * 0.15).setDepth(1).setAlpha(0.95));
     this.waterG = scene.add.graphics().setDepth(10);
+    this.aimG = scene.add.graphics().setDepth(11.2);
     this.setPond(pondId);
   }
 
@@ -173,10 +176,12 @@ export class Pond {
   private livePool: FishDef[] | null = null;
 
   /** Challenge mode on/off: rebuild the swimmers as real, coloured fish of this pond, slower so you can aim. */
-  setLiveFish(pool: FishDef[] | null, count = 9, distinct = 3) {
+  setLiveFish(pool: FishDef[] | null, count = 9, distinct = 3, decoy: { fish: FishDef; n: number } | null = null) {
     for (const f of this.swimmers) f.img.destroy();
     this.swimmers = [];
     this.livePool = pool;
+    this.caughtKinds = new Set();
+    this.decoy = pool && decoy && decoy.n > 0 ? decoy.fish : null;
     if (!pool) {
       const amb = this.pond.fish.filter((f) => f.rarity <= 2);
       for (let i = 0; i < 8; i++) this.addSwimmer(amb[i % amb.length], false);
@@ -184,16 +189,30 @@ export class Pond {
       if (this.L) this.layout(app.viewport.info.width, app.viewport.info.height);
       return;
     }
-    // Enough different species in the water for the goal, then random by rarity.
-    const kinds = [...new Set(pool.map((f) => f.id))];
+    // Enough different species in the water for the goal (besides the school), then random by rarity.
+    const kinds = [...new Set(pool.map((f) => f.id))].filter((id) => id !== this.decoy?.id);
     const first = kinds.slice(0, Math.min(kinds.length, distinct + 1)).map((id) => pool.find((f) => f.id === id)!);
     for (const f of first) this.addSwimmer(f, true);
+    // v1.16: the school of one species, all over the pond (level 3 on).
+    if (this.decoy) for (let i = 0; i < decoy!.n; i++) this.addSwimmer(this.decoy, true, true);
     while (this.swimmers.length < count) this.addSwimmer(this.pickLive(), true);
     if (this.L) this.placeSwimmers();
   }
 
+  /** Challenge (v1.16): species caught in this run swim faded, so the ones still needed stand out. */
+  private caughtKinds = new Set<string>();
+
+  setCaughtKinds(ids: Set<string>) {
+    this.caughtKinds = new Set(ids);
+    if (!this.livePool) return;
+    for (const f of this.swimmers) f.img.setAlpha(this.caughtKinds.has(f.id) ? 0.45 : 1);
+  }
+
+  /** Challenge school (v1.16): its species roams the whole pond and comes back when one is caught. */
+  private decoy: FishDef | null = null;
+
   private pickLive(): FishDef {
-    const pool = this.livePool!;
+    const pool = this.livePool!.filter((f) => f.id !== this.decoy?.id);
     const w = [40, 28, 18, 10, 4];
     let r = Math.random() * pool.reduce((a, f) => a + w[f.rarity], 0);
     for (const f of pool) {
@@ -203,19 +222,74 @@ export class Pond {
     return pool[0];
   }
 
-  private addSwimmer(f: FishDef, live: boolean) {
+  private addSwimmer(f: FishDef, live: boolean, roam = false) {
     const img = this.scene.add.image(-200, 0, `fish:${f.id}`).setDepth(12);
-    const sw: Swimmer = { img, speed: live ? 22 + Math.random() * 26 : 40 + Math.random() * 40, dir: Math.random() < 0.5 ? -1 : 1, y: 0, phase: Math.random() * 6, size: live ? 0.34 + f.rarity * 0.03 : 0.3 + Math.random() * 0.14, id: f.id };
+    const sw: Swimmer = { img, speed: live ? 22 + Math.random() * 26 : 40 + Math.random() * 40, dir: Math.random() < 0.5 ? -1 : 1, y: 0, phase: Math.random() * 6, size: live ? 0.34 + f.rarity * 0.03 : 0.3 + Math.random() * 0.14, id: f.id, zone: roam ? -1 : (f.zone ?? 1) };
     this.swimmers.push(sw);
-    if (live) img.clearTint().setAlpha(1);
+    if (live) img.clearTint().setAlpha(this.caughtKinds.has(f.id) ? 0.45 : 1);
     if (this.L) this.placeSwimmer(sw);
     return sw;
   }
 
-  private placeSwimmer(f: Swimmer) {
+  /**
+   * x range of a cast zone (v1.16), as the cast meter splits it: Near up to 40% of the throw, Far up to
+   * 80%, Super far beyond. Fish (shadows of species not caught yet too) swim in their zone, so the
+   * pond shows where to throw for each.
+   */
+  zoneBand(zone: number): [number, number] {
     const L = this.L;
-    f.y = L.water + 120 + Math.random() * (L.floor - L.water - 220);
-    f.img.x = Math.random() * L.w;
+    const span = L.castFar - L.castNear;
+    const cuts = [L.castNear - 40, L.castNear + span * 0.4, L.castNear + span * 0.8, L.w + 60];
+    if (zone < 0) return [cuts[0], cuts[3]];
+    const z = Math.min(2, zone);
+    return [cuts[z], cuts[z + 1]];
+  }
+
+  /**
+   * v1.16: depth range of a cast zone. A phone held upright is narrow, so there the three zones are
+   * also layers (Near shallow, Far in the middle, Super far deep): the hook sinks to its layer and the
+   * fish that like a zone swim in it. Wide screens keep every depth for every zone.
+   */
+  depthBand(zone: number): [number, number] {
+    const L = this.L;
+    const d = L.floor - L.water;
+    if (zone < 0 || L.h <= L.w) return [L.water + 120, L.floor - 100];
+    // Layers end above the cast meter (about 80% down the water on phones), so the glow shows.
+    const c = L.water + d * (0.14 + 0.23 * Math.min(2, zone));
+    return [c - d * 0.09, c + d * 0.09];
+  }
+
+  /** How deep the hook sinks for a cast zone (deeper on upright phones, see depthBand). */
+  hookDepth(zone: number) {
+    const L = this.L;
+    const z = Math.min(2, Math.max(0, zone));
+    return L.water + (L.floor - L.water) * (L.h > L.w ? 0.14 + 0.23 * z : 0.28 + 0.2 * z);
+  }
+
+  /** v1.16: while the cast charges, the zone it would land in glows softly (null hides it). */
+  setAim(zone: number | null) {
+    if (zone === this.aimZone) return;
+    this.aimZone = zone;
+    const g = this.aimG.clear();
+    if (zone === null || !this.L) return;
+    const L = this.L;
+    const [x0, x1] = this.zoneBand(zone);
+    const a = Math.max(L.castNear - 30, x0);
+    const b = Math.min(L.w - 12, x1);
+    const portrait = L.h > L.w;
+    const [y0, y1] = portrait ? this.depthBand(zone) : [L.water + 40, L.floor - 40];
+    g.fillStyle(0xffffff, 0.1).fillRoundedRect(a, y0 - 20, b - a, y1 - y0 + 40, 26);
+    g.lineStyle(4, 0xffffff, 0.45).strokeRoundedRect(a, y0 - 20, b - a, y1 - y0 + 40, 26);
+  }
+
+  private aimZone: number | null = null;
+  private aimG!: Phaser.GameObjects.Graphics;
+
+  private placeSwimmer(f: Swimmer) {
+    const [top, bottom] = this.depthBand(f.zone);
+    f.y = top + Math.random() * (bottom - top);
+    const [lo, hi] = this.zoneBand(f.zone);
+    f.img.x = lo + Math.random() * (hi - lo);
     setArt(f.img, `fish:${f.id}`, f.size);
     f.img.setFlipX(f.dir < 0);
   }
@@ -247,7 +321,8 @@ export class Pond {
       if (i < 0) return;
       sw.img.destroy();
       this.swimmers.splice(i, 1);
-      const n = this.addSwimmer(this.pickLive(), true);
+      const school = !!this.decoy && sw.id === this.decoy.id;
+      const n = this.addSwimmer(school ? this.decoy! : this.pickLive(), true, school);
       // Swim in from the side.
       n.dir = Math.random() < 0.5 ? 1 : -1;
       n.img.x = n.dir > 0 ? -100 : this.L.w + 100;
@@ -259,25 +334,120 @@ export class Pond {
 
   private wantedFish: { img: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; id: string; dir: number; y: number; hidden: boolean; spark: number } | null = null;
 
+  // ---------- v1.16: the Legendary in sight ----------
+
+  private legendFish: { img: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; clock: Phaser.GameObjects.Text; zone: number; dir: number; y: number; hidden: boolean; spark: number } | null = null;
+
+  get legendShown() {
+    return !!this.legendFish;
+  }
+
+  /** The Legendary shows itself in its zone (in colour, with a gold glow and its seconds left). */
+  showLegend(fish: FishDef, left: number) {
+    this.clearLegend(true);
+    const L = this.L;
+    if (!L) return;
+    this.ensureGlow();
+    const glow = this.scene.add.image(0, 0, 'wanted-glow').setDepth(12.4).setTint(0xffe36e).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
+    const img = this.scene.add.image(0, 0, `fish:${fish.id}`).setDepth(12.5).setAlpha(0);
+    setArt(img, `fish:${fish.id}`, 0.48);
+    const [lo, hi] = this.zoneBand(fish.zone);
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    img.x = Math.max(40, Math.min(L.w - 40, lo + 40 + Math.random() * Math.max(10, hi - lo - 80)));
+    const [top, bottom] = this.depthBand(fish.zone);
+    const y = L.h > L.w ? (top + bottom) / 2 : L.water + (L.floor - L.water) * (0.25 + Math.random() * 0.2);
+    img.y = y;
+    img.setFlipX(dir < 0);
+    glow.setPosition(img.x, img.y).setDisplaySize(img.displayWidth * 2, img.displayHeight * 2.6);
+    const clock = txt(this.scene, img.x, y - 70, `${Math.ceil(left)}`, 30, { color: '#ffe066' }).setDepth(12.6).setAlpha(0);
+    this.legendFish = { img, glow, clock, zone: fish.zone, dir, y, hidden: false, spark: 0 };
+    this.scene.tweens.add({ targets: [img, clock], alpha: 1, duration: 400 });
+    this.scene.tweens.add({ targets: glow, alpha: 0.7, duration: 400 });
+  }
+
+  clearLegend(now = false) {
+    const l = this.legendFish;
+    if (!l) return;
+    this.legendFish = null;
+    const parts = [l.img, l.glow, l.clock];
+    if (now) return parts.forEach((p) => p.destroy());
+    this.scene.tweens.add({ targets: parts, alpha: 0, duration: 500, onComplete: () => parts.forEach((p) => p.destroy()) });
+  }
+
+  /** Hidden while it is on the hook; back in its zone when it gets away. */
+  hideLegend(hidden: boolean) {
+    const l = this.legendFish;
+    if (!l) return;
+    l.hidden = hidden;
+    for (const p of [l.img, l.glow, l.clock]) p.setVisible(!hidden);
+  }
+
+  setLegendShown(on: boolean) {
+    const l = this.legendFish;
+    if (!l) return;
+    const v = on && !l.hidden;
+    if (l.img.visible !== v) for (const p of [l.img, l.glow, l.clock]) p.setVisible(v);
+  }
+
+  setLegendLeft(sec: number) {
+    const l = this.legendFish;
+    if (!l) return;
+    const n = `${Math.max(0, Math.ceil(sec))}`;
+    if (l.clock.text !== n) {
+      l.clock.setText(n).setColor(sec <= 5 ? '#ff8a8a' : '#ffe066');
+    }
+  }
+
+  /** True when a hook landing at x is close enough to the Legendary for it to bite. */
+  legendNear(x: number, reach: number) {
+    const l = this.legendFish;
+    return !!l && !l.hidden && Math.abs(l.img.x - x) <= reach;
+  }
+
+  private updateLegend(dt: number, t: number) {
+    const l = this.legendFish;
+    if (!l || l.hidden || !this.L) return;
+    const [lo, hi] = this.zoneBand(l.zone);
+    const a = Math.max(40, lo + 30);
+    const b = Math.min(this.L.w - 40, hi - 30);
+    l.img.x += l.dir * 26 * dt;
+    if ((l.dir > 0 && l.img.x > b) || (l.dir < 0 && l.img.x < a)) {
+      l.dir *= -1;
+      l.img.setFlipX(l.dir < 0);
+    }
+    l.img.y = l.y + Math.sin(t * 1.1) * 10;
+    l.img.setAngle(Math.sin(t * 3) * 4);
+    l.glow.setPosition(l.img.x, l.img.y).setAlpha(0.5 + 0.3 * Math.sin(t * 4));
+    l.clock.setPosition(l.img.x, l.img.y - l.img.displayHeight * 0.5 - 30);
+    l.spark += dt;
+    if (l.spark > 0.35) {
+      l.spark = 0;
+      this.twinkle(l.img.x + (Math.random() - 0.5) * l.img.displayWidth, l.img.y + (Math.random() - 0.6) * l.img.displayHeight, Math.random() < 0.5 ? 0xffe36e : 0xffffff);
+    }
+  }
+
+  /** Soft round glow behind the WANTED fish and the Legendary, drawn once. */
+  private ensureGlow() {
+    if (this.scene.textures.exists('wanted-glow')) return;
+    const c = this.scene.textures.createCanvas('wanted-glow', 128, 128);
+    const ctx = c?.getContext();
+    if (c && ctx) {
+      const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+      g.addColorStop(0, 'rgba(255,255,255,0.95)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 128, 128);
+      c.refresh();
+    }
+  }
+
   /** A WANTED fish swims in at a random spot within casting range. */
   showWanted(fish: FishDef, size: number) {
     this.clearWanted(true);
     const L = this.L;
     if (!L) return;
-    if (!this.scene.textures.exists('wanted-glow')) {
-      // Soft round glow, drawn once.
-      const c = this.scene.textures.createCanvas('wanted-glow', 128, 128);
-      const ctx = c?.getContext();
-      if (c && ctx) {
-        const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
-        g.addColorStop(0, 'rgba(255,255,255,0.95)');
-        g.addColorStop(0.5, 'rgba(255,255,255,0.35)');
-        g.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, 128, 128);
-        c.refresh();
-      }
-    }
+    this.ensureGlow();
     const glow = this.scene.add.image(0, 0, 'wanted-glow').setDepth(12.4).setTint(0xffd23f).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
     const img = this.scene.add.image(0, 0, `fish:${fish.id}`).setDepth(12.5).setAlpha(0);
     setArt(img, `fish:${fish.id}`, 0.4 * size);
@@ -414,6 +584,8 @@ export class Pond {
     const dockX = portrait ? -70 : -40;
     const dockEnd = dockX + 356 * dockScale;
     this.L = { w, h, water, floor, deckY, dockEnd, castNear: dockEnd + 70, castFar: w - (portrait ? 70 : 110) };
+    this.aimZone = null;
+    this.aimG.clear();
     const pal = PALETTES[this.pond.id];
 
     this.sky.clear();
@@ -590,14 +762,21 @@ export class Pond {
       f.setAlpha(0.5 + 0.5 * Math.sin(t * 2.4 + i * 1.9));
     });
     this.updateWanted(dt, t);
+    this.updateLegend(dt, t);
     for (const f of this.swimmers) {
       f.img.x += f.speed * f.dir * dt;
       f.img.y = f.y + Math.sin(t * 0.9 + f.phase) * 14;
       f.img.setAngle(Math.sin(t * 3 + f.phase) * 3);
-      if ((f.dir > 0 && f.img.x > L.w + 120) || (f.dir < 0 && f.img.x < -120)) {
+      // Turns at the edge of its zone (a little past it, so the bands blend).
+      const [lo, hi] = this.zoneBand(f.zone);
+      if ((f.dir > 0 && f.img.x > hi + 30) || (f.dir < 0 && f.img.x < lo - 30)) {
         f.dir *= -1;
         f.img.setFlipX(f.dir < 0);
-        f.y = L.water + 120 + Math.random() * (L.floor - L.water - 220);
+        // A new depth only off screen (the turn is visible now that fish stay in their zone).
+        if (f.img.x > L.w + 40 || f.img.x < -40) {
+          const [top, bottom] = this.depthBand(f.zone);
+          f.y = top + Math.random() * (bottom - top);
+        }
       }
     }
     this.pets.forEach((p, i) => {

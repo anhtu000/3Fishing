@@ -66,6 +66,8 @@ export interface SaveData {
   quests: { day: string; list: QuestState[] };
   luckyDay: string;
   ads: { mysteryAt: number; goldenAt: number; goldenUntil: number };
+  /** v1.16 Firm hook (FIRM_HOOK): fewer shake-offs until this time (ms since epoch). */
+  gripUntil: number;
   autoFish: boolean;
   /** WANTED fish swimming in the current pond (fish id), null between them. */
   bounty: string | null;
@@ -114,6 +116,7 @@ export function defaultSave(): SaveData {
     quests: { day: '', list: [] },
     luckyDay: '',
     ads: { mysteryAt: 0, goldenAt: 0, goldenUntil: 0 },
+    gripUntil: 0,
     autoFish: false,
     bounty: null,
     bountyIn: WANTED.firstSec,

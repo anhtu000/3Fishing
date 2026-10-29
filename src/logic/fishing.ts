@@ -359,7 +359,7 @@ export class Fishing {
     this.warning = false;
     this.bossPhase = 0;
     const t = this.target;
-    this.slipAt = !t.boss && t.fights && !this.assist && !this.forgiving && this.rng.chance(SLIP.chance) ? SLIP.from + this.rng.next() * SLIP.spread : -1;
+    this.slipAt = !t.boss && t.fights && !this.assist && !this.forgiving && this.rng.chance(this.stats().slip ?? SLIP.chance) ? SLIP.from + this.rng.next() * SLIP.spread : -1;
     this.set('reeling');
   }
 

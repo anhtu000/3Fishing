@@ -161,8 +161,9 @@ def sfx():
     write('chest', mixdown(lowpass(creak, 1500), at(mixdown(*[at(bell(note(n), 0.4, 0.12), i * 0.05) for i, n in enumerate(['E6', 'G6', 'B6', 'E7', 'G7'])]), 0.2)))
     knock = lowpass(noise(0.06) * env(int(SR * 0.06), 0.001, 0.012), 1800) + sine(320, 0.06) * env(int(SR * 0.06), 0.001, 0.02)
     write('wobble', knock, 0.6)
-    crack = highpass(noise(0.05) * env(int(SR * 0.05), 0.0005, 0.01), 2000)
-    write('hatch', mixdown(crack, at(crack, 0.06), at(bloop(300, 1200, 0.15), 0.1), at(mixdown(*[at(bell(note(n), 0.6, 0.2), i * 0.07) for i, n in enumerate(['C6', 'E6', 'G6', 'C7', 'E7'])]), 0.18)))
+    # v1.16: the hatch and the cracks are made by egg_sfx() (own random stream); this draw only keeps
+    # the random stream of the sounds below unchanged.
+    noise(0.05)
     n = int(SR * 0.4)
     whoosh = noise(0.4) * np.sin(np.linspace(0, np.pi, n)) ** 2
     write('cast', lowpass(highpass(whoosh, 400), np.linspace(800, 4000, n)), 0.6)
@@ -185,6 +186,45 @@ def sfx():
     write('unlock', mixdown(*[at(bell(note('C6') * 2 ** (i / 5), 0.5, 0.15, 1.2) * 0.6, i * 0.06) for i in range(10)]))
     n = int(SR * 0.35)
     write('charge', sine(lambda t: 300 + 500 * t / 0.35, 0.35) * np.sin(np.linspace(0, np.pi, n)) * 0.5, 0.45)
+
+
+def egg_sfx():
+    """v1.16: eggshell sounds. 'crack' is one crack forming while the egg wobbles; 'hatch' is the shell
+    breaking open (a dull knock, a sharp snap, a burst of crackles, shell bits) and then the jingle."""
+    r = np.random.default_rng(31)
+
+    def tick(f, dur=0.014, decay=0.0016, amp=1.0):
+        # A tiny brittle click: band of noise around f, with a short ringing tone in it.
+        n = int(SR * dur)
+        x = r.uniform(-1, 1, n) * env(n, 0.0002, decay)
+        x = highpass(lowpass(x, f * 1.8), f * 0.55)
+        ring = sine(f * 0.8, dur) * env(n, 0.0002, decay * 1.6) * 0.35
+        return (x * 2.2 + ring) * amp
+
+    def crackle(count, span, f_lo, f_hi, amp=1.0, fade=1.6):
+        # Ticks bunched at the start, thinning out and getting softer.
+        parts = []
+        for i in range(count):
+            u = (i / max(1, count - 1)) ** 1.7
+            parts.append(at(tick(r.uniform(f_lo, f_hi), decay=r.uniform(0.0009, 0.0024), amp=amp * (1 - u / fade) * r.uniform(0.55, 1.0)), span * u + r.uniform(0, 0.004)))
+        return mixdown(*parts)
+
+    def snap(amp=1.0):
+        # The main crack: a broadband snap with a little woody body under it.
+        n = int(SR * 0.03)
+        x = r.uniform(-1, 1, n) * env(n, 0.0001, 0.0035)
+        body = lowpass(r.uniform(-1, 1, n) * env(n, 0.0003, 0.007), 1400) * 0.8 + sine(520, 0.03) * env(n, 0.0002, 0.006) * 0.4
+        return (highpass(x, 1200) * 1.6 + body) * amp
+
+    crack = mixdown(snap(1.0), at(crackle(6, 0.09, 2600, 6500, 0.6), 0.008))
+    write('crack', crack, 0.75)
+
+    n = int(SR * 0.12)
+    thump = sine(lambda t: 170 - 70 * t / 0.12, 0.12) * env(n, 0.001, 0.04) * 0.9
+    burst = mixdown(snap(1.2), at(snap(0.8), 0.035), at(crackle(16, 0.17, 2200, 7000, 0.75), 0.006))
+    bits = mixdown(*[at(tick(r.uniform(5000, 9000), 0.01, 0.0012, 0.35), 0.1 + i * 0.045 + r.uniform(0, 0.02)) for i in range(5)])
+    jingle = mixdown(*[at(bell(note(nm), 0.6, 0.2), i * 0.07) for i, nm in enumerate(['C6', 'E6', 'G6', 'C7', 'E7'])])
+    write('hatch', mixdown(thump, burst * 1.1, bits, at(bloop(300, 1200, 0.15) * 0.8, 0.16), at(jingle * 0.85, 0.24)))
 
 
 def music():
@@ -393,8 +433,13 @@ def pond_music():
 
 if __name__ == '__main__':
     import sys
-    # `make_audio.py music` rebuilds only the pond music (the effects stay byte-identical).
+    # `make_audio.py music` rebuilds only the pond music (the effects stay byte-identical);
+    # `make_audio.py eggs` only the egg crack and hatch sounds.
+    if 'eggs' in sys.argv[1:]:
+        egg_sfx()
+        sys.exit(0)
     if 'music' not in sys.argv[1:]:
         sfx()
+        egg_sfx()
     pond_music()
     print('ok', sorted(os.listdir(OUT)))

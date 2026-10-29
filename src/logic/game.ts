@@ -1,9 +1,9 @@
 // Game state plus the rules that change it. Pure TypeScript: the Play scene, tests and the balance
 // sim all use this class. The scene only draws and animates what it returns.
-import type { Rng } from '../../core/rng';
+import { pickWeighted, type Rng } from '../../core/rng';
 import { claimDaily, dailyStatus, dayKey } from '../../core/time';
-import { AD, WANTED, BOSS_FORM_COINS, BOSS_LURE, bossForm, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
-import type { Target } from './fishing';
+import { AD, FIRM_HOOK, LEGEND, WANTED, BOSS_FORM_COINS, BOSS_LURE, bossForm, CHALLENGE, CHALLENGES, type ChallengeDef, BOSS_STARS, GIANT_SIZE, INCUBATOR_SLOT_COST, LATE_GAME_POND, OFFLINE_CAP, POND_GOLD_BONUS, cosmeticById, PONDS, QUEST_POOL, STREAK, TEAM_SLOT_COST, TODAY_FISH, UPGRADES, petById, pondById, type FishDef, type PerkKind, type PondDef, type UpgradeId } from '../content/data';
+import { SLIP, type Target } from './fishing';
 import type { SaveData } from './model';
 import {
   incubateFromBasket,
@@ -15,7 +15,11 @@ import {
   chestReward,
   dexCount,
   eggCoins,
+  eggPond,
+  firmHookPrice,
+  perkTotal,
   expectedFishValue,
+  fishWeights,
   fishPrice,
   fishSpeedsEggs,
   fishingStats,
@@ -32,12 +36,12 @@ import {
   rollCatch,
   rewardMult,
   rollSize,
-  teamPerk,
   tickEggs,
   pickTodayFish,
   upgradeCost,
   type CastZone,
   type CatchRoll,
+  type HookPerks,
   type HatchResult,
 } from './rules';
 
@@ -89,6 +93,8 @@ export interface AnglerCatch {
 export class PondGame {
   /** Per-pet progress toward the next fish an angler pet brings. Not saved: offline income covers it. */
   private anglerAcc = new Map<string, number>();
+  /** The Legendary showing itself now (v1.16, see LEGEND): seconds of fishing left. Not saved. */
+  legend: { fish: FishDef; size: number; left: number; pond: string } | null = null;
   /** Perfect hooks in a row (this session). */
   streak = 0;
 
@@ -102,12 +108,42 @@ export class PondGame {
     return pondById.get(this.s.pond as 'cozy') ?? PONDS[0];
   }
 
+  /** A perk in play: team pets plus worn wardrobe items (v1.16). */
   perk(kind: PerkKind) {
-    return teamPerk(this.s, kind, (id) => petById.get(id));
+    return perkTotal(this.s, kind);
   }
 
   stats() {
-    return fishingStats(this.s, this.perk('sharp'), this.perk('strong'));
+    return { ...fishingStats(this.s, this.perk('sharp'), this.perk('strong')), slip: this.firmHookOn ? FIRM_HOOK.slip : SLIP.chance };
+  }
+
+  /** v1.16 Firm hook: on (fewer shake-offs) until s.gripUntil. */
+  get firmHookOn() {
+    return (this.s.gripUntil ?? 0) > this.now();
+  }
+
+  /** Seconds of Firm hook left. */
+  get firmHookLeft() {
+    return Math.max(0, ((this.s.gripUntil ?? 0) - this.now()) / 1000);
+  }
+
+  firmHookPrice() {
+    return firmHookPrice(this.s);
+  }
+
+  /** Buys the Firm hook for FIRM_HOOK.sec seconds. False when it is on already or coins are short. */
+  buyFirmHook(): boolean {
+    if (this.firmHookOn) return false;
+    const price = firmHookPrice(this.s);
+    if (this.s.coins < price) return false;
+    this.s.coins -= price;
+    this.s.gripUntil = this.now() + FIRM_HOOK.sec * 1000;
+    return true;
+  }
+
+  /** Team perks that change the catch itself: more eggs, more chests, bigger fish. */
+  hookPerks(): HookPerks {
+    return { finder: this.perk('finder'), treasure: this.perk('treasure'), big: this.perk('big') };
   }
 
   get goldenBait() {
@@ -159,11 +195,12 @@ export class PondGame {
     const s = this.s;
     const pond = this.pond;
     const luck = this.luck(zone, lucky);
+    const hook = this.hookPerks();
     let roll: CatchRoll;
     if (s.stats.catches === 0) roll = { kind: 'fish', fish: pond.fish[0], size: 1.05 };
     else if (s.stats.catches === 2 && s.stats.eggs === 0) roll = { kind: 'egg', tier: 0 };
     else if (s.stats.catches >= 18 && s.stats.chests === 0) roll = { kind: 'chest' };
-    else roll = rollCatch(this.rng, pond, luck);
+    else roll = rollCatch(this.rng, pond, luck, hook, zone);
 
     // Discovery help: a repeat Common or Uncommon sometimes becomes a species still missing,
     // so the Fishdex keeps filling at the pace the design asks for.
@@ -173,9 +210,22 @@ export class PondGame {
     }
     // Today's fish swims up now and then (Legendary a bit less often).
     const today = this.todayFish;
-    if (today && s.stats.catches >= 3 && roll.kind === 'fish' && roll.fish.id !== today.id && this.rng.chance(today.rarity >= 4 ? TODAY_FISH.chanceLegendary : TODAY_FISH.chance)) {
+    // v1.16: more often in its own zone (x1.5), less elsewhere (x0.75).
+    const todayZone = today && today.zone === zone ? 1.5 : 0.75;
+    if (today && s.stats.catches >= 3 && roll.kind === 'fish' && roll.fish.id !== today.id && this.rng.chance((today.rarity >= 4 ? TODAY_FISH.chanceLegendary : TODAY_FISH.chance) * todayZone)) {
       roll = { kind: 'fish', fish: today, size: rollSize(this.rng, luck) };
     }
+    // A Legendary never bites at random (v1.16): it shows itself in its zone instead, and this cast
+    // brings a fish of another rarity. Today's fish when it is the Legendary goes the same way.
+    if (roll.kind === 'fish' && roll.fish.rarity >= 4) {
+      if (!this.legend || this.legend.pond !== pond.id) this.legend = { fish: roll.fish, size: roll.size, left: LEGEND.staySec, pond: pond.id };
+      const w = fishWeights(pond, luck, zone).map((v, i) => (pond.fish[i].rarity >= 4 ? 0 : v));
+      roll = { kind: 'fish', fish: pond.fish[pickWeighted(this.rng, w)], size: rollSize(this.rng, luck) };
+    }
+    // The pond whose pet is in the egg (an earlier pond now and then, EGG_POND_MIX).
+    if (roll.kind === 'egg') roll = { ...roll, pond: eggPond(this.rng, s, pond.id, roll.tier) };
+    // Big catch pets: the fish grows (the scripted first fish stays as it is).
+    if (roll.kind === 'fish' && hook.big > 0 && s.stats.catches > 0) roll = { ...roll, size: Math.round(roll.size * (1 + hook.big / 100) * 100) / 100 };
     const rarity = roll.kind === 'fish' ? roll.fish.rarity : roll.kind === 'egg' ? roll.tier : 0;
     return { roll, target: { rarity, fights: roll.kind === 'fish' } };
   }
@@ -252,7 +302,7 @@ export class PondGame {
       }
       case 'egg':
         s.stats.eggs += 1;
-        res.eggWhere = storeEgg(s, roll.tier, pond.id);
+        res.eggWhere = storeEgg(s, roll.tier, roll.pond ?? pond.id);
         res.eggStored = !!res.eggWhere;
         if (!res.eggStored) res.coins = eggCoins(roll.tier, this.s);
         break;
@@ -277,6 +327,38 @@ export class PondGame {
   /** A fumbled cast (too early, too slow, line snapped) ends the perfect streak. */
   breakStreak() {
     this.streak = 0;
+  }
+
+  /** The Legendary in sight (this pond only). */
+  get legendHere() {
+    return this.legend && this.legend.pond === this.pond.id ? this.legend : null;
+  }
+
+  /** The hook landed next to the Legendary: it is on the line (it stays in sight if it gets away). */
+  hookLegend(): CatchRoll | null {
+    const l = this.legendHere;
+    if (!l) return null;
+    const big = this.perk('big');
+    return { kind: 'fish', fish: l.fish, size: Math.round(l.size * (1 + big / 100) * 100) / 100 };
+  }
+
+  /** Landed the Legendary: it is gone from the water. */
+  legendCaught() {
+    this.legend = null;
+  }
+
+  /** Clock of the Legendary in sight (call only while fishing, not with a fish on the hook). 'gone' when it swims off. */
+  tickLegend(sec: number): 'gone' | null {
+    const l = this.legend;
+    if (!l) return null;
+    if (l.pond !== this.pond.id) {
+      this.legend = null;
+      return null;
+    }
+    l.left -= sec;
+    if (l.left > 0) return null;
+    this.legend = null;
+    return 'gone';
   }
 
   /** Picks a WANTED fish of this pond: mostly Common or Uncommon, sometimes Rare; always big. */
@@ -354,7 +436,7 @@ export class PondGame {
       let acc = (this.anglerAcc.get(id) ?? 0) + (sec * perMin) / 60;
       while (acc >= 1) {
         acc -= 1;
-        const coins = Math.round(expectedFishValue(pond, this.luck(0), this.perk('merchant')) * (0.7 + this.rng.next() * 0.6));
+        const coins = Math.round(expectedFishValue(pond, this.luck(0), this.perk('merchant'), this.perk('big')) * (0.7 + this.rng.next() * 0.6));
         this.earn(coins);
         out.push({ petId: id, coins });
       }
@@ -372,7 +454,7 @@ export class PondGame {
     tickEggs(this.s, seconds, this.perk('nurture'));
     const per = this.anglerPerMin();
     if (per <= 0) return 0;
-    const value = expectedFishValue(this.pond, this.luck(0), this.perk('merchant'));
+    const value = expectedFishValue(this.pond, this.luck(0), this.perk('merchant'), this.perk('big'));
     // Pets fish at half pace while nobody is watching (design doc: idle at 50%).
     return Math.floor((Math.min(seconds, OFFLINE_CAP) / 60) * per * value * 0.5);
   }
@@ -502,10 +584,20 @@ export class PondGame {
     return this.lateGame;
   }
 
-  /** A challenge can be played: its pond is open and the one before it (same pond) is cleared. */
+  /**
+   * A challenge can be played: its pond is open, its boss has been caught once (v1.16) and the one
+   * before it (same pond) is cleared.
+   */
   challengeUnlocked(c: ChallengeDef) {
     if (!this.challengeOpen || !this.s.unlocked.includes(c.pond)) return false;
+    if (!this.challengeBossDone(c.pond)) return false;
     return c.n === 1 || this.s.challenge.cleared.includes(`${c.pond}-${c.n - 1}`);
+  }
+
+  /** v1.16: a pond's challenges open once its boss has been caught. */
+  challengeBossDone(pondId: string) {
+    const pond = PONDS.find((p) => p.id === pondId);
+    return !!pond && this.s.bosses.includes(pond.boss.id);
   }
 
   /** A challenge catch: Fishdex, medals and quests count, but no coins or eggs (the reward is at the end). */

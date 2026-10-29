@@ -138,7 +138,7 @@ export class Rig {
   cast(power: number, zone: number) {
     const L = this.pond.L;
     this.landX = L.castNear + (L.castFar - L.castNear) * power;
-    this.hookDepth = L.water + (L.floor - L.water) * (0.28 + 0.2 * zone);
+    this.hookDepth = this.pond.hookDepth(zone);
     this.castFrom = this.tip();
     this.bobber.setVisible(true).setAngle(0);
     this.rodKick = 1;

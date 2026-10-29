@@ -3,6 +3,10 @@
 import { pickWeighted, type Rng } from '../../core/rng';
 import {
   petById,
+  EGG_POND_MIX,
+  FIRM_HOOK,
+  cosmeticById,
+  HABITAT_MULT,
   EGG_SELL,
   EGG_WEIGHTS,
   CATCH_WEIGHTS,
@@ -51,7 +55,29 @@ export function anyUpgradeAffordable(s: SaveData) {
 
 export function perkValue(perk: PerkKind, rarity: number, level: number) {
   const lv = Math.max(1, Math.min(PET_MAX_LEVEL, level));
-  return PERKS[perk].values[rarity] * (1 + (PET_TOP_MULT - 1) * Math.sqrt((lv - 1) / (PET_MAX_LEVEL - 1)));
+  const r = Math.max(0, Math.min(PET_TOP_MULT.length - 1, rarity));
+  return PERKS[perk].values[r] * (1 + (PET_TOP_MULT[r] - 1) * Math.sqrt((lv - 1) / (PET_MAX_LEVEL - 1)));
+}
+
+/** v1.16: the bonus of a perk from the worn wardrobe items (hat, rod, bobber, bait). */
+export function gearPerk(s: SaveData, perk: PerkKind) {
+  let total = 0;
+  for (const id of [s.style.hat, s.style.rod, s.style.bobber, s.style.bait]) {
+    const st = id ? cosmeticById.get(id)?.stats : undefined;
+    if (st) total += (st as Record<string, number>)[perk] ?? 0;
+  }
+  return total;
+}
+
+/** A perk in play: the team's pets plus the worn wardrobe items. */
+export function perkTotal(s: SaveData, perk: PerkKind) {
+  return teamPerk(s, perk, (id) => petById.get(id)) + gearPerk(s, perk);
+}
+
+/** v1.16 Firm hook: price now (FIRM_HOOK), from the coins in hand and the furthest pond unlocked. */
+export function firmHookPrice(s: SaveData) {
+  const floor = s.unlocked.includes('frozen') ? FIRM_HOOK.min.frozen : s.unlocked.includes('misty') ? FIRM_HOOK.min.misty : FIRM_HOOK.min.cozy;
+  return Math.max(floor, Math.round(s.coins * FIRM_HOOK.share));
 }
 
 /** Sum of a perk over the pets in the team. */
@@ -123,15 +149,24 @@ export function rarityWeights(luck: number, base: readonly number[] = RARITY_WEI
 
 export type CatchKind = 'fish' | 'egg' | 'junk' | 'chest';
 
-export function catchWeights(luck: number): Record<CatchKind, number> {
+/** Pet perks that change what comes up on the hook, in percent (Egg finder, Treasure nose, Big catch). */
+export interface HookPerks {
+  finder: number;
+  treasure: number;
+  big: number;
+}
+export const NO_HOOK_PERKS: HookPerks = { finder: 0, treasure: 0, big: 0 };
+
+export function catchWeights(luck: number, perks: HookPerks = NO_HOOK_PERKS): Record<CatchKind, number> {
   // Luck makes junk rarer, never gone.
   const junk = CATCH_WEIGHTS.junk * Math.max(0.4, 1 - luck / 100);
-  return { fish: CATCH_WEIGHTS.fish, egg: CATCH_WEIGHTS.egg, junk, chest: CATCH_WEIGHTS.chest };
+  return { fish: CATCH_WEIGHTS.fish, egg: CATCH_WEIGHTS.egg * (1 + perks.finder / 100), junk, chest: CATCH_WEIGHTS.chest * (1 + perks.treasure / 100) };
 }
 
 export type CatchRoll =
   | { kind: 'fish'; fish: FishDef; size: number }
-  | { kind: 'egg'; tier: number }
+  /** pond: the pond whose pet hatches from it (set by PondGame.rollForCast, see eggPond). */
+  | { kind: 'egg'; tier: number; pond?: string }
   | { kind: 'junk'; item: string }
   | { kind: 'chest' };
 
@@ -145,18 +180,33 @@ export function rollSize(rng: Rng, luck: number) {
   return Math.round((0.8 + 0.7 * r) * 100) / 100;
 }
 
-export function rollFish(rng: Rng, pond: PondDef, luck: number): { fish: FishDef; size: number } {
-  const tier = rollRarityTier(rng, luck);
-  const options = pond.fish.filter((f) => f.rarity === tier);
-  const fish = rng.pick(options.length ? options : pond.fish);
+/**
+ * Which fish bites (v1.16). Luck sets the rarity as before; within a rarity, a fish in its own zone
+ * (FishDef.zone, the cast distance) weighs HABITAT_MULT, the others 1, so the share of each rarity and
+ * the coins stay as they were. A rarity with one fish (the Legendary) comes x1.5 in its zone and x0.75
+ * elsewhere. Without a zone (tools), only rarity.
+ */
+export function fishWeights(pond: PondDef, luck: number, zone?: CastZone): number[] {
+  const rw = rarityWeights(luck);
+  const m = (f: FishDef) => (zone !== undefined && f.zone === zone ? HABITAT_MULT : 1);
+  const sum = rw.map((_, t) => pond.fish.filter((f) => f.rarity === t).reduce((a, f) => a + m(f), 0));
+  const alone = rw.map((_, t) => pond.fish.filter((f) => f.rarity === t).length === 1);
+  return pond.fish.map((f) => {
+    const tier = rw[f.rarity] * (alone[f.rarity] && zone !== undefined ? (f.zone === zone ? 1.5 : 0.75) : 1);
+    return (tier * m(f)) / Math.max(1e-9, sum[f.rarity]);
+  });
+}
+
+export function rollFish(rng: Rng, pond: PondDef, luck: number, zone?: CastZone): { fish: FishDef; size: number } {
+  const fish = pond.fish[pickWeighted(rng, fishWeights(pond, luck, zone))];
   return { fish, size: rollSize(rng, luck) };
 }
 
-export function rollCatch(rng: Rng, pond: PondDef, luck: number): CatchRoll {
-  const w = catchWeights(luck);
+export function rollCatch(rng: Rng, pond: PondDef, luck: number, perks: HookPerks = NO_HOOK_PERKS, zone?: CastZone): CatchRoll {
+  const w = catchWeights(luck, perks);
   const kinds: CatchKind[] = ['fish', 'egg', 'junk', 'chest'];
   const kind = kinds[pickWeighted(rng, kinds.map((k) => w[k]))];
-  if (kind === 'fish') return { kind, ...rollFish(rng, pond, luck) };
+  if (kind === 'fish') return { kind, ...rollFish(rng, pond, luck, zone) };
   if (kind === 'egg') return { kind, tier: pickWeighted(rng, rarityWeights(luck, EGG_WEIGHTS)) };
   if (kind === 'junk') return { kind, item: rng.pick(pond.junk) };
   return { kind };
@@ -168,12 +218,12 @@ export function fishPrice(fish: FishDef, size: number, pond: PondDef, merchantPc
 }
 
 /** Expected coins of one fish caught with this luck (for offline income and angler pets). */
-export function expectedFishValue(pond: PondDef, luck: number, merchantPct: number) {
+export function expectedFishValue(pond: PondDef, luck: number, merchantPct: number, bigPct = 0) {
   const w = rarityWeights(luck);
   const total = w.reduce((a, b) => a + b, 0);
   let v = 0;
   for (let i = 0; i < w.length; i++) v += (w[i] / total) * RARITY_PRICE[i];
-  return v * 1.08 * pond.priceMult * (1 + merchantPct / 100);
+  return v * 1.08 * (1 + bigPct / 100) * pond.priceMult * (1 + merchantPct / 100);
 }
 
 export function chestReward(rng: Rng, pond: PondDef, first: boolean) {
@@ -199,6 +249,8 @@ export interface FishingStats {
   reelMult: number;
   /** Seconds the line survives in the red zone. */
   lineHold: number;
+  /** Chance a normal fish shakes off the hook while reeling (v1.16: lower with the Firm hook). */
+  slip?: number;
 }
 
 export function fishingStats(s: SaveData, sharpSec: number, strongPct: number): FishingStats {
@@ -263,7 +315,7 @@ export function hasFreeEggSlot(s: SaveData) {
 
 /** How fast eggs warm up with the team's Nurture pets (1 = normal, 1.28 = 28% faster). */
 export function hatchSpeed(s: SaveData) {
-  return 1 + teamPerk(s, 'nurture', (id) => petById.get(id)) / 100;
+  return 1 + perkTotal(s, 'nurture') / 100;
 }
 
 /**
@@ -313,6 +365,25 @@ export function fishSpeedsEggs(s: SaveData) {
 
 export function readyEggIndex(s: SaveData) {
   return s.eggs.findIndex((e, i) => (i < s.incubatorSlots || i === NEST_INDEX) && e && e.left <= 0);
+}
+
+/**
+ * The pond whose pet an egg caught in `pondId` will hatch (EGG_POND_MIX). Decided when the egg is
+ * caught, so the mark on the egg tells the player which pet is inside. An earlier pond whose pet of
+ * this rarity is already at the top level gives way to the pond itself.
+ */
+export function eggPond(rng: Rng, s: SaveData, pondId: string, tier: number): string {
+  const mix = EGG_POND_MIX[pondId];
+  if (!mix) return pondId;
+  let r = rng.next();
+  for (const [id, chance] of mix) {
+    if (r < chance) {
+      const pet = pondById.get(id)?.pets.find((p) => p.rarity === tier);
+      return pet && (s.pets[pet.id]?.level ?? 0) >= PET_MAX_LEVEL ? pondId : id;
+    }
+    r -= chance;
+  }
+  return pondId;
 }
 
 export function petForEgg(egg: EggSlot) {

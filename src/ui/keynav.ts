@@ -35,6 +35,15 @@ function shown(o: Phaser.GameObjects.GameObject): boolean {
 export class KeyNav {
   /** Pressed by Space/Enter before the player has moved the focus (OK, Yay, Collect...). */
   primary: CButton | null = null;
+  /** Called when the focus moves to a button (v1.16: scrolling lists bring it into view). */
+  onFocus: ((b: CButton) => void) | null = null;
+  /** v1.16: false hides the ring (a button scrolled out of a list's window). */
+  canShow: ((b: CButton) => boolean) | null = null;
+
+  /** Hides the focus ring (the player went back to touch or the mouse). */
+  hideRing() {
+    this.ring.setVisible(false);
+  }
   private focus: CButton | null = null;
   private ring: Phaser.GameObjects.Graphics;
   private onKey = (e: KeyboardEvent) => this.key(e);
@@ -64,6 +73,10 @@ export class KeyNav {
     if (!this.ring.visible) return;
     if (!b || !b.active || !shown(b)) {
       this.ring.setVisible(false);
+      return;
+    }
+    if (this.canShow && !this.canShow(b)) {
+      this.ring.clear();
       return;
     }
     const r = b.getBounds();
@@ -152,6 +165,7 @@ export class KeyNav {
 
   private setFocus(b: CButton) {
     this.focus = b;
+    this.onFocus?.(b);
     this.ring.setVisible(true);
     this.draw();
   }

@@ -4,6 +4,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { PET_IDS, petSvg } from '../render/pets';
 import { commonPieces, hatPieces } from '../render/scenery';
+import { previewItems } from '../render/items';
 
 function badTags(svg: string) {
   const bad: string[] = [];
@@ -17,5 +18,7 @@ function badTags(svg: string) {
 test('art: no SVG tag repeats an attribute (pets, cat, hats, scenery)', () => {
   const all: [string, string][] = PET_IDS.map((id) => [id, petSvg(id)]);
   for (const [k, p] of Object.entries({ ...commonPieces(), ...hatPieces() })) all.push([k, p.svg]);
+  // Items, eggs (with the v1.16 pond marks) and icons.
+  for (const it of previewItems()) all.push([it.name, it.svg]);
   for (const [name, svg] of all) assert.deepEqual(badTags(svg), [], name);
 });
