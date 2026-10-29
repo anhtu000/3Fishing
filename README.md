@@ -37,7 +37,7 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
 ## Poki
 
 - Quy định và checklist trước khi nộp: `docs/Poki-Huong-dan.md` (dùng chung cho mọi game đường A).
-- Thumbnail cửa hàng: `store/thumbnail_1024.png`, `store/thumbnail_628.png` (tạo lại: `bun tools/art/thumbnail.ts store/thumbnail_1024.png 1024`). 3 ảnh chơi dọc 1080×1920 cho form nộp: `store/screenshots/`.
+- Thumbnail cửa hàng: `store/thumbnail_1024.png`, `store/thumbnail_628.png` (tạo lại: `bun tools/art/thumbnail.ts store/thumbnail_1024.png 1024`). Phương án theo art v1.16 (chờ người dùng chọn): `store/thumb-options/thumb_{A,B,C}_{1024,628}.png`, tạo bằng `bun tools/art/thumbnails.ts <thư mục> [cỡ]`. 3 ảnh chơi dọc 1080×1920 cho form nộp: `store/screenshots/`.
 - Kiểm thứ tự sự kiện SDK bằng SDK giả: `npm run build && node tools/poki-events.mjs dist/poki`.
 
 ## Ghi chú kỹ thuật
@@ -92,5 +92,6 @@ Trên bản web có preset để chụp màn hình: `#dev-rich` (đủ xu, sẵn
   - Tủ đồ: mỗi món cộng 1–3% chỉ số (`CosmeticDef.stats`, món đắt cộng nhiều hơn); bảng cuộn 4 cột (kéo, lăn chuột, phím, thanh cuộn); nút phóng to và xác nhận khi mua (nút Huỷ được chọn sẵn khi dùng phím). ESC chỉ đóng bảng trên cùng; khung chọn phím ẩn khi cuộn.
   - HUD: cột nút trái dời lên nhưng nằm dưới vùng nút Poki (kể cả điện thoại xoay ngang, trước đây bị lấn); lời nhắc BOSS nằm dưới nút, ngón tay ở góc nút.
   - Âm thanh: tiếng `crack` mới (trứng nứt 3 lần khi lắc, vết nứt dài dần), `hatch` làm lại (tiếng vỡ giòn, vỏ vụn, rồi chuông); `python3 tools/make_audio.py eggs`, dòng ngẫu nhiên riêng nên các tiếng khác giữ nguyên byte.
+  - Thumbnail: 3 phương án theo art mới (A câu cá Huyền thoại lúc hoàng hôn, B trứng nở lúc chạng vạng, C cận mặt ban ngày) trong `store/thumb-options/`; Claude đề xuất A. Ảnh trong `store/thumbnail_*.png` vẫn là bản v1.14 cho tới khi người dùng chọn.
   - Đánh giá: `docs/KittyPond-DanhGia-Poki-CrazyGames-v1.16.md` (đối chiếu tiêu chí) và `docs/KittyPond-DanhGia-TongThe-v1.16.md` (nội dung, thiết kế, độ thu hút, việc cần làm trước khi nộp).
   - Kiểm tra: tsc sạch (khai báo Phaser giả), 41 test bun đạt; chụp màn hình Playwright ở 412×755, 360×640, 755×412, 1031×580. Mô phỏng kinh tế 60 lượt mỗi kiểu (máy tính): boss hồ 1 phút 2,4–3,0, hồ 2 phút 11–16, hồ 3 phút 27–42. Người dùng chơi thử Android: ổn, chỉ góp ý vùng ném ở màn dọc (đã sửa).
